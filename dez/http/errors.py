@@ -1,0 +1,2 @@
+class HTTPProtocolError(Exception):
+    pass
