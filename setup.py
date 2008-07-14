@@ -1,9 +1,9 @@
 from setuptools import setup
 setup(
     name='dez',
-    version='0.2.8',
+    version='0.2.9',
     author='Michael Carter',
-    author_email='CarterMichael@gmail.com',
+    author_email='mario.balibrera@gmail.com',
     download_url='http://code.google.com/p/dez/downloads/list',
     license='MIT License',
     description='A set of pyevent-based network services',
@@ -23,9 +23,9 @@ setup(
     ],
     zip_safe = False,
     install_requires = [
-        "rel >= 0.2.1"
+        "rel >= 0.2.1",
+        "demjson"
     ],
-
     entry_points = '''
         [console_scripts]
         dez_test = dez.samples.test:main
@@ -33,7 +33,6 @@ setup(
         [paste.server_runner]
         wsgi_server = dez.http.application:serve_wsgi_application
     ''',
-
     classifiers = [
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
