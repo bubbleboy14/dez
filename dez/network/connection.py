@@ -2,6 +2,7 @@ import event
 import dez.io
 import dez.buffer
 from dez.json import decode
+from xml.dom.minidom import parseString
 
 class Connection(object):
     id = 0
@@ -133,6 +134,11 @@ class Connection(object):
 
     def set_rmode_json(self, cb, args=[]):
         self.mode = JsonReadMode(cb, args)
+        self.__mode_changed = True
+        self.__start_read()
+
+    def set_rmode_xml(self, cb, args=[]):
+        self.mode = XMLReadMode(cb, args)
         self.__mode_changed = True
         self.__start_read()
 
@@ -320,7 +326,7 @@ class JsonReadMode(object):
     def ready(self, buffer):
         buff = buffer.get_value()
         if not buff:
-            return
+            return False
         if buff[0] == "[":
             c = ']'
         elif buff[0] == "{":
@@ -339,6 +345,54 @@ class JsonReadMode(object):
             except:
                 self.checked_index = i+1
                 i = buffer.find(c, self.checked_index)
+        return False
+
+    def send_data(self, buffer):
+        self.cb(self.frame, *self.args)
+        self.frame = None
+        return True
+
+    def close(self, buffer):
+        pass
+
+class XMLReadMode(object):
+    def __init__(self, cb, args):
+        self.completed = False
+        self.cb = cb
+        self.args = args
+        self.checked_index = 0
+        self.name = None
+        self.frame = None
+
+    def ready(self, buffer):
+        if not self.name:
+            buff = buffer.get_value()
+            if not buff:
+                return False
+            if buff[0] != "<":
+                self.checked_index = 0
+                buffer.move(1)
+                return self.ready(buffer)
+            if ">" not in buff:
+                return False
+            close_index = buff.index('>')
+            if buff[close_index-1] == '/':
+                self.frame = parseString(buff[:close_index+1])
+                buffer.move(close_index+1)
+                self.checked_index = 0
+                return True
+            self.name = buff[1:close_index].split(' ',1)[0]
+        i = buffer.find(">", self.checked_index)
+        while i != -1:
+            if buffer.part(i-2-len(self.name),i+1) == "</"+self.name+">":
+                self.frame = parseString(buffer.part(0, i+1))
+                buffer.move(i+1)
+                self.checked_index = 0
+                self.name = None
+                return True
+            else:
+                self.checked_index = i+1
+                i = buffer.find(">", self.checked_index)
         return False
 
     def send_data(self, buffer):
