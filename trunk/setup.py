@@ -1,7 +1,7 @@
 from setuptools import setup
 setup(
     name='dez',
-    version='0.2.9',
+    version='0.3.0',
     author='Michael Carter',
     author_email='mario.balibrera@gmail.com',
     download_url='http://code.google.com/p/dez/downloads/list',
