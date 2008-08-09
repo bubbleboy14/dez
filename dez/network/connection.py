@@ -1,12 +1,15 @@
 import event
 import dez.io
-import dez.buffer
+from dez.buffer import Buffer, B64ReadBuffer, B64WriteBuffer
 from dez.json import decode
 from xml.dom.minidom import parseString
 
+RBUFF = {True:B64ReadBuffer, False:Buffer}
+WBUFF = {True:B64WriteBuffer, False:Buffer}
+
 class Connection(object):
     id = 0
-    def __init__(self, addr, sock, pool=None):
+    def __init__(self, addr, sock, pool=None, b64=False):
         Connection.id += 1
         self.id = Connection.id
         self.pool = pool
@@ -15,8 +18,8 @@ class Connection(object):
         self.mode = None
         self.__write_queue = []
         self.__write_chunk = None
-        self.__write_buffer = dez.buffer.Buffer()
-        self.__read_buffer = dez.buffer.Buffer()
+        self.__write_buffer = WBUFF[b64]()
+        self.__read_buffer = RBUFF[b64]()
         self.__looping = False
         self.__mode_changed = False
         self.__release_timer = None
@@ -163,7 +166,8 @@ class Connection(object):
             self.__write_chunk = self.__write_queue.pop(0)
             self.__write_buffer.reset(self.__write_chunk.data)
         try:
-            bsent = self.sock.send(self.__write_buffer.get_value())
+            bsent = len(self.__write_buffer)
+            self.sock.send(self.__write_buffer.get_value())
             self.__write_buffer.move(bsent)
             return True
         except dez.io.socket.error, msg:
