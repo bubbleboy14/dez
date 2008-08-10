@@ -381,7 +381,7 @@ class XMLReadMode(object):
                 return False
             close_index = buff.index('>')
             if buff[close_index-1] == '/':
-                self.frame = parseString(buff[:close_index+1])
+                self.frame = parseString(buff[:close_index+1]).firstChild
                 buffer.move(close_index+1)
                 self.checked_index = 0
                 return True
@@ -389,7 +389,7 @@ class XMLReadMode(object):
         i = buffer.find(">", self.checked_index)
         while i != -1:
             if buffer.part(i-2-len(self.name),i+1) == "</"+self.name+">":
-                self.frame = parseString(buffer.part(0, i+1))
+                self.frame = parseString(buffer.part(0, i+1)).firstChild
                 buffer.move(i+1)
                 self.checked_index = 0
                 self.name = None
