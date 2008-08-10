@@ -2,7 +2,7 @@ import event
 import dez.io
 from dez.buffer import Buffer, B64ReadBuffer, B64WriteBuffer
 from dez.json import decode
-from xml.dom.minidom import parseString
+from dez.xml_tools import extract_xml
 
 RBUFF = {True:B64ReadBuffer, False:Buffer}
 WBUFF = {True:B64WriteBuffer, False:Buffer}
@@ -366,6 +366,7 @@ class XMLReadMode(object):
         self.args = args
         self.checked_index = 0
         self.name = None
+        self.name_count = 0
         self.frame = None
 
     def ready(self, buffer):
@@ -381,22 +382,25 @@ class XMLReadMode(object):
                 return False
             close_index = buff.index('>')
             if buff[close_index-1] == '/':
-                self.frame = parseString(buff[:close_index+1]).firstChild
+                self.frame = extract_xml(buff[:close_index+1])
                 buffer.move(close_index+1)
                 self.checked_index = 0
                 return True
             self.name = buff[1:close_index].split(' ',1)[0]
         i = buffer.find(">", self.checked_index)
         while i != -1:
-            if buffer.part(i-2-len(self.name),i+1) == "</"+self.name+">":
-                self.frame = parseString(buffer.part(0, i+1)).firstChild
-                buffer.move(i+1)
-                self.checked_index = 0
-                self.name = None
-                return True
-            else:
-                self.checked_index = i+1
-                i = buffer.find(">", self.checked_index)
+            if buffer.part(i-1-len(self.name),i+1) == "<"+self.name+">":
+                self.name_count += 1
+            elif buffer.part(i-2-len(self.name),i+1) == "</"+self.name+">":
+                self.name_count -= 1
+                if not self.name_count:
+                    self.frame = extract_xml(buffer.part(0, i+1))
+                    buffer.move(i+1)
+                    self.checked_index = 0
+                    self.name = None
+                    return True
+            self.checked_index = i+1
+            i = buffer.find(">", self.checked_index)
         return False
 
     def send_data(self, buffer):
