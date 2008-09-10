@@ -25,6 +25,12 @@ class XMLNode(object):
     def has_children(self):
         return bool(self.children)
 
+    def has_attribute(self, attr):
+        return attr in self.attributes
+
+    def attr(self, attr):
+        return self.attributes.get(attr, None)
+
     def add_child(self, child):
         self.children.append(child)
 
