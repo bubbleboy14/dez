@@ -11,6 +11,7 @@ class SimpleClient(object):
         sock = io.client_socket(host, port)
         self.conn = Connection((host, port), sock, b64=self.b64)
         cb(self.conn, *args)
+        event.signal(2, event.abort)
         event.dispatch()
 
 class SocketClient(object):
