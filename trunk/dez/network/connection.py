@@ -107,6 +107,8 @@ class Connection(object):
 
     def write(self, data, cb=None, cbargs=[], eb=None, ebargs=[]):
         self.__write_queue.append(WriteChunk(data, cb, cbargs, eb, ebargs))
+        if not self.wevent:
+            raise ConnectionClosedException, "Connection %s is closed and can no longer write. Call Connection.set_close_cb for close notification."%self.id
         if not self.wevent.pending():
             self.wevent.add()
 
@@ -201,6 +203,9 @@ class Connection(object):
             return None
         self.__read(data)
         return True
+
+class ConnectionClosedException(Exception):
+    pass
 
 class WriteChunk(object):
     def __init__(self, data, cb=None, args=[], eb=None, ebargs=[]):
