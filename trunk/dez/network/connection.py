@@ -392,6 +392,8 @@ class XMLReadMode(object):
                 self.checked_index = 0
                 return True
             self.name = buff[1:close_index].split(' ',1)[0]
+            self.name_count = 1
+            self.checked_index = close_index+1
         i = buffer.find(">", self.checked_index)
         while i != -1:
             if buffer.part(i-1-len(self.name),i+1) == "<"+self.name+">":
