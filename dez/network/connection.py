@@ -138,7 +138,7 @@ class Connection(object):
         self.__start_read()
 
     def set_rmode_json(self, cb, args=[]):
-        self.mode = JsonReadMode(cb, args)
+        self.mode = JSONReadMode(cb, args)
         self.__mode_changed = True
         self.__start_read()
 
@@ -324,7 +324,7 @@ class DelimeterReadMode(object):
     def close(self, buffer):
         pass
 
-class JsonReadMode(object):
+class JSONReadMode(object):
     def __init__(self, cb, args):
         self.completed = False
         self.cb = cb
