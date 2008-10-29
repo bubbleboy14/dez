@@ -1,10 +1,10 @@
-import rel, optparse
+import rel, optparse, socket
 
 def parse_input():
     parser = optparse.OptionParser('dez_test [-m MODULE]')
-    parser.add_option("-p", "--port", dest="port", default="80", help="run test on PORT. default: 8888")
+    parser.add_option("-p", "--port", dest="port", default="80", help="run test on PORT. default: 80")
     parser.add_option("-d", "--domain", dest="domain", default="localhost", help="run test on DOMAIN. default: localhost")
-    parser.add_option("-m", "--module", dest="module", help="test MODULE. required field. options: app_proxy, django_hello_world, echo_server, get_url, hello_client, http_client, http_client2, httpd_hello_world, http_proxy, new_conn, op_callback_server, op_callback_test, op_test, stomp_test, wsgi_test")
+    parser.add_option("-m", "--module", dest="module", help="test MODULE. required field. options: app_proxy, django_hello_world, echo_server, get_url, hello_client, http_client, http_client2, httpd_hello_world, http_proxy, new_conn, op_callback_server, op_callback_test, op_test, stomp_test, websocket_test, wsgi_test")
     parser.add_option("-f", "--function", dest="function", default="main", help="run this FUNCTION in test module. default: main")
     parser.add_option("-e", "--event", dest="event", default="pyevent", help="(event listener) notification method. default: pyevent. options: %s"%str(rel.supported_methods)[1:-1])
     parser.add_option("-r", "--report", action="store_true", dest="report", default=False, help="(event listener) status report every 5 seconds (non-pyevent only)")
@@ -46,4 +46,7 @@ def main():
         return error("invalid function specified")
     testdomain = options.domain
     print 'running %s:%s on http://%s:%s'%(testfile,testfunc,testdomain,testport)
-    getattr(testmod,testfunc)(domain=testdomain,port=testport)
+    try:
+        getattr(testmod,testfunc)(domain=testdomain,port=testport)
+    except socket.error:
+        print '\nPermission denied to use port %s. Depending on how your system is set up, you may need root privileges to run this test.'%(testport)

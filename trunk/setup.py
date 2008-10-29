@@ -1,13 +1,13 @@
 from setuptools import setup
 setup(
     name='dez',
-    version='0.3.9',
+    version='0.4.0',
     author='Michael Carter',
     author_email='mario.balibrera@gmail.com',
     download_url='http://code.google.com/p/dez/downloads/list',
     license='MIT License',
     description='A set of pyevent-based network services',
-    long_description='',
+    long_description='The dez library includes an asynchronous server benchmarking toolset; advanced, inotify-based static caching; XML and JSON stream parsing; and Stomp, OP, HTTP, and WebSocket servers. In addition, dez offers a highly sophisticated API for implementing custom protocols, as well as a controller class that simplifies the creation of applications that require multiple servers to run in the same process.',
     packages=[
         'dez',
         'dez.http',
