@@ -1,13 +1,13 @@
 from setuptools import setup
 setup(
     name='dez',
-    version='0.4.0',
+    version='0.4.1',
     author='Michael Carter',
     author_email='mario.balibrera@gmail.com',
     download_url='http://code.google.com/p/dez/downloads/list',
     license='MIT License',
     description='A set of pyevent-based network services',
-    long_description='The dez library includes an asynchronous server benchmarking toolset; advanced, inotify-based static caching; XML and JSON stream parsing; and Stomp, OP, HTTP, and WebSocket servers. In addition, dez offers a highly sophisticated API for implementing custom protocols, as well as a controller class that simplifies the creation of applications that require multiple servers to run in the same process.',
+    long_description='The dez library includes an asynchronous server benchmarking toolset; advanced, inotify-based static caching; XML and JSON stream parsing; Stomp, OP, HTTP, and WebSocket servers; and WebSocketProxy, which enables web application deployment on existing, unmodified TCP servers without straying from the HTML5 spec. In addition, dez offers a highly sophisticated API for implementing custom protocols, as well as a controller class that simplifies the creation of applications that require multiple servers to run in the same process.',
     packages=[
         'dez',
         'dez.http',
@@ -23,13 +23,14 @@ setup(
     ],
     zip_safe = False,
     install_requires = [
-        "rel >= 0.2.2",
+        "rel >= 0.2.3",
         "demjson"
     ],
     entry_points = '''
         [console_scripts]
         dez_test = dez.samples.test:main
         dbench = dez.samples.http_load_test:main
+        dez_websocket_proxy = dez.network:startwebsocketproxy
         [paste.server_runner]
         wsgi_server = dez.http.application:serve_wsgi_application
     ''',
