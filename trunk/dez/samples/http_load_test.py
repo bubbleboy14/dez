@@ -1,5 +1,4 @@
 import rel, time
-rel.override()
 from dez.http.client import HTTPClient
 from optparse import OptionParser
 
