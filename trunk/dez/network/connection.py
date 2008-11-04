@@ -2,7 +2,7 @@ import event
 import dez.io
 from dez.buffer import Buffer, B64ReadBuffer, B64WriteBuffer
 from dez.json import decode
-from dez.xml_tools import extract_xml
+from dez.xml_tools import extract_xml, XMLNode
 
 RBUFF = {True:B64ReadBuffer, False:Buffer}
 WBUFF = {True:B64WriteBuffer, False:Buffer}
@@ -106,6 +106,8 @@ class Connection(object):
             self.pool.connection_available(self)
 
     def write(self, data, cb=None, cbargs=[], eb=None, ebargs=[]):
+        if data.__class__ == XMLNode:
+            data = str(data)
         self.__write_queue.append(WriteChunk(data, cb, cbargs, eb, ebargs))
         if not self.wevent:
             raise ConnectionClosedException, "Connection %s is closed and can no longer write. Call Connection.set_close_cb for close notification."%self.id
