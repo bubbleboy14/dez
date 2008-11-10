@@ -1,5 +1,8 @@
 from xml.dom.minidom import parseString
 
+LT_ESCAPE = "__LT_ESCAPE__"
+GT_ESCAPE = "__GT_ESCAPE__"
+
 class XMLNode(object):
     def __init__(self, name):
         self.name = name
@@ -37,8 +40,10 @@ class XMLNode(object):
     def add_attribute(self, key, val):
         self.attributes[key] = val
 
-def new_node(dnode):
+def new_node(dnode, unescape=False):
     if dnode.nodeType == dnode.TEXT_NODE:
+        if not unescape:
+            return dnode.data.replace(LT_ESCAPE,"&lt;").replace(GT_ESCAPE,"&gt;")
         return dnode.data
     node = XMLNode(dnode.nodeName)
     for key, val in dnode.attributes.items():
@@ -47,8 +52,10 @@ def new_node(dnode):
         node.add_child(new_node(child))
     return node
 
-def extract_xml(string):
+def extract_xml(string, unescape=False):
     try:
-        return new_node(parseString(string).firstChild)
+        if not unescape:
+            string = string.replace("&lt;",LT_ESCAPE).replace("&gt;",GT_ESCAPE)
+        return new_node(parseString(string).firstChild, unescape)
     except:
         return None
