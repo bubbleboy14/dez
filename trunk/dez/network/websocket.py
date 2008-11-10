@@ -22,12 +22,21 @@ class WebSocketProxyConnection(object):
         c = SimpleClient(target['b64'])
         c.connect(target['host'], target['port'], self._conn_server)
 
+    def _blank_cb(self):
+        pass
+
     def _conn_server(self, ws2server):
         self.ws2server = ws2server
         self.ws2server.set_rmode_close_chunked(self.client2ws.write)
-        self.ws2server.set_close_cb(self.client2ws.close)
         self.client2ws.set_cb(self.ws2server.write)
-        self.client2ws.set_close_cb(self.ws2server.close)
+        def ws2server_close():
+            self.client2ws.set_close_cb(self._blank_cb)
+            self.client2ws.close()
+        def client2ws_close():
+            self.ws2server.set_close_cb(self._blank_cb)
+            self.ws2server.close() # what's the problem here?
+        self.ws2server.set_close_cb(ws2server_close)
+        self.client2ws.set_close_cb(client2ws_close)
 
 class WebSocketDaemon(SocketDaemon):
     def __init__(self, hostname, port, cb, b64=False):

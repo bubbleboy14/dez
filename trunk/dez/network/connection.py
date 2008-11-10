@@ -144,8 +144,18 @@ class Connection(object):
         self.__mode_changed = True
         self.__start_read()
 
-    def set_rmode_xml(self, cb, args=[]):
-        self.mode = XMLReadMode(cb, args)
+    def set_rmode_xml(self, cb, args=[], pointy_bracket_unescape=False, silent_readerror=True):
+        """
+        pointy_bracket_unescape
+            the default setting (False) prevents python's
+            xml.dom.minidom.parseString from unescaping pointy
+            brackets ("&lt;", "&gt;"), which it really shouldn't
+            do to begin with
+        silent_readerror
+            the default setting (True) allows stray characters
+            (spaces, line delimiters, etc) between valid nodes
+        """
+        self.mode = XMLReadMode(cb, args, pointy_bracket_unescape, silent_readerror)
         self.__mode_changed = True
         self.__start_read()
 
@@ -207,6 +217,9 @@ class Connection(object):
         return True
 
 class ConnectionClosedException(Exception):
+    pass
+
+class InvalidXMLException(Exception):
     pass
 
 class WriteChunk(object):
@@ -367,7 +380,7 @@ class JSONReadMode(object):
         pass
 
 class XMLReadMode(object):
-    def __init__(self, cb, args):
+    def __init__(self, cb, args, pointy_bracket_unescape, silent_readerror):
         self.completed = False
         self.cb = cb
         self.args = args
@@ -375,6 +388,8 @@ class XMLReadMode(object):
         self.name = None
         self.name_count = 0
         self.frame = None
+        self.pb_unescape = pointy_bracket_unescape
+        self.silent = silent_readerror
 
     def ready(self, buffer):
         if not self.name:
@@ -382,6 +397,8 @@ class XMLReadMode(object):
             if not buff:
                 return False
             if buff[0] != "<":
+                if not self.silent:
+                    raise InvalidXMLException, 'Invalid first character in XML node: %s found instead of "<"'%buff[0]
                 self.checked_index = 0
                 buffer.move(1)
                 return self.ready(buffer)
@@ -403,7 +420,7 @@ class XMLReadMode(object):
             elif buffer.part(i-2-len(self.name),i+1) == "</"+self.name+">":
                 self.name_count -= 1
                 if not self.name_count:
-                    self.frame = extract_xml(buffer.part(0, i+1))
+                    self.frame = extract_xml(buffer.part(0, i+1), self.pb_unescape)
                     buffer.move(i+1)
                     self.checked_index = 0
                     self.name = None
