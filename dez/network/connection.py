@@ -144,18 +144,13 @@ class Connection(object):
         self.__mode_changed = True
         self.__start_read()
 
-    def set_rmode_xml(self, cb, args=[], pointy_bracket_unescape=False, silent_readerror=True):
+    def set_rmode_xml(self, cb, args=[], silent_readerror=True):
         """
-        pointy_bracket_unescape
-            the default setting (False) prevents python's
-            xml.dom.minidom.parseString from unescaping pointy
-            brackets ("&lt;", "&gt;"), which it really shouldn't
-            do to begin with
         silent_readerror
             the default setting (True) allows stray characters
             (spaces, line delimiters, etc) between valid nodes
         """
-        self.mode = XMLReadMode(cb, args, pointy_bracket_unescape, silent_readerror)
+        self.mode = XMLReadMode(cb, args, silent_readerror)
         self.__mode_changed = True
         self.__start_read()
 
@@ -380,7 +375,7 @@ class JSONReadMode(object):
         pass
 
 class XMLReadMode(object):
-    def __init__(self, cb, args, pointy_bracket_unescape, silent_readerror):
+    def __init__(self, cb, args, silent_readerror):
         self.completed = False
         self.cb = cb
         self.args = args
@@ -388,7 +383,6 @@ class XMLReadMode(object):
         self.name = None
         self.name_count = 0
         self.frame = None
-        self.pb_unescape = pointy_bracket_unescape
         self.silent = silent_readerror
 
     def ready(self, buffer):
@@ -420,7 +414,7 @@ class XMLReadMode(object):
             elif buffer.part(i-2-len(self.name),i+1) == "</"+self.name+">":
                 self.name_count -= 1
                 if not self.name_count:
-                    self.frame = extract_xml(buffer.part(0, i+1), self.pb_unescape)
+                    self.frame = extract_xml(buffer.part(0, i+1))
                     buffer.move(i+1)
                     self.checked_index = 0
                     self.name = None
