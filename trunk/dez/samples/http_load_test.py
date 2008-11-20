@@ -1,63 +1,95 @@
-import rel, time
-from dez.http.client import HTTPClient
+import rel, time, socket
 from optparse import OptionParser
+from dez.http.client import HTTPClient
+from dez.http.errors import HTTPProtocolError
 
 class LoadTester(object):
-    def __init__(self, host, port, location, number, concurrency):
-        self.url = "http://"+host+":"+port+location
+    def __init__(self, host, port, path, number, concurrency):
+        self.url = "http://"+host+":"+str(port)+path
         self.number = number
         self.concurrency = concurrency
-        print "       server url:",self.url
-        print "           number:",self.number
-        print "      concurrency:",self.concurrency
-        self.client = HTTPClient()
-        self.client.client.start_connections(host, int(port), self.concurrency, self.connections_open, max_conn=concurrency)
-        self.time_start = time.time()
         self.responses = 0
+        print "\nInitializing Load Tester"
+        display(" server url: %s"%self.url)
+        display("     number: %s"%self.number)
+        display("concurrency: %s"%self.concurrency)
+        print "\nBuilding Connection Pool"
+        self.client = HTTPClient()
+        self.client.client.start_connections(host, port, self.concurrency, self.connections_open, max_conn=concurrency)
+        self.t_start = time.time()
 
     def connections_open(self):
-        self.time_request_start = self.time_request = time.time()
-        print ""
-        print "Running Load Test"
-        print "   ", self.concurrency, 'connections opened in', int(1000*(self.time_request_start - self.time_start)), "ms"
-        print "    -"
+        self.t_connection = self.t_request = time.time()
+        display("pool ready\n\nRunning Test Load")
+        display("%s connections opened in %s ms"%(self.concurrency, ms(self.t_connection, self.t_start)))
+        display("-")
         for i in range(self.number):
-            self.client.get_url(self.url, cb=self.response_cb, cbargs=[i+1])
+            self.client.get_url(self.url, cb=self.response_cb)
 
-    def response_cb(self, response, i):
+    def response_cb(self, response):
         self.responses += 1
         if self.responses == self.number:
             now = time.time()
-            print "   ", self.responses, 'responses:', int(1000*(now - self.time_request)), "ms"
-            print "    -"
-            print ""
-            print "Requests Per Second"
-            print "   ", self.number, 'requests handled in', int(1000*(now - self.time_request_start)), "ms"
-            print "   ", int(self.number / (now - self.time_start)), "requests per second (with connection time)"
-            print "   ", int(self.number / (now - self.time_request_start)), "request per second (without connection time)"
-            return rel.abort()
-        if not self.responses % 100:
+            display("%s responses: %s ms"%(self.responses, ms(now, self.t_request)))
+            display("\nRequests Per Second")
+            display("%s requests handled in %s ms"%(self.number, ms(now, self.t_connection)))
+            display("%s requests per second (without connection time)"%int(self.number / (now - self.t_connection)))
+            display("%s requests per second (with connection time)"%int(self.number / (now - self.t_start)))
+            rel.abort()
+        elif not self.responses % 100:
             now = time.time()
-            print "   ", self.responses, 'responses:', int(1000*(now - self.time_request))
-            self.time_request = now
+            display("%s responses: %s ms"%(self.responses, ms(now, self.t_request)))
+            self.t_request = now
 
-def parse_input():
-    parser = OptionParser()
-    parser.add_option("-d", "--domain", dest="domain", default="localhost", help="test server at DOMAIN")
-    parser.add_option("-p", "--port", dest="port", default="80", help="test server at PORT")
-    parser.add_option("-l", "--location", dest="location", default="/", help="path -> http:// DOMAIN : PORT LOCATION")
-    parser.add_option("-n", "--number", dest="number", default="1000", help="total NUMBER of connections")
-    parser.add_option("-c", "--concurrency", dest="concurrency", default="100", help="connection CONCURRENCY")
-    return parser.parse_args()
+def ms(bigger, smaller):
+    return int(1000*(bigger - smaller))
+
+def display(msg):
+    print "   ",msg
+
+def error(m1, m2):
+    print '\n%s\n%s\n\ntry this: "dbench HOSTNAME PORT NUMBER CONCURRENCY"\nor "dbench -h" for help\n'%(m1,m2)
 
 def main():
-    ops, args = parse_input()
-    if not args:
-        args = ["pyevent"]
-    print ""
-    print "Initializing Load Tester"
-    print "   event listener:",rel.initialize(args)
-    rel.signal(2, rel.abort)
-    rel.timeout(30, rel.abort)
-    l = LoadTester(ops.domain, ops.port, ops.location, int(ops.number), int(ops.concurrency))
-    rel.dispatch()
+    parser = OptionParser("dbench HOSTNAME PORT NUMBER CONCURRENCY")
+    parser.add_option("-p", "--path", dest="path", default="/", help="path -> http://[DOMAIN]:[PORT][PATH]")
+    parser.add_option("-e", "--event", dest="event", default="epoll", help="change event delivery system (options: pyevent, epoll, poll, select) default: epoll")
+    ops, args = parser.parse_args()
+    if len(args) < 4:
+        return error("insufficient arguments specified", "dbench requires 4 arguments")
+    hostname = args[0]
+    try:
+        port = int(args[1])
+        number = int(args[2])
+        concurrency = int(args[3])
+    except:
+        return error("invalid argument","PORT, NUMBER, and CONCURRENCY must all be integers")
+    print "\nLoading Event Listener"
+    display(" requesting: %s"%ops.event)
+    e = rel.initialize([ops.event])
+    if e != ops.event:
+        display("failed to load %s!"%ops.event)
+    display("     loaded: %s"%e)
+    print "\nTesting Server"
+    test_sock = socket.socket()
+    try:
+        test_sock.connect((hostname, port))
+        test_sock.close()
+    except:
+        return display("no server at %s:%s!\n\ngoodbye\n"%(hostname, port))
+    display("valid server")
+    def abort(msg):
+        print ""
+        print msg
+        rel.abort()
+    rel.signal(2, abort, "Test aborted by user")
+    rel.timeout(30, abort, "Test aborted after 30 seconds")
+    LoadTester(hostname, port, ops.path, number, concurrency)
+    try:
+        rel.dispatch()
+    except HTTPProtocolError:
+        print "\nerror communicating with server:"
+        print "http protocol violation"
+    finally:
+        print "\ngoodbye\n"
+        rel.abort()

@@ -2,20 +2,26 @@ import socket
 LQUEUE_SIZE = 5
 BUFFER_SIZE = 4096
 
-HTTP_DELIMITER = '\r\n'
-HTTP_DELIM_LENGTH = len(HTTP_DELIMITER)
 def server_socket(port):
     ''' Return a listening socket bound to the given interface and port. '''
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(('', port))
     sock.setblocking(0)
+    sock.bind(('', port))
     sock.listen(LQUEUE_SIZE)
     return sock
 
-
 def client_socket(addr, port):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.setblocking(0)
-    sock.connect_ex((addr, port))
-    return sock    
+    sock = socket.socket()
+    sock.setblocking(False)
+    try:
+        sock.connect_ex((addr, port))
+    except socket.error:
+        # this seems to happen when there are
+        # > 1016 connections, for some reason.
+        # we need to get to the bottom of this
+        raise SocketError, "the python socket cannot open another connection"
+    return sock
+
+class SocketError(Exception):
+    pass

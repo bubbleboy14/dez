@@ -12,11 +12,9 @@ class HTTPClientReader(object):
     def get_full_response(self, cb, cbargs):
         self.cb_info = (cb, cbargs)
         self.helper.get_headers(self.__full_headers_end_cb, ())
-#        self.mode = "full"
-
-#        self.conn.set_rmode_delimiter('\r\n', self.recv_status)
 
     def __full_headers_end_cb(self):
+#        print "__full_headers_end_cb"
         self.helper.get_body(self.__dispatch_cb, ())
 
     def get_headers_only(self, cb, cbargs):
@@ -24,6 +22,7 @@ class HTTPClientReader(object):
         self.helper.get_headers(self.__dispatch_cb, ())
 
     def __dispatch_cb(self):
+#        print "__dispatch_cb"
         cb, args = self.cb_info
         if cb:
             if args is None:
@@ -55,7 +54,6 @@ class HTTPClientResponse(object):
         self.headers = {}
         self.case_match_headers = {}
         self.content_length = None
-#        self.content_read = None
         self.body = Buffer()
         self.completed = False
 
