@@ -1,6 +1,4 @@
 import event
-#import rel as event
-#from orbited.logger import get_logger
 from dez import io
 from dez.buffer import Buffer
 from dez.logging import default_get_logger
@@ -9,7 +7,6 @@ from dez.http.server.response import RawHTTPResponse, HTTPResponse
 from dez.http.server.request import HTTPRequest
 
 class HTTPDaemon(object):
-        
     def __init__(self, host, port, get_logger=None):
         if not get_logger:
             get_logger = default_get_logger
@@ -21,7 +18,7 @@ class HTTPDaemon(object):
         self.sock = io.server_socket(self.port)
         self.listen = event.read(self.sock, self.accept_connection, None, self.sock, None)
         self.router = Router(self.default_cb, [])
-        
+
     def register_prefix(self, prefix, cb, args=[]):
         self.router.register_prefix(prefix, cb, args)
 
@@ -36,10 +33,8 @@ class HTTPDaemon(object):
 
     def accept_connection(self, ev, sock, event_type, *arg):
         sock, addr = sock.accept()
-        HTTPConnection(sock, addr, self.router, self.get_logger)                
+        HTTPConnection(sock, addr, self.router, self.get_logger)
         return True
-                
-
 
 class HTTPConnection(object):
     id = 0
@@ -48,7 +43,6 @@ class HTTPConnection(object):
         self.get_logger = get_logger
         HTTPConnection.id += 1
         self.id = HTTPConnection.id
-#        print 'Incoming HTTP Connection with id %s, fileno %s' % (self.id, sock.fileno())
         self.sock = sock
         self.addr, self.local_port = addr
         self.router = router
@@ -61,13 +55,13 @@ class HTTPConnection(object):
         self.revent = None
         self.__close_cb = None
         self.start_request()
-        
+
     def set_close_cb(self, cb, args):
         self.__close_cb = (cb, args)
-        
+
     def start_request(self):
         if self.wevent:
-            self.wevent.delete()      
+            self.wevent.delete()
             self.wevent = None
         if self.revent:
             self.revent.delete()
@@ -77,7 +71,7 @@ class HTTPConnection(object):
         self.write_buffer = Buffer(mode='consume')
         self.buffer = Buffer()
         self.state = "read"
-        
+
     def close(self, reason=""):
         if self.__close_cb:
             cb, args = self.__close_cb
@@ -89,7 +83,6 @@ class HTTPConnection(object):
         if self.wevent:
             self.wevent.delete()
             self.wevent = None
-#        self.sock.shutdown(io.socket.SHUT_RDWR)
         self.sock.close()
         if self.current_eb:
             self.current_eb(*self.current_ebargs)
@@ -102,8 +95,7 @@ class HTTPConnection(object):
                 self.current_eb(*self.current_ebargs)
             self.current_eb = None
             self.current_ebargs = None
-            
-            
+
     def read_ready(self):
         try:
             data = self.sock.recv(io.BUFFER_SIZE)
@@ -116,15 +108,14 @@ class HTTPConnection(object):
             return None
 
     def read_body(self):
-#        print '... read_body'
         self.revent = event.read(self.sock, self.read_ready)
         self.request.process()
+
     def read(self, data):
         if self.state != "read":
             self.log.error("Invalid additional data: %s" % data)
             self.close()
         self.buffer += data
-#        print "READ:", data
         self.request.process()
         if self.request.state == "waiting":
             self.revent.delete()
@@ -137,14 +128,12 @@ class HTTPConnection(object):
             self.revent = None
             return None
         return True
-            
-            
+
     def write(self, data, cb, args,eb=None,ebargs=[]):
-#        print "ENQUEUE: ", len(data)#, cb, args
         self.response_queue.append((data, cb, args, eb, ebargs))
         if not self.wevent:
             self.wevent = event.write(self.sock, self.write_ready)
-        
+
     def write_ready(self):
         if self.write_buffer.empty():
             if self.current_cb:
@@ -152,7 +141,7 @@ class HTTPConnection(object):
                 args = self.current_args
                 cb(*args)
                 self.current_cb = None
-            if not self.response_queue:                
+            if not self.response_queue:
                 self.current_cb = None
                 self.current_response = None
                 self.wevent = None
@@ -170,7 +159,6 @@ class HTTPConnection(object):
                 return None
         try:
             bsent = self.sock.send(self.write_buffer.get_value())
-#            print "WRITE:", self.write_buffer.part(0, bsent)
             self.write_buffer.move(bsent)
             self.log.debug('write_buffer: return True')
             return True
@@ -178,5 +166,3 @@ class HTTPConnection(object):
             self.log.debug('io.socket.error: %s' % msg)
             self.close(reason=str(msg))
             return None
-        
-

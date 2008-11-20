@@ -4,7 +4,6 @@ from dez.network import SocketClient
 import event
 
 class HTTPClient(object):
-
     def __init__(self):
         self.client = SocketClient()
         self.id = 0
@@ -34,8 +33,13 @@ class HTTPClient(object):
     def __write_request_cb(self, id, conn):
         reader = HTTPClientReader(conn)
         reader.get_full_response(self.__end_body_cb, [id])
+#        print "asking for response"
 
     def __end_body_cb(self, response, id):
+#        print "getting response"
+#        print response.status_line
+#        print response.headers
+#        print response.body
         self.requests[id].success(response)
 
     def __parse_url(self, url):

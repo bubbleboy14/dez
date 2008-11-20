@@ -20,7 +20,7 @@ def delim_linebreak(**kwargs):
     server.start()
 
 def http(**kwargs):
-    server = SocketDaemon(kwargs['domain'], kwargs['port'],cb=EchoHTTP)
+    server = SocketDaemon(kwargs['domain'], kwargs['port'], cb=EchoHTTP)
     server.start()
 
 class EchoChunked(object):
@@ -66,8 +66,7 @@ class EchoHTTP(object):
         self.conn.set_rmode_delimiter('\r\n\r\n', self.line_received)
 
     def line_received(self, data):
-        print data
-        self.conn.set_rmode_close(self.line_received)
+        self.conn.write("HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n", self.conn.close)
 
 class LengthConnection(object):
     def __init__(self, conn):
@@ -87,4 +86,3 @@ class LengthConnection(object):
 
     def close(self):
         self.conn.close()
-

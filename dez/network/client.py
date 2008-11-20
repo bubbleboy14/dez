@@ -15,7 +15,6 @@ class SimpleClient(object):
         event.dispatch()
 
 class SocketClient(object):
-
     def __init__(self):
         self.pools = {}
 
@@ -43,7 +42,6 @@ class SocketClient(object):
 
 
 class ConnectionPool(object):
-
     def __init__(self, hostname, port, max_connections=5, b64=False):
         self.addr = hostname, port
         self.connection_count = 0
@@ -96,7 +94,6 @@ class ConnectionPool(object):
             conn = Connection(self.addr, sock, self, self.b64)
             conn.connect()
             self.connection_count += 1
-        
 
     def connection_available(self, conn):
         self.pool.append(conn)
