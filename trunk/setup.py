@@ -1,7 +1,7 @@
 from setuptools import setup
 setup(
     name='dez',
-    version='0.4.6',
+    version='0.4.7',
     author='Michael Carter',
     author_email='mario.balibrera@gmail.com',
     download_url='http://code.google.com/p/dez/downloads/list',
@@ -31,6 +31,7 @@ setup(
         dez_test = dez.samples.test:main
         dbench = dez.samples.http_load_test:main
         dez_websocket_proxy = dez.network:startwebsocketproxy
+        dez_reverse_proxy = dez.http.reverseproxy:startreverseproxy
         [paste.server_runner]
         wsgi_server = dez.http.application:serve_wsgi_application
     ''',
