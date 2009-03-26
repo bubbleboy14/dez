@@ -5,11 +5,12 @@ class SocketController(object):
     def __init__(self):
         self.daemons = {}
 
-    def register_address(self, hostname, port, callback, b64=False):
+    def register_address(self, hostname, port, callback, cbargs=[], b64=False):
         if (hostname, port) in self.daemons:
             self.daemons[(hostname, port)].cb = callback
+            self.daemons[(hostname, port)].cbargs = cbargs
         else:
-            self.daemons[(hostname, port)] = SocketDaemon(hostname, port, callback, b64)
+            self.daemons[(hostname, port)] = SocketDaemon(hostname, port, callback, b64, cbargs)
 
     def start(self):
         if not self.daemons:
