@@ -57,7 +57,7 @@ class ReverseProxy(object):
                     domain = domain.split(":")[0]
                 break
         if not domain:
-            conn.close('no host header')
+            return conn.close('no host header')
         elif domain in self.domains:
             host, port = self.domains[domain]
         elif self.default_address:
