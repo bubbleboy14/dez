@@ -84,7 +84,7 @@ def error(msg):
 
 def startreverseproxy():
     import os, optparse
-    parser = optparse.OptionParser('dez_subdomain_router [CONFIG]')
+    parser = optparse.OptionParser('dez_reverse_proxy [CONFIG]')
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="log proxy activity")
     parser.add_option("-p", "--port", dest="port", default="80", help="public-facing port")
     options, arguments = parser.parse_args()
