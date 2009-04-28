@@ -16,7 +16,7 @@ Usage: dez_reverse_proxy [CONFIG]
 Options:
   -h, --help            show this help message and exit
   -v, --verbose         log proxy activity
-  -p PORT, --port=PORT  public-facing port
+  -p PORT, --port=PORT  public-facing port (default: 80)
 }}}
 
 The mandatory argument is the name of your config file. A dez_reverse_proxy config file is just a series of lines directing dez to forward traffic to different places depending on the Host header. It looks like this:
