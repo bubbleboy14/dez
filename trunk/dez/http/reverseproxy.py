@@ -22,7 +22,7 @@ class ReverseProxyConnection(object):
         self.back_conn.set_close_cb(self.onClose, [self.front_conn])
         self.front_conn.set_rmode_close_chunked(self.back_conn.write)
         self.back_conn.set_rmode_close_chunked(self.front_conn.write)
-        conn.write(start_data)
+        self.back_conn.write(start_data)
 
     def onClose(self, conn):
         self.log("Connection closed")
@@ -58,7 +58,10 @@ class ReverseProxy(object):
                 break
         if not domain:
             return conn.close('no host header')
-        elif domain in self.domains:
+        self.dispatch(data+'\r\n\r\n', conn, domain)
+
+    def dispatch(self, data, conn, domain):
+        if domain in self.domains:
             host, port = self.domains[domain]
         elif self.default_address:
             host, port = self.default_address
@@ -66,7 +69,7 @@ class ReverseProxy(object):
             msg = "unable to route hostname: %s"%(domain,)
             self.log(msg)
             return conn.close(msg)
-        ReverseProxyConnection(conn, domain, self.port, host, port, self.log, data+'\r\n\r\n')
+        ReverseProxyConnection(conn, domain, self.port, host, port, self.log, data)
 
     def register_default(self, host, port):
         self.default_address = (host, port)
