@@ -108,6 +108,7 @@ def startreverseproxy():
     except:
         error('could not start server! try running as root!')
     for line in lines:
+        line = line.split("#")[0]
         try:
             domain, back_addr = line.split('->')
             domain = domain.strip()
