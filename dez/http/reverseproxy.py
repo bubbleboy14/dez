@@ -28,9 +28,11 @@ class ReverseProxyConnection(object):
         self.log("Connection closed")
         self.front_conn.set_close_cb(None)
         self.back_conn.set_close_cb(None)
-        conn.soft_close()
+        self.front_conn.halt_read()
+        self.back_conn.halt_read()
         self.front_conn = None
         self.back_conn = None
+        conn.soft_close()
 
 class ReverseProxy(object):
     def __init__(self, port, verbose):
