@@ -294,17 +294,8 @@ class CloseReadMode(object):
         raise Exception("InvalidCall"), "How did this get called?"
 
     def close(self, buffer):
-        pass
-        """
-        # this code strikes me as
-        # unnecessary and inconsistent
-        # with other read modes.
-        # also, it could cause difficult
-        # to diagnose errors
-
         self.cb(buffer.get_value(), *self.args)
         buffer.reset()
-        """
 
 class CloseChunkedReadMode(object):
     def __init__(self, cb, args):
@@ -322,19 +313,9 @@ class CloseChunkedReadMode(object):
         return True
 
     def close(self, buffer):
-        pass
-        """
-        # this code strikes me as
-        # unnecessary and inconsistent
-        # with other read modes
-        # also, it could cause difficult
-        # to diagnose errors
-
         if len(buffer) > 0:
-            self.cb(buffer.get_value())
+            self.cb(buffer.get_value(), *self.args)
             buffer.reset()
-        self.cb("", *self.args)
-        """
 
 class DelimeterReadMode(object):
     def __init__(self, delimiter, cb, args):
