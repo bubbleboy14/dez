@@ -34,6 +34,8 @@ class ReverseProxyConnection(object):
         self.back_conn = None
         conn.soft_close()
 
+BIG_FILES = ["mp3", "png", "jpg", "gif", "pdf"] # more?
+
 class ReverseProxy(object):
     def __init__(self, port, verbose):
         self.port = port
@@ -49,18 +51,31 @@ class ReverseProxy(object):
     def new_connection(self, conn):
         conn.set_rmode_delimiter('\r\n\r\n', self.route_connection, [conn])
 
+    def _302(self, conn, domain, path): # from hostTrick
+        conn.write("HTTP/1.1 302 Found\r\nLocation: http://%s%s\r\n\r\n"%(domain, path))
+        conn.soft_close()
+
     def route_connection(self, data, conn):
         conn.halt_read()
         domain = None
+        path = None
+        should302 = False
         for line in data.split('\r\n'):
-            if line.startswith('Host: '):
+            if line.startswith("GET"):
+                path = line.split(" ")[1]
+                if "." in path and path.split(".")[1] in BIG_FILES:
+                    should302 = True
+            elif line.startswith('Host: '):
                 domain = line[6:]
                 if ":" in domain:
                     domain = domain.split(":")[0]
                 break
         if not domain:
             return conn.close('no host header')
-        self.dispatch(data+'\r\n\r\n', conn, domain)
+        if should302:
+            self._302(conn, "%s:%s"%self.domains[domain], path)
+        else:
+            self.dispatch(data+'\r\n\r\n', conn, domain)
 
     def dispatch(self, data, conn, domain):
         if domain in self.domains:
