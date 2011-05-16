@@ -55,6 +55,18 @@ class ReverseProxy(object):
         conn.write("HTTP/1.1 302 Found\r\nLocation: http://%s%s\r\n\r\n"%(domain, path))
         conn.soft_close()
 
+    def domain2hostport(self, domain):
+        if domain in self.domains:
+            return self.domains[domain]
+        if self.default_address:
+            return self.default_address
+        return None, None
+
+    def cantroute(self, domain):
+        msg = "unable to route hostname: %s"%(domain,)
+        self.log(msg)
+        conn.close(msg)
+
     def route_connection(self, data, conn):
         conn.halt_read()
         domain = None
@@ -73,19 +85,17 @@ class ReverseProxy(object):
         if not domain:
             return conn.close('no host header')
         if should302:
-            self._302(conn, "%s:%s"%self.domains[domain], path)
+            host, port = self.domain2hostport(domain)
+            if not host:
+                return self.cantroute(domain)
+            self._302(conn, "%s:%s"%(host, port), path)
         else:
             self.dispatch(data+'\r\n\r\n', conn, domain)
 
     def dispatch(self, data, conn, domain):
-        if domain in self.domains:
-            host, port = self.domains[domain]
-        elif self.default_address:
-            host, port = self.default_address
-        else:
-            msg = "unable to route hostname: %s"%(domain,)
-            self.log(msg)
-            return conn.close(msg)
+        host, port = self.domain2hostport(domain)
+        if not host:
+            return self.cantroute(domain)
         ReverseProxyConnection(conn, domain, self.port, host, port, self.log, data)
 
     def register_default(self, host, port):
