@@ -34,7 +34,8 @@ class ReverseProxyConnection(object):
         self.back_conn = None
         conn.soft_close()
 
-BIG_FILES = ["mp3", "png", "jpg", "gif", "pdf"] # more?
+BIG_FILES = ["mp3", "png", "jpg", "jpeg",
+    "gif", "pdf", "mov", "zip"] # more?
 
 class ReverseProxy(object):
     def __init__(self, port, verbose):
