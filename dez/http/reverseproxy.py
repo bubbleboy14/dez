@@ -85,19 +85,16 @@ class ReverseProxy(object):
                 break
         if not domain:
             return conn.close('no host header')
-        if should302:
-            host, port = self.domain2hostport(domain)
-            if not host:
-                return self.cantroute(domain)
-            self._302(conn, "%s:%s"%(host, port), path)
-        else:
-            self.dispatch(data+'\r\n\r\n', conn, domain)
+        self.dispatch(data+'\r\n\r\n', conn, domain, should302, path)
 
-    def dispatch(self, data, conn, domain):
+    def dispatch(self, data, conn, domain, should302=False, path=None):
         host, port = self.domain2hostport(domain)
         if not host:
             return self.cantroute(domain)
-        ReverseProxyConnection(conn, domain, self.port, host, port, self.log, data)
+        if should302:
+            self._302(conn, "%s:%s"%(host, port), path)
+        else:
+            ReverseProxyConnection(conn, domain, self.port, host, port, self.log, data)
 
     def register_default(self, host, port):
         self.default_address = (host, port)
