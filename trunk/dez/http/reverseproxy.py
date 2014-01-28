@@ -76,7 +76,7 @@ class ReverseProxy(object):
         for line in data.split('\r\n'):
             if line.startswith("GET"):
                 path = line.split(" ")[1]
-                if "." in path and path.split(".")[1] in BIG_FILES:
+                if "." in path and path.rsplit(".")[1] in BIG_FILES:
                     should302 = True
             elif line.startswith('Host: '):
                 domain = line[6:]
