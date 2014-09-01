@@ -88,15 +88,15 @@ class Connection(object):
         while self.__write_queue:
             self.__write_queue.pop(0).error(reason)
 
-    def release(self,timeout=0):
+    def release(self, timeout=0):
         self.halt_read()
         self.__read_buffer.reset()
         self.__clear_writes("Connection freed")
         if not self.__release_timer:
             self.__ready()
         else:
-            print 'pool',self.pool
-            print 'release_timer',self.__release_timer
+            print 'pool', self.pool
+            print 'release_timer', self.__release_timer
             raise "What?"
 
     def __release_timer_cb(self):
@@ -205,6 +205,7 @@ class Connection(object):
             if not reschedule and not self.__mode_changed:
                 self.mode = None
         self.__looping = False
+
     def __read_ready(self):
         try:
             data = self.sock.recv(dez.io.BUFFER_SIZE)

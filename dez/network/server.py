@@ -10,7 +10,7 @@ class SocketDaemon(object):
         self.cb = cb
         self.cbargs = cbargs
         self.b64 = b64
-        self.listen = event.read(self.sock,self.accept_connection)
+        self.listen = event.read(self.sock, self.accept_connection)
 
     def accept_connection(self):
         sock, addr = self.sock.accept()
@@ -20,5 +20,5 @@ class SocketDaemon(object):
         return True
 
     def start(self):
-        event.signal(2,event.abort)
+        event.signal(2, event.abort)
         event.dispatch()
