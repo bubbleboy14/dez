@@ -8,10 +8,13 @@ class Buffer(object):
         altered by calling b.move, or by b.exhaust, which moves 'pos' to the
         end of the file.
 
-        In consume mode, a buffer essentially just a proxy for its contained
+        In consume mode, a buffer is essentially just a proxy for its contained
         string b.data.
+
+        If you experience memory leaks, make sure you don't have buffers sitting
+        around in 'index' mode.
     '''
-    def __init__(self, initial_data='', mode='index'):
+    def __init__(self, initial_data='', mode='consume'):
         self.mode = None
         self.pos = None
         self.data = initial_data
@@ -122,6 +125,9 @@ class Buffer(object):
     def __get_slice__(self, start, end):
         return self.part(self, start, end)
 
+    def __getitem__(self, key):
+        return self.data[key]
+
     def __add__(self, add_data):
         ''' Add the passed-in string to the buffer '''
         self.data += add_data
@@ -131,12 +137,9 @@ class B64ReadBuffer(Buffer):
     ''' This works exactly like the Buffer class, except it
         reads base64-encoded strings separated by whitespace.
     '''
-    def __init__(self, initial_data='', mode='index'):
-        self.mode = None
-        self.pos = None
-        self.data = initial_data
+    def __init__(self, initial_data='', mode='consume'):
         self.raw_data = ''
-        self.set_mode(mode)
+        Buffer.__init__(self, initial_data, mode)
 
     def __add__(self, add_data):
         ''' Add the passed-in base64-encoded string to the pre-buffer '''

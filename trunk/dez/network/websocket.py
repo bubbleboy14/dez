@@ -1,10 +1,66 @@
 import optparse
+from base64 import b64encode
+from hashlib import sha1
 from datetime import datetime
+from dez.buffer import Buffer
 from dez.network.server import SocketDaemon
 from dez.network.client import SimpleClient
 
-FRAME_START = chr(0)
-FRAME_END   = chr(255)
+GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+
+def key2accept(key):
+    return b64encode(sha1(key + GUID).digest())
+
+def parse_frame(buf):
+    """
+    Parse a WebSocket frame. If there is not a complete frame in the
+    buffer, return without modifying the buffer.
+
+    Adapted from:
+    http://www.cs.rpi.edu/~goldsd/docs/spring2012-csci4220/websocket-py.txt
+    """
+    payload_start = 2
+
+    # try to pull first two bytes
+    if len(buf) < 3:
+        return
+    b = ord(buf[0])
+    fin = b & 0x80      # 1st bit
+    # next 3 bits reserved
+    opcode = b & 0x0f   # low 4 bits
+    b2 = ord(buf[1])
+    mask = b2 & 0x80    # high bit of the second byte
+    length = b2 & 0x7f    # low 7 bits of the second byte
+
+    # check that enough bytes remain
+    if len(buf) < payload_start + 4:
+        return
+    elif length == 126:
+        length, = struct.unpack(">H", buf[2:4])
+        payload_start += 2
+    elif length == 127:
+        length, = struct.unpack(">I", buf[2:6])
+        payload_start += 4
+
+    if mask:
+        mask_bytes = [ord(b) for b in buf[payload_start:payload_start + 4]]
+        payload_start += 4
+
+    # is there a complete frame in the buffer?
+    if len(buf) < payload_start + length:
+        return
+
+    # remove leading bytes, decode if necessary, dispatch
+    payload = buf[payload_start:payload_start + length]
+    buf.move(payload_start + length)
+
+    # use xor and mask bytes to unmask data
+    if mask:
+        unmasked = [mask_bytes[i % 4] ^ ord(b)
+            for b, i in zip(payload, range(len(payload)))]
+        payload = "".join([chr(c) for c in unmasked])
+
+    return payload
 
 class WebSocketProxy(object):
     def __init__(self, myhostname, myport, targethostname, targetport, b64=False, verbose=False):
@@ -67,7 +123,6 @@ class WebSocketHandshake(object):
         self.report_cb = report_cb
         self.conn = conn
         self.conn.set_rmode_delimiter('\r\n', self._recv_action)
-        self.conn.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\n")
 
     def _handshake_error(self, data):
         self.report_cb(data)
@@ -91,36 +146,46 @@ class WebSocketHandshake(object):
             if len(header) != 2:
                 return self._handshake_error("Invalid headers")
             self.headers.__setitem__(*header)
-        if 'Host' not in self.headers or 'Origin' not in self.headers:
-            return self._handshake_error("Missing header")
-        self.conn.write("WebSocket-Origin: %s\r\nWebSocket-Location: ws://%s:%s%s\r\n\r\n"%(self.headers['Origin'], self.hostname, self.port, self.path))
+        for required_header in ['Host', 'Origin', 'Sec-WebSocket-Key']:
+            if required_header not in self.headers:
+                return self._handshake_error("Missing header: %s"%(required_header,))
+        response_headers = [
+            "Upgrade: WebSocket",
+            "Connection: Upgrade",
+            "WebSocket-Origin: %s"%(self.headers['Origin'],),
+            "WebSocket-Location: ws://%s:%s%s"%(self.hostname, self.port, self.path),
+            "Sec-WebSocket-Accept: %s"%(key2accept(self.headers['Sec-WebSocket-Key']),)
+        ]
+        self.conn.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n%s\r\n\r\n"%("\r\n".join(response_headers),))
         self.report_cb("Handshake complete")
         self.cb(WebSocketConnection(self.conn, self.report_cb))
 
 class WebSocketConnection(object):
     def __init__(self, conn, report_cb=lambda x:None):
+        self.buff = Buffer()
         self.conn = conn
         self.conn.halt_read()
         self.report_cb = report_cb
         self.report_cb("Client connection ready")
 
     def _recv(self, data):
-        self.report_cb('Data received:"%s"'%(data))
-        if data[0] != FRAME_START:
-            self.report_cb("Unframed data received")
-            return self.conn.close()
-        self.cb(data[1:])
+        self.report_cb('Data received:"%s"'%(data,))
+        self.buff += data
+        payload = parse_frame(self.buff)
+        if payload:
+            self.report_cb('Payload parsed:"%s"'%(payload,))
+            self.cb(payload)
 
     def set_close_cb(self, cb):
         self.conn.set_close_cb(cb)
 
     def set_cb(self, cb):
         self.cb = cb
-        self.conn.set_rmode_delimiter(FRAME_END, self._recv)
+        self.conn.set_rmode_close_chunked(self._recv)
 
     def write(self, data):
         self.report_cb('Data sent:"%s"'%(data))
-        self.conn.write(FRAME_START + data + FRAME_END)
+        self.conn.write(chr(0x81) + chr(len(data)) + data)
 
     def close(self):
         self.conn.close()
