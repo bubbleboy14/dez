@@ -3,6 +3,7 @@ from base64 import b64encode
 from hashlib import sha1
 from datetime import datetime
 from dez.buffer import Buffer
+from dez.json import encode, decode
 from dez.network.server import SocketDaemon
 from dez.network.client import SimpleClient
 
@@ -66,7 +67,7 @@ class WebSocketProxy(object):
     def __init__(self, myhostname, myport, targethostname, targetport, b64=False, verbose=False):
         self.verbose = verbose
         self.target = {'host':targethostname, 'port':targetport, 'b64':b64}
-        self.proxy = WebSocketDaemon(myhostname, myport, self._new_conn, b64, self._report)
+        self.proxy = WebSocketDaemon(myhostname, myport, self._new_conn, b64, report_cb=self._report)
 
     def _report(self, data):
         if self.verbose:
@@ -107,22 +108,27 @@ class WebSocketProxyConnection(object):
         self.report_cb("Connections linked")
 
 class WebSocketDaemon(SocketDaemon):
-    def __init__(self, hostname, port, cb, b64=False, report_cb=lambda x:None):
-        SocketDaemon.__init__(self, hostname, port, cb, b64)
+    def __init__(self, hostname, port, cb, b64=False, cbargs=[], report_cb=lambda x:None, isJSON=False):
+        SocketDaemon.__init__(self, hostname, port, cb, b64, cbargs)
         real_cb = self.cb
         def handshake_cb(conn):
             report_cb("Handshake initiated")
-            WebSocketHandshake(conn, hostname, port, real_cb, report_cb)
+            WebSocketHandshake(conn, hostname, port, real_cb, report_cb, self.isJSON)
         self.cb = handshake_cb
+        self.isJSON = isJSON
+
+    def setJSON(self, isJSON=True):
+        self.isJSON = isJSON
 
 class WebSocketHandshake(object):
-    def __init__(self, conn, hostname, port, cb, report_cb=lambda x:None):
+    def __init__(self, conn, hostname, port, cb, report_cb=lambda x:None, isJSON=False):
         self.hostname = hostname
         self.port = port
         self.cb = cb
         self.report_cb = report_cb
         self.conn = conn
         self.conn.set_rmode_delimiter('\r\n', self._recv_action)
+        self.isJSON = isJSON
 
     def _handshake_error(self, data):
         self.report_cb(data)
@@ -158,11 +164,12 @@ class WebSocketHandshake(object):
         ]
         self.conn.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n%s\r\n\r\n"%("\r\n".join(response_headers),))
         self.report_cb("Handshake complete")
-        self.cb(WebSocketConnection(self.conn, self.report_cb))
+        self.cb(WebSocketConnection(self.conn, self.report_cb, self.isJSON))
 
 class WebSocketConnection(object):
-    def __init__(self, conn, report_cb=lambda x:None):
+    def __init__(self, conn, report_cb=lambda x:None, isJSON=False):
         self.buff = Buffer()
+        self.isJSON = isJSON
         self.conn = conn
         self.conn.halt_read()
         self.report_cb = report_cb
@@ -174,16 +181,20 @@ class WebSocketConnection(object):
         payload = parse_frame(self.buff)
         if payload:
             self.report_cb('Payload parsed:"%s"'%(payload,))
+            if self.isJSON:
+                payload = decode(payload)
             self.cb(payload)
 
-    def set_close_cb(self, cb):
-        self.conn.set_close_cb(cb)
+    def set_close_cb(self, cb, cbargs=[]):
+        self.conn.set_close_cb(cb, cbargs)
 
     def set_cb(self, cb):
         self.cb = cb
         self.conn.set_rmode_close_chunked(self._recv)
 
     def write(self, data):
+        if self.isJSON:
+            data = encode(data)
         self.report_cb('Data sent:"%s"'%(data))
         self.conn.write(chr(0x81) + chr(len(data)) + data)
 

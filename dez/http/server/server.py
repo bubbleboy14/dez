@@ -28,6 +28,11 @@ class HTTPDaemon(object):
         r.write("The requested document %s was not found" % request.url)
         r.dispatch()
 
+    def default_200_cb(self, request):
+        r = HTTPResponse(request)
+        r.status = "200 OK"
+        r.dispatch()
+
     def default_cb(self, request):
         return self.default_404_cb(request)
 
@@ -68,7 +73,7 @@ class HTTPConnection(object):
             self.revent = None
         self.revent = event.read(self.sock, self.read_ready)
         self.request = HTTPRequest(self)
-        self.write_buffer = Buffer(mode='consume')
+        self.write_buffer = Buffer()
         self.buffer = Buffer()
         self.state = "read"
 

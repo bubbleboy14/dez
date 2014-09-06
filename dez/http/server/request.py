@@ -31,9 +31,9 @@ class HTTPRequest(object):
         if '\r\n' not in self.conn.buffer:
             return False
         i = self.conn.buffer.find('\r\n')
-        self.action = self.conn.buffer.part(0,i)
+        self.action = self.conn.buffer.part(0, i)
         try:
-            self.method, self.url, self.protocol = self.conn.buffer.part(0,i).split(' ',2)
+            self.method, self.url, self.protocol = self.conn.buffer.part(0, i).split(' ', 2)
         except ValueError:
             raise HTTPProtocolError, "Invalid HTTP status line"
         #self.protocol = self.protocol.lower()
@@ -43,8 +43,6 @@ class HTTPRequest(object):
         self.version_minor = int(minor)
         self.url_scheme = url_scheme.lower()
         self.conn.buffer.move(i+2)
-        
-        
         self.state = 'headers'
         return self.state_headers()
     
@@ -55,7 +53,7 @@ class HTTPRequest(object):
                 return False
             if index == 0:
                 self.conn.buffer.move(2)
-                self.state='headers_completed'
+                self.state = 'headers_completed'
                 return self.state_headers_completed()
             try:
                 key, value = self.conn.buffer.part(0, index).split(': ')
@@ -63,20 +61,17 @@ class HTTPRequest(object):
                 raise HTTPProtocolError, "Invalid HTTP header format"
             self.headers[key.lower()] = value
             self.case_match_headers[key.lower()] = key
-
             self.conn.buffer.move(index+2)
-            
-            
+
     def state_headers_completed(self):
         self.content_length = int(self.headers.get('content-length', '0'))
         self.headers_complete = True
         self.state = 'waiting'
-        return
-    
+
     def state_waiting(self):
         pass
-    
-    def read_body(self, cb, args = []):      
+
+    def read_body(self, cb, args=[]):
         self.body_cb = cb, args
         self.state = 'body'
         self.remaining_content = self.content_length
@@ -84,14 +79,14 @@ class HTTPRequest(object):
             self.state = "completed"
             return self.state_completed()
         self.conn.read_body()
-   
+
     def read_body_stream(self, stream_cb, args=[]):
         self.remaining_content = self.content_length
         self.body_stream_cb = stream_cb, args
         self.state = 'body'
         self.conn.read_body()
         return self.state_body()
-        
+
     def state_body(self):
         if self.body_stream_cb:
             bytes_available = min(len(self.conn.buffer), self.remaining_content)
@@ -105,7 +100,7 @@ class HTTPRequest(object):
         if self.remaining_content == 0:            
             self.state = 'completed'
             return self.state_completed()
-        
+
     def state_completed(self):
         if self.body_stream_cb:
             cb, args = self.body_stream_cb
@@ -116,9 +111,13 @@ class HTTPRequest(object):
                 cb(self.conn.buffer.part(0, self.content_length), *args)
             self.conn.buffer.move(self.content_length)
         if len(self.conn.buffer) > 0:
-            print "buffer: '%s'" % (self.conn.buffer.get_value(),)
-            raise HTTPProtocolError, "Unexpected Data: %s" % (self.conn.buffer.get_value())
-        
+            b = self.conn.buffer.get_value()
+            if b == "\r\n":
+                # buffer is line break -- letting it slide
+                self.conn.buffer.exhaust()
+            else:
+                raise HTTPProtocolError, "Unexpected Data: %s" % (repr(b),)
+
         self.state = 'write'
         for (mode, data, cb, args, eb, ebargs) in self.pending_actions:
             if mode == "write":
