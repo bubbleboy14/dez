@@ -180,7 +180,7 @@ class WebSocketConnection(object):
         self.buff += data
         payload = parse_frame(self.buff)
         if payload:
-            self.report_cb('Payload parsed:"%s"'%(payload,))
+            self.report_cb('Payload parsed:"%s"'%(payload.decode("utf-8"),))
             if self.isJSON:
                 payload = decode(payload)
             self.cb(payload)
