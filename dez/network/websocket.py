@@ -196,7 +196,7 @@ class WebSocketConnection(object):
         if self.isJSON:
             data = encode(data)
         self.report_cb('Data sent:"%s"'%(data))
-        self.conn.write(chr(0x81) + chr(len(data)) + data)
+        self.conn.write(chr(0x81) + chr(len(data)) + data.encode("utf-8"))
 
     def close(self):
         self.conn.close()
