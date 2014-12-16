@@ -63,7 +63,7 @@ class ReverseProxy(object):
             return self.default_address
         return None, None
 
-    def cantroute(self, domain):
+    def cantroute(self, domain, conn):
         msg = "unable to route hostname: %s"%(domain,)
         self.log(msg)
         conn.close(msg)
@@ -90,7 +90,7 @@ class ReverseProxy(object):
     def dispatch(self, data, conn, domain, should302=False, path=None):
         host, port = self.domain2hostport(domain)
         if not host:
-            return self.cantroute(domain)
+            return self.cantroute(domain, conn)
         if should302:
             self._302(conn, "%s:%s"%(host, port), path)
         else:
