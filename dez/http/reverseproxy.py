@@ -133,7 +133,6 @@ def startreverseproxy():
     if not os.path.isfile(config):
         error('no valid config - "%s" not found'%config)
     BIG_302 = not options.override_redirect
-    print "BIG_302:", BIG_302
     f = open(config)
     lines = f.readlines()
     f.close()
