@@ -34,6 +34,7 @@ class ReverseProxyConnection(object):
         self.back_conn = None
         conn.soft_close()
 
+BIG_302 = True
 BIG_FILES = ["mp3", "png", "jpg", "jpeg",
     "gif", "pdf", "mov", "zip"] # more?
 
@@ -91,7 +92,7 @@ class ReverseProxy(object):
         host, port = self.domain2hostport(domain)
         if not host:
             return self.cantroute(domain, conn)
-        if should302:
+        if should302 and BIG_302:
             self._302(conn, "%s:%s"%(host, port), path)
         else:
             ReverseProxyConnection(conn, domain, self.port, host, port, self.log, data)
@@ -111,10 +112,16 @@ def error(msg):
     sys.exit(0)
 
 def startreverseproxy():
+    global BIG_302
     import os, optparse
     parser = optparse.OptionParser('dez_reverse_proxy [CONFIG]')
-    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="log proxy activity")
-    parser.add_option("-p", "--port", dest="port", default="80", help="public-facing port (default: 80)")
+    parser.add_option("-v", "--verbose", action="store_true",
+        dest="verbose", default=False, help="log proxy activity")
+    parser.add_option("-p", "--port", dest="port", default="80",
+        help="public-facing port (default: 80)")
+    parser.add_option("-o", "--override_redirect", action="store_true",
+        dest="override_redirect", default=False,
+        help="prevent 302 redirect of large files (necessary if incoming host matters to target)")
     options, arguments = parser.parse_args()
     try:
         options.port = int(options.port)
@@ -125,6 +132,8 @@ def startreverseproxy():
     config = arguments[0]
     if not os.path.isfile(config):
         error('no valid config - "%s" not found'%config)
+    BIG_302 = not options.override_redirect
+    print "BIG_302:", BIG_302
     f = open(config)
     lines = f.readlines()
     f.close()

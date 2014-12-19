@@ -1,4 +1,4 @@
 import rel
 rel.override()
 
-__version__ = "0.5.2.3"
+__version__ = "0.5.2.4"
