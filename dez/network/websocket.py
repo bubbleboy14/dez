@@ -200,9 +200,9 @@ class WebSocketConnection(object):
         if dl < 126:
             lenchars = chr(dl)
         elif dl < 65536: # 2 bytes
-            lenchars = chr(126) + struct.pack("=H", dl)
+            lenchars = chr(126) + struct.pack("=H", dl)[::-1]
         else: # 8 bytes
-            lenchars = chr(127) + struct.pack("=Q", dl)
+            lenchars = chr(127) + struct.pack("=Q", dl)[::-1]
         self.conn.write(chr(0x81) + lenchars + data.encode("utf-8"))
 
     def close(self):
