@@ -1,4 +1,4 @@
-import optparse
+import optparse, struct
 from base64 import b64encode
 from hashlib import sha1
 from datetime import datetime
@@ -196,7 +196,14 @@ class WebSocketConnection(object):
         if self.isJSON:
             data = encode(data)
         self.report_cb('Data sent:"%s"'%(data))
-        self.conn.write(chr(0x81) + chr(len(data)) + data.encode("utf-8"))
+        dl = len(data)
+        if dl < 126:
+            lenchars = chr(dl)
+        elif dl < 65536: # 2 bytes
+            lenchars = chr(126) + struct.pack("=H", dl)
+        else: # 8 bytes
+            lenchars = chr(127) + struct.pack("=Q", dl)
+        self.conn.write(chr(0x81) + lenchars + data.encode("utf-8"))
 
     def close(self):
         self.conn.close()
