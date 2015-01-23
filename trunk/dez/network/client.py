@@ -62,7 +62,7 @@ class ConnectionPool(object):
         
     def start_connections(self, num, cb, args, timeout=None):
         if self.__start_cb_info:
-            raise Exception("StartInProgress"), "Only issue one start_connections call in parellel"
+            raise Exception("StartInProgress"), "Only issue one start_connections call in parallel"
         if timeout:
             self.__start_timer = event.timeout(timeout, __start_timeout_cb)
         self.__start_cb_info = (cb, args)

@@ -180,10 +180,14 @@ class WebSocketConnection(object):
         self.buff += data
         payload = parse_frame(self.buff)
         if payload:
-            self.report_cb('Payload parsed:"%s"'%(payload.decode("utf-8"),))
-            if self.isJSON:
-                payload = decode(payload)
-            self.cb(payload)
+            try:
+                self.report_cb('Payload parsed:"%s"'%(payload.decode("utf-8"),))
+                if self.isJSON:
+                    payload = decode(payload)
+                self.cb(payload)
+            except UnicodeDecodeError, e: # connection closed
+                self.report_cb('Closing connection: %s'%(e,))
+                self.close()
 
     def set_close_cb(self, cb, cbargs=[]):
         self.conn.set_close_cb(cb, cbargs)
