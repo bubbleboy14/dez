@@ -56,7 +56,7 @@ class HTTPRequest(object):
                 self.state = 'headers_completed'
                 return self.state_headers_completed()
             try:
-                key, value = self.conn.buffer.part(0, index).split(': ')
+                key, value = self.conn.buffer.part(0, index).split(': ', 1)
             except ValueError:
                 raise HTTPProtocolError, "Invalid HTTP header format"
             self.headers[key.lower()] = value
