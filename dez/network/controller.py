@@ -26,9 +26,15 @@ class SocketController(object):
             self.daemons[(hostname, port)] = d
         return d
 
-    def start(self):
+    def _abort(self):
+        if self.onstop:
+            self.onstop()
+        event.abort()
+
+    def start(self, onstop=False):
         if not self.daemons:
             print "SocketController doesn't know where to listen. Use register_address(hostname, port, callback) to register server addresses."
             return
-        event.signal(2, event.abort)
+        self.onstop = onstop
+        event.signal(2, self._abort)
         event.dispatch()
