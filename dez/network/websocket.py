@@ -74,7 +74,7 @@ class WebSocketProxy(object):
             print "%s [WebSocketProxy] %s"%(datetime.now(), data)
 
     def _new_conn(self, conn):
-        self._report("Connecting to TCP server")
+        self._report("Connecting to TCP server @ %s:%s"%(self.target["host"], self.target["port"]))
         WebSocketProxyConnection(conn, self.target, self._report)
 
     def start(self):
@@ -84,38 +84,45 @@ class WebSocketProxy(object):
 class WebSocketProxyConnection(object):
     def __init__(self, client2ws, target, report_cb=lambda x:None):
         self.client2ws = client2ws
-        self.report_cb = report_cb
+        self._report_cb = report_cb
         SimpleClient(target['b64']).connect(target['host'], target['port'], self._conn_server)
 
+    def report(self, data):
+        self._report_cb("[WebSocketProxyConnection] %s"%(data,))
+
     def _conn_server(self, ws2server):
-        self.report_cb("TCP connection ready")
+        self.report("TCP connection ready")
         self.ws2server = ws2server
         self.ws2server.set_rmode_close_chunked(self.client2ws.write)
         self.client2ws.set_cb(self.ws2server.write)
         def do_nothing():pass
         def ws2server_close():
-            self.report_cb("TCP server disconnected")
-            self.report_cb("Closing client connection")
+            self.report("TCP server disconnected")
+            self.report("Closing client connection")
             self.client2ws.set_close_cb(do_nothing)
             self.client2ws.close()
         def client2ws_close():
-            self.report_cb("Client disconnected")
-            self.report_cb("Closing TCP connection")
+            self.report("Client disconnected")
+            self.report("Closing TCP connection")
             self.ws2server.set_close_cb(do_nothing)
             self.ws2server.close()
         self.ws2server.set_close_cb(ws2server_close)
         self.client2ws.set_close_cb(client2ws_close)
-        self.report_cb("Connections linked")
+        self.report("Connections linked")
 
 class WebSocketDaemon(SocketDaemon):
-    def __init__(self, hostname, port, cb, b64=False, cbargs=[], report_cb=lambda x:None, isJSON=False):
+    def __init__(self, hostname, port, cb=None, b64=False, cbargs=[], report_cb=lambda x:None, isJSON=False):
         SocketDaemon.__init__(self, hostname, port, cb, b64, cbargs)
         real_cb = self.cb
         def handshake_cb(conn):
-            report_cb("Handshake initiated")
+            self.report("Handshake initiated")
             WebSocketHandshake(conn, hostname, port, real_cb, report_cb, self.isJSON)
+        self._report_cb = report_cb
         self.cb = handshake_cb
         self.isJSON = isJSON
+
+    def report(self, data):
+        self._report_cb("[WebSocketDaemon] %s"%(data,))
 
     def setJSON(self, isJSON=True):
         self.isJSON = isJSON
@@ -125,18 +132,21 @@ class WebSocketHandshake(object):
         self.hostname = hostname
         self.port = port
         self.cb = cb
-        self.report_cb = report_cb
+        self._report_cb = report_cb
         self.conn = conn
         self.conn.set_rmode_delimiter('\r\n', self._recv_action)
         self.isJSON = isJSON
 
+    def report(self, data):
+        self._report_cb("[WebSocketHandshake] %s"%(data,))
+
     def _handshake_error(self, data):
-        self.report_cb(data)
-        self.report_cb("Connection closed")
+        self.report(data)
+        self.report("Connection closed")
         self.conn.close()
 
     def _recv_action(self, data):
-        self.report_cb("Processing action line")
+        self.report("Processing action line")
         tokens = data.split(' ')
         if len(tokens) != 3:
             return self._handshake_error("Invalid action line")
@@ -144,7 +154,7 @@ class WebSocketHandshake(object):
         self.conn.set_rmode_delimiter('\r\n\r\n', self._recv_headers)
 
     def _recv_headers(self, data):
-        self.report_cb("Processing headers")
+        self.report("Processing headers")
         lines = data.split('\r\n')
         self.headers = {}
         for line in lines:
@@ -163,8 +173,8 @@ class WebSocketHandshake(object):
             "Sec-WebSocket-Accept: %s"%(key2accept(self.headers['Sec-WebSocket-Key']),)
         ]
         self.conn.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n%s\r\n\r\n"%("\r\n".join(response_headers),))
-        self.report_cb("Handshake complete")
-        self.cb(WebSocketConnection(self.conn, self.report_cb, self.isJSON))
+        self.report("Handshake complete")
+        self.cb(WebSocketConnection(self.conn, self._report_cb, self.isJSON))
 
 class WebSocketConnection(object):
     def __init__(self, conn, report_cb=lambda x:None, isJSON=False):
@@ -172,38 +182,43 @@ class WebSocketConnection(object):
         self.isJSON = isJSON
         self.conn = conn
         self.conn.halt_read()
-        self.report_cb = report_cb
-        self.report_cb("Client connection ready")
+        self.cbargs = []
+        self._report_cb = report_cb
+        self.report("Client connection ready")
+
+    def report(self, data):
+        self._report_cb("[WebSocketConnection] %s"%(data,))
 
     def _recv(self, data):
-        self.report_cb('Data received:"%s"'%(data,))
+        self.report('Data received:"%s"'%(data,))
         self.buff += data
         payload = parse_frame(self.buff)
         if payload:
             try:
-                self.report_cb('Payload parsed:"%s"'%(payload.decode("utf-8"),))
+                self.report('Payload parsed:"%s"'%(payload.decode("utf-8"),))
             except UnicodeDecodeError, e: # connection closed
-                self.report_cb('Closing connection: %s'%(e,))
+                self.report('Closing connection: %s'%(e,))
                 return self.close()
             if self.isJSON:
                 try:
                     payload = decode(payload)
                 except ValueError, e: # connection closed
-                    self.report_cb('Closing connection: %s'%(e,))
+                    self.report('Closing connection: %s'%(e,))
                     return self.close()
-            self.cb(payload)
+            self.cb(payload, *self.cbargs)
 
     def set_close_cb(self, cb, cbargs=[]):
         self.conn.set_close_cb(cb, cbargs)
 
-    def set_cb(self, cb):
+    def set_cb(self, cb, cbargs=[]):
         self.cb = cb
+        self.cbargs = cbargs
         self.conn.set_rmode_close_chunked(self._recv)
 
-    def write(self, data):
-        if self.isJSON:
+    def write(self, data, noEncode=False):
+        if self.isJSON and not noEncode:
             data = encode(data)
-        self.report_cb('Data sent:"%s"'%(data))
+        self.report('Data sent:"%s"'%(data))
         dl = len(data)
         if dl < 126:
             lenchars = chr(dl)
