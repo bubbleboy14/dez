@@ -16,6 +16,7 @@ class Connection(object):
         self.pool = pool
         self.addr = addr
         self.sock = sock
+        self.b64 = b64
         self.mode = None
         self.__write_queue = []
         self.__write_chunk = None
@@ -29,6 +30,12 @@ class Connection(object):
         self.wevent = None
         if not self.pool:
             self.__start()
+
+    def set_b64(self, val):
+        if val is not self.b64:
+            self.b64 = val
+            self.__write_buffer = WBUFF[val](str(self.__write_buffer))
+            self.__read_buffer = RBUFF[val](str(self.__read_buffer))
 
     def connect(self, timeout=5):
         self.connect_timer = event.timeout(timeout, self.__connect_timeout_cb)

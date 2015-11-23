@@ -1,5 +1,5 @@
 import optparse, struct
-from base64 import b64encode
+from base64 import b64encode, b64decode
 from hashlib import sha1
 from datetime import datetime
 from dez.buffer import Buffer
@@ -112,11 +112,11 @@ class WebSocketProxyConnection(object):
 
 class WebSocketDaemon(SocketDaemon):
     def __init__(self, hostname, port, cb=None, b64=False, cbargs=[], report_cb=lambda x:None, isJSON=False):
-        SocketDaemon.__init__(self, hostname, port, cb, b64, cbargs)
+        SocketDaemon.__init__(self, hostname, port, cb, False, cbargs)
         real_cb = self.cb
         def handshake_cb(conn):
             self.report("Handshake initiated")
-            WebSocketHandshake(conn, hostname, port, real_cb, report_cb, self.isJSON)
+            WebSocketHandshake(conn, hostname, port, real_cb, report_cb, self.isJSON, b64)
         self._report_cb = report_cb
         self.cb = handshake_cb
         self.isJSON = isJSON
@@ -128,7 +128,7 @@ class WebSocketDaemon(SocketDaemon):
         self.isJSON = isJSON
 
 class WebSocketHandshake(object):
-    def __init__(self, conn, hostname, port, cb, report_cb=lambda x:None, isJSON=False):
+    def __init__(self, conn, hostname, port, cb, report_cb=lambda x:None, isJSON=False, b64=False):
         self.hostname = hostname
         self.port = port
         self.cb = cb
@@ -136,6 +136,7 @@ class WebSocketHandshake(object):
         self.conn = conn
         self.conn.set_rmode_delimiter('\r\n', self._recv_action)
         self.isJSON = isJSON
+        self.b64 = b64
 
     def report(self, data):
         self._report_cb("[WebSocketHandshake] %s"%(data,))
@@ -174,12 +175,13 @@ class WebSocketHandshake(object):
         ]
         self.conn.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n%s\r\n\r\n"%("\r\n".join(response_headers),))
         self.report("Handshake complete")
-        self.cb(WebSocketConnection(self.conn, self._report_cb, self.isJSON))
+        self.cb(WebSocketConnection(self.conn, self._report_cb, self.isJSON, self.b64))
 
 class WebSocketConnection(object):
-    def __init__(self, conn, report_cb=lambda x:None, isJSON=False):
+    def __init__(self, conn, report_cb=lambda x:None, isJSON=False, b64=False):
         self.buff = Buffer()
         self.isJSON = isJSON
+        self.b64 = b64
         self.conn = conn
         self.conn.halt_read()
         self.cbargs = []
@@ -195,10 +197,13 @@ class WebSocketConnection(object):
         payload = parse_frame(self.buff)
         while payload:
             try:
-                self.report('Payload parsed:"%s"'%(payload.decode("utf-8"),))
+                self.report('Payload parsed: "%s"'%(payload.decode("utf-8"),))
             except UnicodeDecodeError, e: # connection closed
                 self.report('Closing connection: %s'%(e,))
                 return self.close()
+            if self.b64:
+                payload = b64decode(payload)
+                self.report('B64 decoded: %s'%(payload,))
             if self.isJSON:
                 try:
                     payload = decode(payload)
@@ -219,7 +224,10 @@ class WebSocketConnection(object):
     def write(self, data, noEncode=False):
         if self.isJSON and not noEncode:
             data = encode(data)
-        self.report('Data sent:"%s"'%(data))
+        self.report('Sending data: "%s"'%(data,))
+        if self.b64:
+            data = b64encode(data)
+            self.report('B64 version: "%s"'%(data,))
         dl = len(data)
         if dl < 126:
             lenchars = chr(dl)
@@ -227,7 +235,7 @@ class WebSocketConnection(object):
             lenchars = chr(126) + struct.pack("=H", dl)[::-1]
         else: # 8 bytes
             lenchars = chr(127) + struct.pack("=Q", dl)[::-1]
-        self.conn.write(chr(0x81) + lenchars + data.encode("utf-8"))
+        self.conn.write(chr(0x81) + lenchars + data)
 
     def close(self):
         self.conn.close()

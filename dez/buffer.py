@@ -3,16 +3,15 @@ from base64 import b64encode, b64decode
 class Buffer(object):
     ''' A Buffer object buffers text, and has two modes, 'index' and 'consume'
 
-        In index mode, which is the default initial mode of a Buffer object,
-        the buffer object keeps track of a position 'pos', which can be
-        altered by calling b.move, or by b.exhaust, which moves 'pos' to the
-        end of the file.
+        In index mode, the buffer object keeps track of a position 'pos',
+        which can be altered by calling b.move, or by b.exhaust, which
+        moves 'pos' to the end of the file.
 
-        In consume mode, a buffer is essentially just a proxy for its contained
-        string b.data.
+        In consume mode (default), a buffer is essentially just a proxy
+        for its contained string b.data.
 
-        If you experience memory leaks, make sure you don't have buffers sitting
-        around in 'index' mode.
+        If you experience memory leaks, make sure you don't have
+        buffers sitting around in 'index' mode.
     '''
     def __init__(self, initial_data='', mode='consume'):
         self.mode = None
