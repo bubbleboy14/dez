@@ -193,7 +193,7 @@ class WebSocketConnection(object):
         self.report('Data received:"%s"'%(data,))
         self.buff += data
         payload = parse_frame(self.buff)
-        if payload:
+        while payload:
             try:
                 self.report('Payload parsed:"%s"'%(payload.decode("utf-8"),))
             except UnicodeDecodeError, e: # connection closed
@@ -206,6 +206,7 @@ class WebSocketConnection(object):
                     self.report('Closing connection: %s'%(e,))
                     return self.close()
             self.cb(payload, *self.cbargs)
+            payload = parse_frame(self.buff)
 
     def set_close_cb(self, cb, cbargs=[]):
         self.conn.set_close_cb(cb, cbargs)
