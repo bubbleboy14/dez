@@ -64,8 +64,6 @@ class HTTPApplication(object):
             url == "/main.html/foo" returns a 404
         """
         self.daemon.register_prefix(prefix, self.static_request, [prefix, local_base_resource])
-#        self.static.register(prefix, local_base_resource)
-#        raise Exception("NotImplemented"), "Static file serving not implemented"
 
     def add_cb_rule(self, prefix, cb, parsed=True):
         """ Adds a prefix that will issue a call to cb when a request with that
