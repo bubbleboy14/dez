@@ -17,18 +17,20 @@ class HTTPDaemon(object):
         self.log.info("Listening on %s:%s" % (host, port))
         self.sock = io.server_socket(self.port)
         self.listen = event.read(self.sock, self.accept_connection, None, self.sock, None)
-        self.router = Router(self.default_cb, [])
+        self.router = Router(self.default_cb)
 
     def register_prefix(self, prefix, cb, args=[]):
         self.router.register_prefix(prefix, cb, args)
 
     def default_404_cb(self, request):
+        self.log.access("404: %s"%(request.url,))
         r = HTTPResponse(request)
         r.status = "404 Not Found"
         r.write("The requested document %s was not found" % request.url)
         r.dispatch()
 
     def default_200_cb(self, request):
+        self.log.access("200: %s"%(request.url,))
         r = HTTPResponse(request)
         r.status = "200 OK"
         r.dispatch()
