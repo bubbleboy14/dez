@@ -46,8 +46,7 @@ class HTTPApplication(object):
             url == "/hello/chat/index.html" # will not be proxied
         """
         self.daemon.register_prefix(prefix, self.__proxy, [dest_host, dest_port])
-        
-        
+
     def __proxy(self, req, host, port):
         return proxy(req, host, port)
 
