@@ -1,7 +1,7 @@
 from setuptools import setup
 setup(
     name='dez',
-    version='0.5.4.1',
+    version='0.5.5',
     author='Mario Balibrera',
     author_email='mario.balibrera@gmail.com',
     license='MIT License',
@@ -22,7 +22,7 @@ setup(
     ],
     zip_safe = False,
     install_requires = [
-        "rel >= 0.3.1",
+        "rel >= 0.3.2",
         "demjson"
     ],
     entry_points = '''
