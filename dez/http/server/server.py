@@ -167,7 +167,6 @@ class HTTPConnection(object):
         try:
             bsent = self.sock.send(self.write_buffer.get_value())
             self.write_buffer.move(bsent)
-            self.log.debug('write_buffer: return True')
             return True
         except io.socket.error, msg:
             self.log.debug('io.socket.error: %s' % msg)
