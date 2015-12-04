@@ -45,7 +45,7 @@ class HTTPApplication(object):
             url == "/chat/index.html"  # will be proxied
             url == "/hello/chat/index.html" # will not be proxied
         """
-        self.daemon.register_prefix(prefix, self.__proxy, [dest_host, dest_port])
+        self.daemon.register_cb(prefix, self.__proxy, [dest_host, dest_port])
 
     def __proxy(self, req, host, port):
         return proxy(req, host, port)
@@ -62,7 +62,7 @@ class HTTPApplication(object):
             url == "/main.html" refers to /home/app/static/html/main.html
             url == "/main.html/foo" returns a 404
         """
-        self.daemon.register_prefix(prefix, self.static_request, [prefix, local_base_resource])
+        self.daemon.register_cb(prefix, self.static_request, [prefix, local_base_resource])
 
     def add_cb_rule(self, prefix, cb, parsed=True):
         """ Adds a prefix that will issue a call to cb when a request with that
@@ -80,7 +80,7 @@ class HTTPApplication(object):
             def format_wrapper(req):
                 req = ParsedHTTPRequest(req, cb)
             app_cb = format_wrapper
-        self.daemon.register_prefix(prefix, app_cb)
+        self.daemon.register_cb(prefix, app_cb)
 
     def add_wsgi_rule(self, prefix, app):
         """ Adds a prefix that will execute (call) a wsgi compliant app function.
@@ -110,7 +110,7 @@ class HTTPApplication(object):
             r = WSGIResponse(req, app, self.host, self.port)
             self.wsgi_pool.dispatch(r)
 #            r.dispatch()
-        self.daemon.register_prefix(prefix, wsgi_cb)
+        self.daemon.register_cb(prefix, wsgi_cb)
 
 
 class ParsedHTTPRequest(object):
