@@ -22,6 +22,10 @@ class HTTPDaemon(object):
     def register_prefix(self, prefix, cb, args=[]):
         self.router.register_prefix(prefix, cb, args)
 
+    def register_cb(self, signature, cb, args=[]):
+        self.log.info("Registering callback: %s"%(signature,))
+        self.router.register_cb(signature, cb, args)
+
     def default_404_cb(self, request):
         self.log.access("404: %s"%(request.url,))
         r = HTTPResponse(request)
