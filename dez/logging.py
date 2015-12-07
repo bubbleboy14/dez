@@ -5,6 +5,7 @@ class FakeLogger(object):
     access = debug
     warn = debug
     error = debug
+    simple = debug
 
 logger = FakeLogger()
 
@@ -21,6 +22,9 @@ class BasicLogger(object):
 		self.func("[%s] %s | %s :: %s"%(log_type, self.name,
 			self.subname, msg), *args, **kwargs)
 
+	def simple(self, msg, log_type="log"):
+		self._log(log_type, msg)
+
 	def debug(self, msg, *args, **kwargs):
 		self._log("debug", msg, *args, **kwargs)
 
@@ -36,5 +40,5 @@ class BasicLogger(object):
 	def error(self, msg, *args, **kwargs):
 		self._log("error", msg, *args, **kwargs)
 
-def get_logger(name, func):
+def get_logger_getter(name, func):
 	return lambda subname : BasicLogger(name, subname, func)
