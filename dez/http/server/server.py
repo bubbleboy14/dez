@@ -3,7 +3,7 @@ from dez import io
 from dez.buffer import Buffer
 from dez.logging import default_get_logger
 from dez.http.server.router import Router
-from dez.http.server.response import RawHTTPResponse, HTTPResponse
+from dez.http.server.response import HTTPResponse
 from dez.http.server.request import HTTPRequest
 
 class HTTPDaemon(object):
@@ -26,18 +26,21 @@ class HTTPDaemon(object):
         self.log.info("Registering callback: %s"%(signature,))
         self.router.register_cb(signature, cb, args)
 
+    def respond(self, request, data=None, status="200 OK"):
+        self.log.access("response (%s): '%s', '%s'"%(request.url, status, data))
+        r = HTTPResponse(request)
+        r.status = status
+        if data:
+            r.write(data)
+        r.dispatch()
+
     def default_404_cb(self, request):
         self.log.access("404: %s"%(request.url,))
-        r = HTTPResponse(request)
-        r.status = "404 Not Found"
-        r.write("The requested document %s was not found" % request.url)
-        r.dispatch()
+        self.respond(request, "The requested document %s was not found" % (request.url,), "404 Not Found")
 
     def default_200_cb(self, request):
         self.log.access("200: %s"%(request.url,))
-        r = HTTPResponse(request)
-        r.status = "200 OK"
-        r.dispatch()
+        self.respond(request)
 
     def default_cb(self, request):
         return self.default_404_cb(request)
