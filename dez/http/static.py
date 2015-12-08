@@ -14,10 +14,13 @@ class StaticHandler(object):
             #print "static cache: NaiveCache"
 
     def __respond(self, req, path=None, ctype=False, data=[], stream=False):
-        response = (stream and HTTPVariableResponse or HTTPResponse)(req)
+        if stream:
+            response = HTTPVariableResponse(req)
+        else:
+            response = HTTPResponse(req, False)
         response.headers['Server'] = self.server_name
         if ctype:
-            response.headers['Content-type'] = self.cache.get_type(path)
+            response.headers['Content-Type'] = self.cache.get_type(path)
         if not path:
             response.status = "404 Not Found"
         for d in data:
