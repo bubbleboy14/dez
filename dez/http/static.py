@@ -28,7 +28,10 @@ class StaticHandler(object):
             response.dispatch()
 
     def __call__(self, req, prefix, directory):
-        path = os.path.join(directory, req.url[len(prefix):])
+        if "*" in prefix: # regex
+            path = directory + req.url
+        else:
+            path = os.path.join(directory, req.url[len(prefix):])
         if os.path.isdir(path):
             url = req.url
             if url.endswith('/'):

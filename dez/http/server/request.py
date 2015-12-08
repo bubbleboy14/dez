@@ -2,8 +2,10 @@ import event
 from dez.http.errors import HTTPProtocolError
 
 class HTTPRequest(object):
-    
+    id = 0
     def __init__(self, conn):
+        HTTPRequest.id += 1
+        self.id = HTTPRequest.id
         self.conn = conn
         self.log = conn.get_logger('HTTPRequest')
         

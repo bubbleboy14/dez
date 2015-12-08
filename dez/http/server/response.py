@@ -5,19 +5,19 @@ except ImportError:
 
 class HTTPResponse(object):
     id = 0
-    def __init__(self, request):
+    def __init__(self, request, keep_alive=True):
         HTTPResponse.id += 1
 
         self.id = HTTPResponse.id
         self.request = request
         self.headers = {
-            'Content-type': 'text/html'
+            'Content-Type': 'text/html'
         }
         self.buffer = []
         self.status = "200 OK"
         self.version_major = 1
         self.version_minor = min(1, request.version_minor)
-        if self.version_minor == 1:
+        if keep_alive and self.version_minor == 1:
             self.headers['Connection'] = 'keep-alive'
             self.headers['Keep-alive'] = '300'
 
@@ -55,7 +55,7 @@ class HTTPVariableResponse(object):
         self.request = request
         self.started = False
         self.headers = {
-            'Content-type': 'text/html'
+            'Content-Type': 'text/html'
         }
         self.status = "200 OK"
         self.version_major = 1
