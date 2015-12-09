@@ -17,7 +17,9 @@ class HTTPResponse(object):
         self.status = "200 OK"
         self.version_major = 1
         self.version_minor = min(1, request.version_minor)
-        if keep_alive and self.version_minor == 1:
+        self.keep_alive = False
+        if keep_alive and self.version_minor == 1 and 'keep-alive' in request.headers:
+            self.keep_alive = True
             self.headers['Connection'] = 'keep-alive'
             self.headers['Keep-alive'] = '300'
 
@@ -31,20 +33,17 @@ class HTTPResponse(object):
         self.buffer.append(str(data))
 
     def dispatch(self, cb=None):
-#        print "DISPATCHING:", self.id
         status_line = "HTTP/%s.%s %s\r\n" % (
             self.version_major, self.version_minor, self.status)
         self.headers['Content-length'] = str(sum([len(s) for s in self.buffer]))
         h = "\r\n".join(": ".join((k, v)) for (k, v) in self.headers.items())
         h += "\r\n\r\n"
         response = status_line + h + "".join(self.buffer)
+        self.buffer = []
         self.request.write(response, None)
-        if self.version_minor == 1 and int(self.headers.get('Keep-alive', '0')) > 0:
-#            def cb(*args):
-#                print 'ended!'
-            self.request.end(cb)#cb)
+        if self.keep_alive:
+            self.request.end(cb)
         else:
-#            print 'closing...'
             self.request.close(cb)
 
 class HTTPVariableResponse(object):
