@@ -126,9 +126,11 @@ class HTTPRequest(object):
                 self.write(data, cb, args, eb, ebargs, override=True)
             elif mode == "end":
                 self.end(cb)
+                break
             elif mode == "close":
                 self.close(cb)
-                
+                break
+
     def write(self, data, cb=None, args=[],eb=None, ebargs=[],override=False):
         if self.write_ended and not override:
             raise Exception, "end already called"
@@ -141,8 +143,8 @@ class HTTPRequest(object):
         if len(data) == 0:
             return cb()
         self.write_queue_size += 1
-        self.conn.write(data , self.write_cb, (cb, args), eb, ebargs)
-    
+        self.conn.write(data, self.write_cb, (cb, args), eb, ebargs)
+
     def write_cb(self, *args):
         self.write_queue_size -= 1
         if self.write_ended and self.write_queue_size == 0:
@@ -158,7 +160,7 @@ class HTTPRequest(object):
             if cbargs is None:
                 cbargs = []
             cb(*cbargs)
-            
+
     def end(self, cb=None, args=[]):
         if self.write_ended:
             raise Exception, "end already called"
@@ -178,6 +180,6 @@ class HTTPRequest(object):
         if not self.write_ended:
             self.end(cb)
         self.send_close = True
-    
+
     def close_now(self, reason="hard close"):
         self.conn.close(reason)
