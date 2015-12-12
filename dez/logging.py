@@ -40,5 +40,8 @@ class BasicLogger(object):
 	def error(self, msg, *args, **kwargs):
 		self._log("error", msg, *args, **kwargs)
 
-def get_logger_getter(name, func):
+def _log_write(s):
+	print s
+
+def get_logger_getter(name, func=_log_write):
 	return lambda subname : BasicLogger(name, subname, func)
