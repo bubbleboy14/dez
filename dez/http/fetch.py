@@ -9,14 +9,14 @@ class Fetcher(HTTPClient):
 		HTTPClient.__init__(self)
 		self.log = get_logger_getter("dez")("Fetcher").simple
 
-	def fetch(self, host, cb=None, path="/", port=80, timeout=1):
+	def fetch(self, host, path="/", port=80, cb=None, timeout=1):
 		url = "http://%s:%s%s"%(host, port, path)
 		self.log("fetching: %s"%(url,))
 		HTTPClient().get_url(url,
 			cb=lambda resp : (cb and cb or self.log)(resp.body),
 			timeout=timeout)
 
-def fetch(host, cb=None, path="/", port=80, timeout=1, json=False, dispatch=False):
+def fetch(host, path="/", port=80, cb=None, timeout=1, json=False, dispatch=False):
 	global F
 	if not F:
 		F = Fetcher()
