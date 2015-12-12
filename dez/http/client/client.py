@@ -1,6 +1,7 @@
 from request import HTTPClientRequest, HTTPClientWriter
 from response import HTTPClientResponse, HTTPClientReader
 from dez.network import SocketClient
+from dez.logging import get_logger_getter
 import event
 
 class HTTPClient(object):
@@ -8,17 +9,22 @@ class HTTPClient(object):
         self.client = SocketClient()
         self.id = 0
         self.requests = {}
+        self.log = get_logger_getter("dez")("HTTPClient").simple
+        self.log("initialized client")
 
     def get_url(self, url, method='GET', headers={}, cb=None, cbargs=(), eb=None, ebargs=(), body="", timeout=None):
+        self.log("get_url: %s"%(url,))
         self.id += 1
         path, host, port = self.__parse_url(url)
         self.requests[self.id] = URLRequest(self.id, path, host, port, method, headers, cb, cbargs, eb, ebargs, body, timeout=timeout)
         self.client.get_connection(host, port, self.__conn_cb, [self.id], self.__conn_timeout_cb, [self.id])
     
     def __conn_timeout_cb(self, id):
+        self.log("__conn_timeout_cb: %s"%(id,))
         self.requests[id].timeout()
     
     def __conn_cb(self, conn, id):
+        self.log("__conn_cb: %s"%(id,))
         writer = HTTPClientWriter(conn)
         request = HTTPClientRequest()
         url_request = self.requests[id]
@@ -31,6 +37,7 @@ class HTTPClient(object):
         writer.dispatch(request, self.__write_request_cb, [id, conn])
 
     def __write_request_cb(self, id, conn):
+        self.log("__write_request_cb: %s"%(id,))
         reader = HTTPClientReader(conn)
         reader.get_full_response(self.__end_body_cb, [id])
 #        print "asking for response"
@@ -40,9 +47,11 @@ class HTTPClient(object):
 #        print response.status_line
 #        print response.headers
 #        print response.body
+        self.log("__end_body_cb: %s"%(id,))
         self.requests[id].success(response)
 
     def __parse_url(self, url):
+        self.log("__parse_url: %s"%(url,))
         """ >>> __hostname_from_url("www.google.com/hello/world?q=yo")
             /, "www.google.com", 80
         """
