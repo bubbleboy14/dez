@@ -1,7 +1,9 @@
+from dez import __version__
 from setuptools import setup
+
 setup(
     name='dez',
-    version='0.5.5',
+    version=__version__,
     author='Mario Balibrera',
     author_email='mario.balibrera@gmail.com',
     license='MIT License',
@@ -22,7 +24,7 @@ setup(
     ],
     zip_safe = False,
     install_requires = [
-        "rel >= 0.3.2",
+        "rel >= 0.3.3",
         "demjson"
     ],
     entry_points = '''
