@@ -114,45 +114,48 @@ class HTTPApplication(object):
 
 
 class ParsedHTTPRequest(object):
-    
     def __init__(self, req, cb):
         self.req = req
         self.cb = cb
         self.form = {}
         self.cookies = {}
+        self.qs_params = {}
         req.read_body(self.recv_body)
-        
+
     def __getattr__(self, key):
         try:
             return object.__getattr__(self, key)
         except AttributeError:
           return getattr(self.req, key)
-        
+
     def recv_body(self, body):
         self.body = body
         self.dispatch()  
-      
+
     def dispatch(self):
         self.setup_url()
         self.setup_form()
         self.setup_cookies()
         self.cb(self)
-        
+
     def setup_url(self):
         if self.req.method.lower() == "get" and "?" in self.req.url:
             self.url, self.qs = self.req.url.split('?', 1)
+            for qparam in self.qs.split("&"):
+                key, val = qparam.split("=")
+                self.qs_params[key] = val
         elif self.req.method.lower() == "post":
             self.url, self.qs = self.req.url, self.body
         else:
             self.url, self.qs = self.req.url, ""
-            
+
     def setup_form(self):
         try:
             for key, val in cgi.parse_qsl(self.qs):
                 self.form[key] = val
         except ValueError:
             raise HTTPProtocolError, "Invalid querystring format"
-        
+
     def setup_cookies(self):
         pass
 

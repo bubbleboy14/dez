@@ -22,10 +22,10 @@ class HTTPRequest(object):
         self.remaining_content = 0
         self.write_queue_size = 0
         self.pending_actions = []
-            
+
     def process(self):
-        return getattr(self, 'state_%s' % self.state)()        
-    
+        return getattr(self, 'state_%s' % self.state)()
+
     def set_close_cb(self, cb, args):
         self.conn.set_close_cb(cb, args)
     
@@ -35,7 +35,7 @@ class HTTPRequest(object):
         i = self.conn.buffer.find('\r\n')
         self.action = self.conn.buffer.part(0, i)
         try:
-            self.method, self.url, self.protocol = self.conn.buffer.part(0, i).split(' ', 2)
+            self.method, self.url, self.protocol = self.action.split(' ', 2)
         except ValueError:
             raise HTTPProtocolError, "Invalid HTTP status line"
         #self.protocol = self.protocol.lower()
