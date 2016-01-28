@@ -37,13 +37,23 @@ class StaticHandler(object):
             path = os.path.join(directory, req.url[len(prefix):])
         if os.path.isdir(path):
             url = req.url
-            if url.endswith('/'):
-                url = url[:-1]
-            return self.__respond(req, data=[
-                '<b>%s</b><br><br>'%(url,),
-                "<a href=%s>..</a><br>"%(os.path.split(url)[0],)
-            ] + ["<a href=%s/%s>%s</a><br>"%(url,child,child) for child in os.listdir(path)])
-        self.cache.get(req, path, self.__write, self.__stream, self.__404)
+            if not self._try_index(req, path):
+                if url.endswith('/'):
+                    url = url[:-1]
+                return self.__respond(req, data=[
+                    '<b>%s</b><br><br>'%(url,),
+                    "<a href=%s>..</a><br>"%(os.path.split(url)[0],)
+                ] + ["<a href=%s/%s>%s</a><br>"%(url,child,child) for child in os.listdir(path)])
+        else:
+            self.cache.get(req, path, self.__write, self.__stream, self.__404)
+
+    def _try_index(self, req, path):
+        indexp = os.path.join(path, "index.html")
+        if os.path.isfile(indexp):
+            req.url += "index.html"
+            self.cache.get(req, indexp, self.__write, self.__stream, self.__404)
+            return True
+        return False
 
     def __write(self, req, path):
         self.__respond(req, path, True, [self.cache.get_content(path)])

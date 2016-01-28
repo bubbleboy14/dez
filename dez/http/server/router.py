@@ -23,11 +23,19 @@ class Router(object):
     def pref_order(self, b, a):
         return cmp(len(a[0]),len(b[0]))
 
-    def __call__(self, url):
+    def _check(self, url):
         for rx, cb, args in self.regexs:
             if rx.match(url):
                 return cb, args
         for prefix, cb, args in self.prefixes:
             if url.startswith(prefix):
                 return cb, args
+
+    def _try_index(self, url):
+        return self._check(url + "index.html")
+
+    def __call__(self, url):
+        match = self._check(url) or self._try_index(url)
+        if match:
+            return match[0], match[1]
         return self.default_cb, self.default_args
