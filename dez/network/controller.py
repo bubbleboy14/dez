@@ -2,27 +2,30 @@ import event
 from dez.network.server import SocketDaemon
 from dez.network.websocket import WebSocketDaemon
 from dez.http.server import HTTPDaemon
+from dez.http.application import HTTPApplication
 
-def get_http(hostname, port, callback, b64, cbargs):
-    return HTTPDaemon(hostname, port) # doesn't support extra args
+def daemon_wrapper(dclass):
+    return lambda h, p, *args, **kwargs : dclass(h, p)
 
 heads = {
     "socket": SocketDaemon,
     "websocket": WebSocketDaemon,
-    "http": get_http
+    "http": daemon_wrapper(HTTPDaemon),
+    "application": daemon_wrapper(HTTPApplication)
 }
 
 class SocketController(object):
     def __init__(self):
         self.daemons = {}
 
-    def register_address(self, hostname, port, callback=None, cbargs=[], b64=False, daemon="socket"):
+    def register_address(self, hostname, port, callback=None, cbargs=[], b64=False, daemon="socket", dclass=None):
         d = self.daemons.get((hostname, port))
         if d:
             d.cb = callback
             d.cbargs = cbargs
         else:
-            d = heads[daemon](hostname, port, callback, b64, cbargs=cbargs)
+            dclass = dclass and daemon_wrapper(dclass) or heads[daemon]
+            d = dclass(hostname, port, callback, b64, cbargs=cbargs)
             self.daemons[(hostname, port)] = d
         return d
 
