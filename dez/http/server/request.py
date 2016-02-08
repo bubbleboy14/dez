@@ -7,7 +7,6 @@ class HTTPRequest(object):
         HTTPRequest.id += 1
         self.id = HTTPRequest.id
         self.conn = conn
-        self.log = conn.get_logger('HTTPRequest')
         
         self.state = 'action'
         self.headers = {}
@@ -62,7 +61,7 @@ class HTTPRequest(object):
             except ValueError:
                 raise HTTPProtocolError, "Invalid HTTP header format"
             self.headers[key.lower()] = value
-            self.case_match_headers[key.lower()] = key
+            self.case_match_headers[key] = key
             self.conn.buffer.move(index+2)
 
     def state_headers_completed(self):
@@ -99,7 +98,7 @@ class HTTPRequest(object):
         # Quick hack to fix body bug. TODO: clean up this whole function.
         elif len(self.conn.buffer) >= self.content_length:
             self.remaining_content = 0
-        if self.remaining_content == 0:            
+        if self.remaining_content == 0:
             self.state = 'completed'
             return self.state_completed()
 
@@ -121,6 +120,9 @@ class HTTPRequest(object):
                 raise HTTPProtocolError, "Unexpected Data: %s" % (repr(b),)
 
         self.state = 'write'
+        self.state_write()
+
+    def state_write(self):
         for (mode, data, cb, args, eb, ebargs) in self.pending_actions:
             if mode == "write":
                 self.write(data, cb, args, eb, ebargs, override=True)
@@ -131,7 +133,7 @@ class HTTPRequest(object):
                 self.close(cb)
                 break
 
-    def write(self, data, cb=None, args=[],eb=None, ebargs=[],override=False):
+    def write(self, data, cb=None, args=[], eb=None, ebargs=[], override=False):
         if self.write_ended and not override:
             raise Exception, "end already called"
         if self.state != 'write':
@@ -142,6 +144,9 @@ class HTTPRequest(object):
             return
         if len(data) == 0:
             return cb()
+        self.write_now(data, cb, args, eb, ebargs)
+
+    def write_now(self, data, cb=None, args=[], eb=None, ebargs=[]):
         self.write_queue_size += 1
         self.conn.write(data, self.write_cb, (cb, args), eb, ebargs)
 

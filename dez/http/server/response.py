@@ -18,7 +18,7 @@ class HTTPResponse(object):
         self.version_major = 1
         self.version_minor = min(1, request.version_minor)
         self.keep_alive = False
-        if keep_alive and self.version_minor == 1 and 'keep-alive' in request.headers:
+        if keep_alive and self.version_minor == 1 and request.headers.get("connection") == "keep-alive":
             self.keep_alive = True
             self.headers['Connection'] = 'keep-alive'
             self.headers['Keep-alive'] = '300'
@@ -32,7 +32,13 @@ class HTTPResponse(object):
     def write(self, data):
         self.buffer.append(str(data))
 
-    def dispatch(self, cb=None):
+    def end_or_close(self, cb):
+        if self.keep_alive:
+            self.request.end(cb)
+        else:
+            self.request.close(cb)
+
+    def render(self):
         status_line = "HTTP/%s.%s %s\r\n" % (
             self.version_major, self.version_minor, self.status)
         self.headers['Content-length'] = str(sum([len(s) for s in self.buffer]))
@@ -40,17 +46,19 @@ class HTTPResponse(object):
         h += "\r\n\r\n"
         response = status_line + h + "".join(self.buffer)
         self.buffer = []
-        self.request.write(response, None)
-        if self.keep_alive:
-            self.request.end(cb)
-        else:
-            self.request.close(cb)
+        return response
+
+    def dispatch_now(self, cb=None):
+        self.request.write_now(self.render(), self.end_or_close, [cb])
+
+    def dispatch(self, cb=None):
+        self.request.write(self.render(), self.end_or_close, [cb])
 
 class HTTPVariableResponse(object):
     id = 0
     def __init__(self, request):
-        HTTPResponse.id += 1
-        self.id = HTTPResponse.id
+        HTTPVariableResponse.id += 1
+        self.id = HTTPVariableResponse.id
         self.request = request
         self.started = False
         self.headers = {

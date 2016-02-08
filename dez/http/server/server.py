@@ -7,9 +7,7 @@ from dez.http.server.response import HTTPResponse
 from dez.http.server.request import HTTPRequest
 
 class HTTPDaemon(object):
-    def __init__(self, host, port, get_logger=None):
-        if not get_logger:
-            get_logger = default_get_logger
+    def __init__(self, host, port, get_logger=default_get_logger):
         self.log = get_logger("HTTPDaemon")
         self.get_logger = get_logger
         self.host = host
@@ -143,7 +141,7 @@ class HTTPConnection(object):
             return None
         return True
 
-    def write(self, data, cb, args,eb=None,ebargs=[]):
+    def write(self, data, cb, args, eb=None, ebargs=[]):
         self.response_queue.append((data, cb, args, eb, ebargs))
         if not self.wevent:
             self.wevent = event.write(self.sock, self.write_ready)
