@@ -6,8 +6,9 @@ class HTTPRequest(object):
     def __init__(self, conn):
         HTTPRequest.id += 1
         self.id = HTTPRequest.id
+        self.log = conn.get_logger("HTTPRequest(%s)"%(self.id,))
+        self.log.debug("__init__")
         self.conn = conn
-        
         self.state = 'action'
         self.headers = {}
         self.case_match_headers = {}
@@ -23,6 +24,7 @@ class HTTPRequest(object):
         self.pending_actions = []
 
     def process(self):
+        self.log.debug("process", self.state)
         return getattr(self, 'state_%s' % self.state)()
 
     def set_close_cb(self, cb, args):
@@ -73,6 +75,7 @@ class HTTPRequest(object):
         pass
 
     def read_body(self, cb, args=[]):
+        self.log.debug("read_body", self.state)
         self.body_cb = cb, args
         self.state = 'body'
         self.remaining_content = self.content_length
@@ -103,6 +106,8 @@ class HTTPRequest(object):
             return self.state_completed()
 
     def state_completed(self):
+        self.log.debug("state_completed")
+        self.state = 'write'
         if self.body_stream_cb:
             cb, args = self.body_stream_cb
             cb("", *args)
@@ -119,11 +124,12 @@ class HTTPRequest(object):
             else:
                 raise HTTPProtocolError, "Unexpected Data: %s" % (repr(b),)
 
-        self.state = 'write'
-        self.state_write()
+        return self.state_write()
 
     def state_write(self):
-        for (mode, data, cb, args, eb, ebargs) in self.pending_actions:
+        self.log.debug("state_write")
+        while len(self.pending_actions):
+            mode, data, cb, args, eb, ebargs = self.pending_actions.pop(0)
             if mode == "write":
                 self.write(data, cb, args, eb, ebargs, override=True)
             elif mode == "end":
@@ -134,24 +140,26 @@ class HTTPRequest(object):
                 break
 
     def write(self, data, cb=None, args=[], eb=None, ebargs=[], override=False):
+        self.log.debug("write", self.state, len(data))
         if self.write_ended and not override:
             raise Exception, "end already called"
         if self.state != 'write':
             self.pending_actions.append(("write", data, cb, args, eb, ebargs))
             if self.state == 'waiting':
                 self.state = 'body'
-                return self.state_body()
-            return
+            return self.process()
         if len(data) == 0:
-            return cb()
+            return cb(*args)
         self.write_now(data, cb, args, eb, ebargs)
 
     def write_now(self, data, cb=None, args=[], eb=None, ebargs=[]):
         self.write_queue_size += 1
+        self.log.debug("write_now", self.write_queue_size, len(data))
         self.conn.write(data, self.write_cb, (cb, args), eb, ebargs)
 
     def write_cb(self, *args):
         self.write_queue_size -= 1
+        self.log.debug("write_cb", self.write_queue_size, self.write_ended)
         if self.write_ended and self.write_queue_size == 0:
             if self.send_close:
                 self.conn.close()
@@ -167,23 +175,25 @@ class HTTPRequest(object):
             cb(*cbargs)
 
     def end(self, cb=None, args=[]):
+        self.log.debug("end", self.write_ended, self.state)
         if self.write_ended:
             raise Exception, "end already called"
         if self.state != "write":
-            self.pending_actions.append(("end", None, cb, None, None, None))
+            self.pending_actions.append(("end", None, cb, args, None, None))
             return
         self.write_ended = True
         self.write_queue_size +=1
-        self.conn.write("", self.write_cb, (cb,))
+        self.conn.write("", self.write_cb, (cb, args))
 
     def close(self, cb=None, args=[]):
+        self.log.debug("close", self.write_ended, self.state)
         if self.write_ended:
             raise Exception, "end already called"
         if self.state != "write":
-            self.pending_actions.append(("close", None, cb, None, None, None))
+            self.pending_actions.append(("close", None, cb, args, None, None))
             return
         if not self.write_ended:
-            self.end(cb)
+            self.end(cb, args)
         self.send_close = True
 
     def close_now(self, reason="hard close"):
