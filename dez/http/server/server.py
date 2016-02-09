@@ -51,10 +51,10 @@ class HTTPDaemon(object):
 class HTTPConnection(object):
     id = 0
     def __init__(self, sock, addr, router, get_logger):
-        self.log = get_logger("HTTPConnection")
-        self.get_logger = get_logger
         HTTPConnection.id += 1
         self.id = HTTPConnection.id
+        self.log = get_logger("HTTPConnection(%s)"%(self.id,))
+        self.get_logger = get_logger
         self.sock = sock
         self.addr, self.local_port = addr
         self.router = router
@@ -72,6 +72,7 @@ class HTTPConnection(object):
         self.__close_cb = (cb, args)
 
     def start_request(self):
+        self.log.debug("start_request")
         if self.wevent:
             self.wevent.delete()
             self.wevent = None
@@ -142,11 +143,13 @@ class HTTPConnection(object):
         return True
 
     def write(self, data, cb, args, eb=None, ebargs=[]):
+        self.log.debug("write", len(data))
         self.response_queue.append((data, cb, args, eb, ebargs))
         if not self.wevent:
             self.wevent = event.write(self.sock, self.write_ready)
 
     def write_ready(self):
+        self.log.debug("write_ready")
         if self.write_buffer.empty():
             if self.current_cb:
                 cb = self.current_cb
@@ -155,7 +158,6 @@ class HTTPConnection(object):
                 self.current_cb = None
             if not self.response_queue:
                 self.current_cb = None
-                self.current_response = None
                 self.wevent = None
                 return None
             data, self.current_cb, self.current_args, self.current_eb, self.current_ebargs = self.response_queue.pop(0)
@@ -170,6 +172,8 @@ class HTTPConnection(object):
                 self.current_ebargs = None
                 return None
         try:
+            self.log.debug("buffer", len(self.write_buffer.get_value()))
+            self.log.debug("queue", len(self.response_queue))
             bsent = self.sock.send(self.write_buffer.get_value())
             self.write_buffer.move(bsent)
             return True

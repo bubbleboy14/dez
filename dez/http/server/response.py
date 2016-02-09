@@ -9,6 +9,7 @@ class HTTPResponse(object):
         HTTPResponse.id += 1
 
         self.id = HTTPResponse.id
+        self.log = request.conn.get_logger("HTTPResponse(%s)"%(self.id,))
         self.request = request
         self.headers = {
             'Content-Type': 'text/html'
@@ -34,8 +35,10 @@ class HTTPResponse(object):
 
     def end_or_close(self, cb):
         if self.keep_alive:
+            self.log.debug("end_or_close", "ending")
             self.request.end(cb)
         else:
+            self.log.debug("end_or_close", "closing")
             self.request.close(cb)
 
     def render(self):
@@ -46,12 +49,15 @@ class HTTPResponse(object):
         h += "\r\n\r\n"
         response = status_line + h + "".join(self.buffer)
         self.buffer = []
+        self.log.debug("render", len(response))
         return response
 
     def dispatch_now(self, cb=None):
+        self.log.debug("dispatch_now")
         self.request.write_now(self.render(), self.end_or_close, [cb])
 
     def dispatch(self, cb=None):
+        self.log.debug("dispatch")
         self.request.write(self.render(), self.end_or_close, [cb])
 
 class HTTPVariableResponse(object):
