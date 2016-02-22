@@ -37,7 +37,8 @@ class HTTPRequest(object):
         self.action = self.conn.buffer.part(0, i)
         try:
             self.method, self.url, self.protocol = self.action.split(' ', 2)
-        except ValueError:
+        except ValueError, e:
+            self.log.debug("state_action", "ValueError", e)
             raise HTTPProtocolError, "Invalid HTTP status line"
         #self.protocol = self.protocol.lower()
         url_scheme, version = self.protocol.split('/',1)
@@ -60,7 +61,8 @@ class HTTPRequest(object):
                 return self.state_headers_completed()
             try:
                 key, value = self.conn.buffer.part(0, index).split(': ', 1)
-            except ValueError:
+            except ValueError, e:
+                self.log.debug("state_headers", "ValueError", e)
                 raise HTTPProtocolError, "Invalid HTTP header format"
             self.headers[key.lower()] = value
             self.case_match_headers[key] = key
@@ -118,6 +120,7 @@ class HTTPRequest(object):
             self.conn.buffer.move(self.content_length)
         if len(self.conn.buffer) > 0:
             b = self.conn.buffer.get_value()
+            self.log.debug("state_completed", "extra data", b)
             if b == "\r\n":
                 # buffer is line break -- letting it slide
                 self.conn.buffer.exhaust()
@@ -127,7 +130,7 @@ class HTTPRequest(object):
         return self.state_write()
 
     def state_write(self):
-        self.log.debug("state_write")
+        self.log.debug("state_write", self.state, self.pending_actions)
         while len(self.pending_actions):
             mode, data, cb, args, eb, ebargs = self.pending_actions.pop(0)
             if mode == "write":
@@ -142,6 +145,7 @@ class HTTPRequest(object):
     def write(self, data, cb=None, args=[], eb=None, ebargs=[], override=False):
         self.log.debug("write", self.state, len(data))
         if self.write_ended and not override:
+            self.log.debug("write", "Exception", "end already called")
             raise Exception, "end already called"
         if self.state != 'write':
             self.pending_actions.append(("write", data, cb, args, eb, ebargs))
@@ -177,6 +181,7 @@ class HTTPRequest(object):
     def end(self, cb=None, args=[]):
         self.log.debug("end", self.write_ended, self.state)
         if self.write_ended:
+            self.log.debug("end", "Exception", "end already called")
             raise Exception, "end already called"
         if self.state != "write":
             self.pending_actions.append(("end", None, cb, args, None, None))
@@ -188,6 +193,7 @@ class HTTPRequest(object):
     def close(self, cb=None, args=[]):
         self.log.debug("close", self.write_ended, self.state)
         if self.write_ended:
+            self.log.debug("close", "Exception", "end already called")
             raise Exception, "end already called"
         if self.state != "write":
             self.pending_actions.append(("close", None, cb, args, None, None))

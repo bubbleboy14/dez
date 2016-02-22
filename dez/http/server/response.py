@@ -52,7 +52,7 @@ class HTTPResponse(object):
         self.log.debug("render", len(response))
         return response
 
-    def dispatch_now(self, cb=None):
+    def dispatch_now(self, cb=None): # this should maybe not be used...
         self.log.debug("dispatch_now")
         self.request.write_now(self.render(), self.end_or_close, [cb])
 
@@ -180,9 +180,11 @@ class WSGIResponse(object):
         
         try:
             first_iteration = output.next()
-        except StopIteration:
+        except StopIteration, e:
+            self.log.debug("body_cb", "StopIteration", e)
             first_iteration = ""
         if self.headers_sent:
+            self.log.debug("body_cb", "AssertionError", "start_response was not called")
             raise AssertionError("start_response was not called")
         
         self.response.write(first_iteration)

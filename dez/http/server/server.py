@@ -116,7 +116,8 @@ class HTTPConnection(object):
                 self.close()
                 return None
             return self.read(data)
-        except io.socket.error:
+        except io.socket.error, e:
+            self.log.debug("read_ready", "io.socket.error", e)
             self.close()
             return None
 
