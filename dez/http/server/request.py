@@ -48,6 +48,7 @@ class HTTPRequest(object):
         self.url_scheme = url_scheme.lower()
         self.conn.buffer.move(i+2)
         self.state = 'headers'
+        self.log.debug("state_action", self.action)
         return self.state_headers()
     
     def state_headers(self):
@@ -57,8 +58,12 @@ class HTTPRequest(object):
                 return False
             if index == 0:
                 self.conn.buffer.move(2)
-                self.state = 'headers_completed'
-                return self.state_headers_completed()
+                self.content_length = int(self.headers.get('content-length', '0'))
+                self.headers_complete = True
+                self.state = 'waiting'
+                self.log.debug("waiting", self.content_length)
+                self.conn.route(self)
+                return True
             try:
                 key, value = self.conn.buffer.part(0, index).split(': ', 1)
             except ValueError, e:
@@ -68,16 +73,11 @@ class HTTPRequest(object):
             self.case_match_headers[key] = key
             self.conn.buffer.move(index+2)
 
-    def state_headers_completed(self):
-        self.content_length = int(self.headers.get('content-length', '0'))
-        self.headers_complete = True
-        self.state = 'waiting'
-
     def state_waiting(self):
         pass
 
     def read_body(self, cb, args=[]):
-        self.log.debug("read_body", self.state)
+        self.log.debug("read_body", self.state, self.content_length)
         self.body_cb = cb, args
         self.state = 'body'
         self.remaining_content = self.content_length
@@ -85,6 +85,7 @@ class HTTPRequest(object):
             self.state = "completed"
             return self.state_completed()
         self.conn.read_body()
+        return self.state_body()
 
     def read_body_stream(self, stream_cb, args=[]):
         self.remaining_content = self.content_length
@@ -112,12 +113,15 @@ class HTTPRequest(object):
         self.state = 'write'
         if self.body_stream_cb:
             cb, args = self.body_stream_cb
+            self.log.debug("firing body_stream callback", str(cb))
             cb("", *args)
         elif self.body_cb:
             cb, args = self.body_cb
-            if cb:
-                cb(self.conn.buffer.part(0, self.content_length), *args)
+            self.log.debug("firing body callback", str(cb))
+            d = self.conn.buffer.part(0, self.content_length)
             self.conn.buffer.move(self.content_length)
+            if cb:
+                cb(d, *args)
         if len(self.conn.buffer) > 0:
             b = self.conn.buffer.get_value()
             self.log.debug("state_completed", "extra data", b)
@@ -126,7 +130,6 @@ class HTTPRequest(object):
                 self.conn.buffer.exhaust()
             else:
                 raise HTTPProtocolError, "Unexpected Data: %s" % (repr(b),)
-
         return self.state_write()
 
     def state_write(self):
@@ -134,13 +137,11 @@ class HTTPRequest(object):
         while len(self.pending_actions):
             mode, data, cb, args, eb, ebargs = self.pending_actions.pop(0)
             if mode == "write":
-                self.write(data, cb, args, eb, ebargs, override=True)
+                self.write(data, cb, args, eb, ebargs)
             elif mode == "end":
                 self.end(cb)
-                break
             elif mode == "close":
                 self.close(cb)
-                break
 
     def write(self, data, cb=None, args=[], eb=None, ebargs=[], override=False):
         self.log.debug("write", self.state, len(data))
@@ -148,9 +149,11 @@ class HTTPRequest(object):
             self.log.debug("write", "Exception", "end already called")
             raise Exception, "end already called"
         if self.state != 'write':
+            self.log.debug("state is not 'write'", self.state)
             self.pending_actions.append(("write", data, cb, args, eb, ebargs))
             if self.state == 'waiting':
                 self.state = 'body'
+            self.log.debug("calling process() from write()")
             return self.process()
         if len(data) == 0:
             return cb(*args)
@@ -163,12 +166,7 @@ class HTTPRequest(object):
 
     def write_cb(self, *args):
         self.write_queue_size -= 1
-        self.log.debug("write_cb", self.write_queue_size, self.write_ended)
-        if self.write_ended and self.write_queue_size == 0:
-            if self.send_close:
-                self.conn.close()
-            else:
-                self.conn.start_request()
+        self.log.debug("write_cb", self.write_queue_size, self.write_ended, args)
         if len(args) > 0 and args[0] is not None:
             cb = args[0]
             cbargs = None
@@ -177,6 +175,11 @@ class HTTPRequest(object):
             if cbargs is None:
                 cbargs = []
             cb(*cbargs)
+        if self.write_ended and self.write_queue_size == 0:
+            if self.send_close:
+                self.conn.close()
+            else:
+                self.conn.start_request()
 
     def end(self, cb=None, args=[]):
         self.log.debug("end", self.write_ended, self.state)

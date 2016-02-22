@@ -78,7 +78,7 @@ class HTTPApplication(object):
         app_cb = cb
         if parsed:
             def format_wrapper(req):
-                req = ParsedHTTPRequest(req, cb)
+                ParsedHTTPRequest(req, cb)
             app_cb = format_wrapper
         self.daemon.register_cb(prefix, app_cb)
 
