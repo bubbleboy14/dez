@@ -177,6 +177,7 @@ class HTTPRequest(object):
             cb(*cbargs)
         if self.write_ended and self.write_queue_size == 0:
             if self.send_close:
+                self.state = "closed"
                 self.conn.close()
             else:
                 self.conn.start_request()
@@ -189,6 +190,7 @@ class HTTPRequest(object):
         if self.state != "write":
             self.pending_actions.append(("end", None, cb, args, None, None))
             return
+        self.state = "ended"
         self.write_ended = True
         self.write_queue_size +=1
         self.conn.write("", self.write_cb, (cb, args))
@@ -201,9 +203,8 @@ class HTTPRequest(object):
         if self.state != "write":
             self.pending_actions.append(("close", None, cb, args, None, None))
             return
-        if not self.write_ended:
-            self.end(cb, args)
         self.send_close = True
+        self.end(cb, args)
 
     def close_now(self, reason="hard close"):
         self.conn.close(reason)
