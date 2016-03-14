@@ -241,8 +241,9 @@ class WebSocketConnection(object):
         self.conn.close()
 
 def startwebsocketproxy():
-    parser = optparse.OptionParser('dez_websocket_proxy [DOMAIN] [PORT]')
+    parser = optparse.OptionParser('dez_websocket_proxy [DOMAIN] [PORT] [--port=PUBLIC_PORT')
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="verbose output")
+    parser.add_option("-p", "--port", dest="port", default="81", help="public-facing port (default: 81)")
     options, args = parser.parse_args()
     try:
         hostname, port = args
@@ -255,10 +256,15 @@ def startwebsocketproxy():
         print '\nThe second argument must be an integer. The command should look like this:\n\ndez_websocket_proxy mydomain.com 5555\n\nTry again!'
         return
     try:
-        proxy = WebSocketProxy('localhost', 81, hostname, port, verbose=options.verbose)
+        options.port = int(options.port)
+    except:
+        print '\nThe -p (or --port) option must be an integer. The command should look like this:\n\ndez_websocket_proxy mydomain.com 5555 -p 82 (or something)\n\nTry again!'
+        return
+    try:
+        proxy = WebSocketProxy('localhost', options.port, hostname, port, verbose=options.verbose)
     except:
         print '\nPermission denied to use port %s. Depending on how your system is set up, you may need root privileges to run the proxy.'%(port)
         return
-    print 'running WebSocket server on port 81'
+    print 'running WebSocket server on port', options.port
     print 'proxying to %s:%s'%(hostname, port)
     proxy.start()
