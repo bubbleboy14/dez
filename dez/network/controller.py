@@ -4,8 +4,8 @@ from dez.network.websocket import WebSocketDaemon
 from dez.http.server import HTTPDaemon
 from dez.http.application import HTTPApplication
 
-def daemon_wrapper(dclass):
-    return lambda h, p, *args, **kwargs : dclass(h, p)
+def daemon_wrapper(dclass, *dargs):
+    return lambda h, p, *args, **kwargs : dclass(h, p, *dargs)
 
 heads = {
     "socket": SocketDaemon,
