@@ -24,7 +24,7 @@ setup(
     ],
     zip_safe = False,
     install_requires = [
-        "rel >= 0.3.4",
+        "rel >= 0.3.5",
         "demjson"
     ],
     entry_points = '''
