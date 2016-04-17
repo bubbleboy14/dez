@@ -8,7 +8,7 @@ class Memcache(object):
 
 	def get(self, key, tojson=True):
 		val = self.cache.get(key)
-		return tojson and json.encode(val) or val
+		return (val and tojson) and json.encode(val) or val
 
 	def set(self, key, val, fromjson=True):
 		self.cache[key] = fromjson and json.decode(val) or val
