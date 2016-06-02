@@ -6,7 +6,6 @@ from dez.xml_tools import extract_xml, XMLNode
 
 RBUFF = {True:B64ReadBuffer, False:Buffer}
 WBUFF = {True:B64WriteBuffer, False:Buffer}
-SCINT = 0.1
 
 class Connection(object):
     id = 0
@@ -26,6 +25,7 @@ class Connection(object):
         self.__mode_changed = False
         self.__release_timer = None
         self.__close_cb = None
+        self.__soft_close = False
         self.revent = None
         self.wevent = None
         if not self.pool:
@@ -64,7 +64,10 @@ class Connection(object):
 
     def soft_close(self, reason=""):
         if self.__write_chunk or self.__write_queue:
-            return event.timeout(SCINT, self.soft_close, reason)
+            self.__soft_close = True
+            if not self.wevent.pending():
+                self.wevent.add()
+            return
         self.close(reason)
 
     def close(self, reason=""):
@@ -184,6 +187,8 @@ class Connection(object):
                 self.__write_chunk.completed()
                 self.__write_chunk = None
             if not self.__write_queue:
+                if self.__soft_close:
+                    self.close("soft close")
                 return None
             self.__write_chunk = self.__write_queue.pop(0)
             self.__write_buffer.reset(self.__write_chunk.data)
