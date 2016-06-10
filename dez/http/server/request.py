@@ -37,15 +37,16 @@ class HTTPRequest(object):
         self.action = self.conn.buffer.part(0, i)
         try:
             self.method, self.url, self.protocol = self.action.split(' ', 2)
+            url_scheme, version = self.protocol.split('/',1)
+            major, minor = version.split('.', 1)
+            self.version_major = int(major)
+            self.version_minor = int(minor)
+            self.url_scheme = url_scheme.lower()
         except ValueError, e:
             self.log.debug("state_action", "ValueError", e)
-            raise HTTPProtocolError, "Invalid HTTP status line"
+            return self.close_now()
+#            raise HTTPProtocolError, "Invalid HTTP status line"
         #self.protocol = self.protocol.lower()
-        url_scheme, version = self.protocol.split('/',1)
-        major, minor = version.split('.', 1)
-        self.version_major = int(major)
-        self.version_minor = int(minor)
-        self.url_scheme = url_scheme.lower()
         self.conn.buffer.move(i+2)
         self.state = 'headers'
         self.log.debug("state_action", self.action)
@@ -68,7 +69,8 @@ class HTTPRequest(object):
                 key, value = self.conn.buffer.part(0, index).split(': ', 1)
             except ValueError, e:
                 self.log.debug("state_headers", "ValueError", e)
-                raise HTTPProtocolError, "Invalid HTTP header format"
+                return self.close_now()
+#                raise HTTPProtocolError, "Invalid HTTP header format"
             self.headers[key.lower()] = value
             self.case_match_headers[key] = key
             self.conn.buffer.move(index+2)
