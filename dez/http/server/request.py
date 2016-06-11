@@ -1,4 +1,4 @@
-import event
+import event, os
 from dez.http.errors import HTTPProtocolError
 
 class HTTPRequest(object):
@@ -37,6 +37,10 @@ class HTTPRequest(object):
         self.action = self.conn.buffer.part(0, i)
         try:
             self.method, self.url, self.protocol = self.action.split(' ', 2)
+            p, qs = self.url, ""
+            if "?" in self.url:
+                p, qs = self.url.split("?")
+            os.environ.update(PATH_INFO=p, QUERY_STRING=qs)
             url_scheme, version = self.protocol.split('/',1)
             major, minor = version.split('.', 1)
             self.version_major = int(major)
