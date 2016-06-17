@@ -40,8 +40,8 @@ class BasicLogger(object):
 	def warn(self, msg, *args, **kwargs):
 		self._log("warn", msg, *args, **kwargs)
 
-	def error(self, msg, *args, **kwargs):
-		self._log("error", msg, *args, **kwargs)
+	def error(self, *args, **kwargs):
+		self._log("error", " ".join([str(a) for a in args]), **kwargs)
 
 def _log_write(s):
 	print s
