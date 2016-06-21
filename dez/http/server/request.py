@@ -135,7 +135,7 @@ class HTTPRequest(object):
                 # buffer is line break -- letting it slide
                 self.conn.buffer.exhaust()
             else:
-                this.log.error("completed", "HTTPProtocolError", "Unexpected Data: %s" % (repr(b),))
+                self.log.error("completed", "HTTPProtocolError", "Unexpected Data: %s" % (repr(b),))
                 return self.close_now()
 #                raise HTTPProtocolError, "Unexpected Data: %s" % (repr(b),)
         return self.state_write()
