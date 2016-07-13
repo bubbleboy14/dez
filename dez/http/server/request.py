@@ -25,7 +25,7 @@ class HTTPRequest(object):
 
     def process(self):
         self.log.debug("process", self.state)
-        return getattr(self, 'state_%s' % self.state)()
+        return getattr(self, 'state_%s' % (self.state,), lambda : None)()
 
     def set_close_cb(self, cb, args):
         self.conn.set_close_cb(cb, args)
