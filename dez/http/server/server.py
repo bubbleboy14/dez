@@ -129,29 +129,26 @@ class HTTPConnection(object):
         self.log.debug("read_body")
         if self.revent:
             self.log.debug("revent exists?")
-        self.revent = event.read(self.sock, self.read_ready)
+        else:
+            self.revent = event.read(self.sock, self.read_ready)
 
     def route(self, request):
-        self.log.debug("route", request.id)
-        self.log.debug(" - deleting revent")
-        self.revent.delete()
-        self.revent = None
-        self.log.debug(" - dispatching router")
+        self.log.debug("route", request.id, "[deleting revent]", "[dispatching router]")
         dispatch_cb, args = self.router(request.url)
         dispatch_cb(request, *args)
+
+    def complete(self):
+        self.log.debug("request completed (%s) -- deleting revent"%(self.request.id,))
+        self.revent.delete()
+        self.revent = None
 
     def read(self, data):
         self.log.debug("read", self.state)
         if self.state != "read":
-            self.log.error("Invalid additional data: %s" % data)
+            self.log.debug("Invalid additional data: %s" % data)
             self.close()
         self.buffer += data
         self.request.process()
-        if self.request.state == "completed":
-            self.log.debug("request completed (%s) -- deleting revent"%(self.request.id,))
-            self.revent.delete()
-            self.revent = None
-            return None
         return self.request.state != "waiting"
 
     def write(self, data, cb, args, eb=None, ebargs=[]):

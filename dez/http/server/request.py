@@ -13,14 +13,12 @@ class HTTPRequest(object):
         self.headers = {}
         self.case_match_headers = {}
         self.headers_complete = False
-        self.complete = False
         self.write_ended = False
         self.send_close = False
         self.body = None
         self.body_cb = None
         self.body_stream_cb = None
         self.remaining_content = 0
-        self.write_queue_size = 0
         self.pending_actions = []
 
     def process(self):
@@ -88,8 +86,7 @@ class HTTPRequest(object):
         self.state = 'body'
         self.remaining_content = self.content_length
         if self.remaining_content == 0:
-            self.state = "completed"
-            return self.state_completed()
+            return self.complete()
         self.conn.read_body()
         return self.state_body()
 
@@ -111,11 +108,11 @@ class HTTPRequest(object):
         elif len(self.conn.buffer) >= self.content_length:
             self.remaining_content = 0
         if self.remaining_content == 0:
-            self.state = 'completed'
-            return self.state_completed()
+            return self.complete()
 
-    def state_completed(self):
-        self.log.debug("state_completed")
+    def complete(self):
+        self.log.debug("complete")
+        self.conn.complete()
         self.state = 'write'
         if self.body_stream_cb:
             cb, args = self.body_stream_cb
@@ -128,17 +125,7 @@ class HTTPRequest(object):
             self.conn.buffer.move(self.content_length)
             if cb:
                 cb(d, *args)
-        if len(self.conn.buffer) > 0:
-            b = self.conn.buffer.get_value()
-            self.log.debug("state_completed", "extra data", b)
-            if b == "\r\n":
-                # buffer is line break -- letting it slide
-                self.conn.buffer.exhaust()
-            else:
-                self.log.error("completed", "HTTPProtocolError", "Unexpected Data: %s" % (repr(b),))
-                return self.close_now()
-#                raise HTTPProtocolError, "Unexpected Data: %s" % (repr(b),)
-        return self.state_write()
+        self.state_write()
 
     def state_write(self):
         self.log.debug("state_write", self.state, self.pending_actions)
@@ -147,16 +134,14 @@ class HTTPRequest(object):
             if mode == "write":
                 self.write(data, cb, args, eb, ebargs)
             elif mode == "end":
-                self.end(cb)
+                self.end(cb, args)
             elif mode == "close":
-                self.close(cb)
+                self.close(cb, args)
 
     def write(self, data, cb=None, args=[], eb=None, ebargs=[], override=False):
         self.log.debug("write", self.state, len(data))
         if self.write_ended and not override:
-            self.log.error("write", "Exception", "end already called")
-            return
-#            raise Exception, "end already called"
+            raise Exception, "end already called"
         if self.state != 'write':
             self.log.debug("state is not 'write'", self.state)
             self.pending_actions.append(("write", data, cb, args, eb, ebargs))
@@ -166,16 +151,10 @@ class HTTPRequest(object):
             return self.process()
         if len(data) == 0:
             return cb(*args)
-        self.write_now(data, cb, args, eb, ebargs)
-
-    def write_now(self, data, cb=None, args=[], eb=None, ebargs=[]):
-        self.write_queue_size += 1
-        self.log.debug("write_now", self.write_queue_size, len(data))
         self.conn.write(data, self.write_cb, (cb, args), eb, ebargs)
 
     def write_cb(self, *args):
-        self.write_queue_size -= 1
-        self.log.debug("write_cb", self.write_queue_size, self.write_ended, args)
+        self.log.debug("write_cb", self.write_ended, args)
         if len(args) > 0 and args[0] is not None:
             cb = args[0]
             cbargs = None
@@ -184,36 +163,32 @@ class HTTPRequest(object):
             if cbargs is None:
                 cbargs = []
             cb(*cbargs)
-        if self.write_ended and self.write_queue_size == 0:
+        if self.write_ended and not self.conn.wevent:
             if self.send_close:
+                self.log.debug("closing!!")
                 self.state = "closed"
                 self.conn.close()
             else:
+                self.log.debug("restarting!!")
                 self.conn.start_request()
 
     def end(self, cb=None, args=[]):
         self.log.debug("end", self.write_ended, self.state)
         if self.write_ended:
-            self.log.error("end", "Exception", "end already called")
-            return
-#            raise Exception, "end already called"
+            return self.log.error("end", "Exception", "end already called")
         if self.state != "write":
             self.pending_actions.append(("end", None, cb, args, None, None))
             return
         self.state = "ended"
         self.write_ended = True
-        self.write_queue_size +=1
         self.conn.write("", self.write_cb, (cb, args))
 
     def close(self, cb=None, args=[]):
         self.log.debug("close", self.write_ended, self.state)
         if self.write_ended:
-            self.log.error("close", "Exception", "end already called")
-            return
-#            raise Exception, "end already called"
+            return self.log.error("close", "Exception", "end already called")
         if self.state != "write":
-            self.pending_actions.append(("close", None, cb, args, None, None))
-            return
+            return self.pending_actions.append(("close", None, cb, args, None, None))
         self.send_close = True
         self.end(cb, args)
 
