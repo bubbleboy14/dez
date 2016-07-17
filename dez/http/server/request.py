@@ -20,6 +20,7 @@ class HTTPRequest(object):
         self.body_stream_cb = None
         self.remaining_content = 0
         self.pending_actions = []
+        self.log.debug("init")
 
     def process(self):
         self.log.debug("process", self.state)
@@ -153,16 +154,10 @@ class HTTPRequest(object):
             return cb(*args)
         self.conn.write(data, self.write_cb, (cb, args), eb, ebargs)
 
-    def write_cb(self, *args):
-        self.log.debug("write_cb", self.write_ended, args)
-        if len(args) > 0 and args[0] is not None:
-            cb = args[0]
-            cbargs = None
-            if len(args) > 1:
-                cbargs = args[1]
-            if cbargs is None:
-                cbargs = []
-            cb(*cbargs)
+    def write_cb(self, cb=None, args=[]):
+        self.log.debug("write_cb", self.write_ended)
+        if cb:
+            cb(*args)
         if self.write_ended and not self.conn.wevent:
             if self.send_close:
                 self.log.debug("closing!!")
@@ -175,7 +170,7 @@ class HTTPRequest(object):
     def end(self, cb=None, args=[]):
         self.log.debug("end", self.write_ended, self.state)
         if self.write_ended:
-            return self.log.error("end", "Exception", "end already called")
+            return self.log.error("END", "end already called")
         if self.state != "write":
             self.pending_actions.append(("end", None, cb, args, None, None))
             return
@@ -186,7 +181,7 @@ class HTTPRequest(object):
     def close(self, cb=None, args=[]):
         self.log.debug("close", self.write_ended, self.state)
         if self.write_ended:
-            return self.log.error("close", "Exception", "end already called")
+            return self.log.error("CLOSE", "end already called")
         if self.state != "write":
             return self.pending_actions.append(("close", None, cb, args, None, None))
         self.send_close = True
