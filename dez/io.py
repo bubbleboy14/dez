@@ -1,6 +1,6 @@
 import socket
 LQUEUE_SIZE = 5
-BUFFER_SIZE = 4096
+BUFFER_SIZE = 131072
 
 def server_socket(port):
     ''' Return a listening socket bound to the given interface and port. '''
