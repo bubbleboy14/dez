@@ -2,7 +2,7 @@ import mimetypes, os
 from dez.http.inotify import INotify
 
 class BasicCache(object):
-    def __init__(self, streaming=False):
+    def __init__(self, streaming=True):
         self.cache = {}
         self.streaming = streaming
 
