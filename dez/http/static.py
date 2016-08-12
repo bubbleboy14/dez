@@ -1,7 +1,7 @@
 from dez.http.server import HTTPResponse, HTTPVariableResponse
 from dez.http.cache import NaiveCache, INotifyCache
 from dez import io
-import os
+import os, urllib
 
 class StaticHandler(object):
     def __init__(self, server_name):
@@ -31,19 +31,20 @@ class StaticHandler(object):
             response.dispatch()
 
     def __call__(self, req, prefix, directory):
+        url = urllib.unquote(req.url)
         if "*" in prefix: # regex
-            path = directory + req.url
+            path = directory + url
         else:
-            path = os.path.join(directory, req.url[len(prefix):])
+            path = os.path.join(directory, url[len(prefix):])
         if os.path.isdir(path):
-            url = req.url
             if not self._try_index(req, path):
                 if url.endswith('/'):
                     url = url[:-1]
                 return self.__respond(req, data=[
                     '<b>%s</b><br><br>'%(url,),
                     "<a href=%s>..</a><br>"%(os.path.split(url)[0],)
-                ] + ["<a href=%s/%s>%s</a><br>"%(url,child,child) for child in os.listdir(path)])
+                ] + ["<a href=%s>%s</a><br>"%(urllib.quote("%s/%s"%(url,
+                    child)),child) for child in os.listdir(path)])
         else:
             self.cache.get(req, path, self.__write, self.__stream, self.__404)
 
