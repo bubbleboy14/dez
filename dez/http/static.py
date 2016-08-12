@@ -1,7 +1,7 @@
 from dez.http.server import HTTPResponse, HTTPVariableResponse
 from dez.http.cache import NaiveCache, INotifyCache
 from dez import io
-import os, urllib
+import os, urllib, event
 
 class StaticHandler(object):
     def __init__(self, server_name):
@@ -13,7 +13,7 @@ class StaticHandler(object):
             self.cache = NaiveCache()
             #print "static cache: NaiveCache"
 
-    def __respond(self, req, path=None, ctype=False, data=[], stream=False):
+    def __respond(self, req, path=None, ctype=False, headers={}, data=[], stream=False):
         if stream:
             response = HTTPVariableResponse(req)
         else:
@@ -21,12 +21,21 @@ class StaticHandler(object):
         response.headers['Server'] = self.server_name
         if ctype:
             response.headers['Content-Type'] = self.cache.get_type(path)
+        for header in headers:
+            response.headers[header] = headers[header]
         if not path:
             response.status = "404 Not Found"
         for d in data:
             response.write(d)
         if stream:
-            self.__write_file(response, open(path), path)
+            openfile = open(path)
+            limit = os.stat(path).st_size
+            if "range" in req.headers:
+                rs, re = self.__range(req, response.headers, limit)
+                rs and openfile.seek(rs)
+                if re:
+                    limit = re - rs
+            self.__write_file(response, openfile, path, limit)
         else:
             response.dispatch()
 
@@ -56,8 +65,19 @@ class StaticHandler(object):
             return True
         return False
 
+    def __range(self, req, headers, size):
+        rs, re = req.headers["range"][6:].split("-")
+        headers["Content-Range"] = "bytes %s-%s/%s"%(rs, re or size, size)
+        headers["Accept-Range"] = "bytes"
+        return int(rs), re and int(re) or None
+
     def __write(self, req, path):
-        self.__respond(req, path, True, [self.cache.get_content(path)])
+        data = self.cache.get_content(path)
+        headers = {}
+        if "range" in req.headers:
+            rs, re = self.__range(req, headers, len(data))
+            data = data[rs:re]
+        self.__respond(req, path, True, headers, [data])
 
     def __stream(self, req, path):
         self.__respond(req, path, True, stream=True)
@@ -67,9 +87,10 @@ class StaticHandler(object):
             "<b>404</b><br>Requested resource \"<i>%s</i>\" not found" % (req.url,)
         ])
 
-    def __write_file(self, response, openfile, path):
-        data = openfile.read(io.BUFFER_SIZE)
+    def __write_file(self, response, openfile, path, limit):
+        data = openfile.read(min(limit, io.BUFFER_SIZE))
+        limit -= len(data)
         if data == "":
             return response.end()
         self.cache.add_content(path, data)
-        response.write(data, self.__write_file, [response, openfile, path])
+        event.timeout(0, response.write, data, self.__write_file, [response, openfile, path, limit])
