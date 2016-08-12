@@ -87,6 +87,8 @@ class HTTPVariableResponse(object):
     def write(self, data, cb=None, args=[]):
         if not self.started:
             self.__start_response()
+        if self.request.write_ended:
+            return
         if not data:
             return
         if self.version_minor == 1:
@@ -95,7 +97,7 @@ class HTTPVariableResponse(object):
             self.request.write(data, cb, args)
 
     def __write_chunk(self, data, cb=None, args=[]):
-        self.request.write("%X\r\n%s\r\n"%(len(data),data))
+        self.request.write("%X\r\n%s\r\n"%(len(data), data))
         if cb:
             cb(*args)
 

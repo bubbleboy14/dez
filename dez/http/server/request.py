@@ -20,11 +20,15 @@ class HTTPRequest(object):
         self.body_stream_cb = None
         self.remaining_content = 0
         self.pending_actions = []
+        self.set_close_cb(self._onclose, [])
         self.log.debug("init")
 
     def process(self):
         self.log.debug("process", self.state)
         return getattr(self, 'state_%s' % (self.state,), lambda : None)()
+
+    def _onclose(self):
+        self.write_ended = True
 
     def set_close_cb(self, cb, args):
         self.conn.set_close_cb(cb, args)
@@ -151,7 +155,7 @@ class HTTPRequest(object):
             self.log.debug("calling process() from write()")
             return self.process()
         if len(data) == 0:
-            return cb(*args)
+            return cb and cb(*args)
         self.conn.write(data, self.write_cb, (cb, args), eb, ebargs)
 
     def write_cb(self, cb=None, args=[]):
