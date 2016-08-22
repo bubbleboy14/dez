@@ -74,9 +74,10 @@ class HTTPVariableResponse(object):
         self.version_major = 1
         self.version_minor = min(1, request.version_minor)
         if self.version_minor == 1:
-            self.headers['Connection'] = 'keep-alive'
-            self.headers['Keep-alive'] = '300'
             self.headers['Transfer-encoding'] = 'chunked'
+            if request.headers.get("connection") == "keep-alive":
+                self.headers['Connection'] = 'keep-alive'
+                self.headers['Keep-alive'] = '300'
 
     def __setitem__(self, key, val):
         self.headers[key] = val
