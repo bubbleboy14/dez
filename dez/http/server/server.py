@@ -87,6 +87,22 @@ class HTTPConnection(object):
         self.state = "read"
         if len(self.buffer):
             self.request.process()
+#        else:
+#            event.timeout(2, self.nudge_request(self.request))
+
+    def nudge_request(self, request):
+        self.log.debug("setting up nudge")
+        def _f():
+            self.log.debug("might nudge request", request.id, request.state, len(self.buffer))
+            if request.state == "action" and len(self.buffer):
+                self.log.debug("nudging!")
+                request.process()
+            elif request.state not in ["ended", "closed"]:
+                self.log.debug("closing!!?!")
+                request.close_now()
+#                self.revent.add()
+#                return request.state != "ended"
+        return _f
 
     def close(self, reason=""):
         self.log.debug("close")
@@ -134,6 +150,7 @@ class HTTPConnection(object):
 
     def route(self, request):
         self.log.debug("route", request.id, "[deleting revent]", "[dispatching router]")
+        request.state = "write" # questionable
         dispatch_cb, args = self.router(request.url)
         dispatch_cb(request, *args)
 
