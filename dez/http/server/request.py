@@ -21,7 +21,6 @@ class HTTPRequest(object):
         self.remaining_content = 0
         self.pending_actions = []
         self.set_close_cb(self._onclose, [])
-        self.log.debug("init")
 
     def process(self):
         self.log.debug("process", self.state)
