@@ -26,17 +26,24 @@ class BasicCache(object):
     def add_content(self, path, data):
         self.cache[path]['content'] += data
 
-    def _return(self, req, path, write_back, stream_back):
-        (self.streaming and stream_back or write_back)(req, path)
+    def _empty(self, path):
+        return not self.cache[path]['content']
+
+    def _return(self, req, path, write_back, stream_back, err_back):
+        if self._empty(path):
+            err_back(req)
+        else:
+            (self.streaming and stream_back or write_back)(req, path)
 
     def get(self, req, path, write_back, stream_back, err_back):
         if self._is_current(path):
-            return self._return(req, path, write_back, stream_back)
-        if os.path.isfile(path):
+            self._return(req, path, write_back, stream_back, err_back)
+        elif os.path.isfile(path):
             self._new_path(path, req.url)
             self.__update(path)
-            return self._return(req, path, write_back, stream_back)
-        err_back(req)
+            self._return(req, path, write_back, stream_back, err_back)
+        else:
+            err_back(req)
 
 class NaiveCache(BasicCache):
     def _is_current(self, path):
