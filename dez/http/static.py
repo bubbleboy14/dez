@@ -1,10 +1,13 @@
+from dez.logging import default_get_logger
 from dez.http.server import HTTPResponse, HTTPVariableResponse
 from dez.http.cache import NaiveCache, INotifyCache
 from dez import io
 import os, urllib, event
 
 class StaticHandler(object):
-    def __init__(self, server_name):
+    def __init__(self, server_name, get_logger=default_get_logger):
+        self.log = get_logger("StaticHandler")
+        self.log.debug("__init__")
         self.server_name = server_name
         try:
             self.cache = INotifyCache()
@@ -42,6 +45,7 @@ class StaticHandler(object):
             response.dispatch()
 
     def __call__(self, req, prefix, directory):
+        self.log.debug("__call__", prefix, directory)
         url = urllib.unquote(req.url)
         if "*" in prefix: # regex
             path = directory + url
