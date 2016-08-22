@@ -35,6 +35,8 @@ class StaticHandler(object):
                 rs and openfile.seek(rs)
                 if re:
                     limit = re - rs
+                response.status = "206 Partial Content"
+            response.headers["Content-Length"] = str(limit)
             self.__write_file(response, openfile, path, limit)
         else:
             response.dispatch()
@@ -67,7 +69,7 @@ class StaticHandler(object):
 
     def __range(self, req, headers, size):
         rs, re = req.headers["range"][6:].split("-")
-        headers["Content-Range"] = "bytes %s-%s/%s"%(rs, re or size, size)
+        headers["Content-Range"] = "bytes %s-%s/%s"%(rs, re or (size - 1), size)
         headers["Accept-Range"] = "bytes"
         return int(rs), re and int(re) or None
 
@@ -91,6 +93,7 @@ class StaticHandler(object):
         data = openfile.read(min(limit, io.BUFFER_SIZE))
         limit -= len(data)
         if data == "":
+            openfile.close()
             return response.end()
         self.cache.add_content(path, data)
         event.timeout(0, response.write, data, self.__write_file, [response, openfile, path, limit])
