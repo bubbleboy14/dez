@@ -2,7 +2,7 @@ import mimetypes, os
 from dez.http.inotify import INotify
 
 class BasicCache(object):
-    def __init__(self, streaming=True):
+    def __init__(self, streaming=False):
         self.cache = {}
         self.streaming = streaming
 
@@ -13,9 +13,12 @@ class BasicCache(object):
         return mimetype
 
     def __update(self, path):
-        f = open(path,'r')
-        self.cache[path]['content'] = f.read()
-        f.close()
+        if self.streaming:
+            self.cache[path]['content'] = bool(os.stat(path).st_size)
+        else:
+            f = open(path,'r')
+            self.cache[path]['content'] = f.read()
+            f.close()
 
     def get_type(self, path):
         return self.cache[path]['type']
