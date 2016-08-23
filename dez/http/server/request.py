@@ -158,7 +158,7 @@ class HTTPRequest(object):
         self.conn.write(data, self.write_cb, (cb, args), eb, ebargs)
 
     def write_cb(self, cb=None, args=[]):
-        self.log.debug("write_cb", self.write_ended)
+        self.log.debug("write_cb", self.write_ended, cb)
         if cb:
             cb(*args)
         if self.write_ended and not self.conn.wevent.pending():
