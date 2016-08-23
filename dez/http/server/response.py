@@ -12,6 +12,7 @@ class HTTPResponse(object):
 
         self.id = HTTPResponse.id
         self.log = request.conn.get_logger("HTTPResponse(%s)"%(self.id,))
+        self.log.debug("__init__", keep_alive)
         self.request = request
         self.headers = {
             'Content-Type': 'text/html'
@@ -24,7 +25,7 @@ class HTTPResponse(object):
         if keep_alive and self.version_minor == 1 and request.headers.get("connection") == "keep-alive":
             self.keep_alive = True
             self.headers['Connection'] = 'keep-alive'
-            self.headers['Keep-alive'] = KEEPALIVE
+            self.headers['Keep-Alive'] = KEEPALIVE
 
     def __setitem__(self, key, val):
         self.headers[key] = val
@@ -46,7 +47,7 @@ class HTTPResponse(object):
     def render(self):
         status_line = "HTTP/%s.%s %s\r\n" % (
             self.version_major, self.version_minor, self.status)
-        self.headers['Content-length'] = str(sum([len(s) for s in self.buffer]))
+        self.headers['Content-Length'] = str(sum([len(s) for s in self.buffer]))
         h = "\r\n".join(": ".join((k, v)) for (k, v) in self.headers.items())
         h += "\r\n\r\n"
         response = status_line + h + "".join(self.buffer)
@@ -81,7 +82,7 @@ class HTTPVariableResponse(object):
             self.headers['Transfer-encoding'] = 'chunked'
             if request.headers.get("connection") == "keep-alive":
                 self.headers['Connection'] = 'keep-alive'
-                self.headers['Keep-alive'] = KEEPALIVE
+                self.headers['Keep-Alive'] = KEEPALIVE
 
     def __setitem__(self, key, val):
         self.headers[key] = val
