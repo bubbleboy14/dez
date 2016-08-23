@@ -21,7 +21,7 @@ class StaticHandler(object):
         if stream:
             response = HTTPVariableResponse(req)
         else:
-            response = HTTPResponse(req, False)
+            response = HTTPResponse(req)
         response.headers['Server'] = self.server_name
         if ctype:
             response.headers['Content-Type'] = self.cache.get_type(path)
