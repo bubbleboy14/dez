@@ -4,7 +4,7 @@ from dez.http.inotify import INotify
 
 class BasicCache(object):
     id = 0
-    def __init__(self, streaming=False, get_logger=default_get_logger):
+    def __init__(self, streaming=True, get_logger=default_get_logger):
         BasicCache.id += 1
         self.id = BasicCache.id
         self.cache = {}
@@ -68,9 +68,8 @@ class NaiveCache(BasicCache):
         self.cache[path] = {'mtime':os.path.getmtime(path),'type':self._mimetype(url),'content':''}
 
 class INotifyCache(BasicCache):
-    def __init__(self, streaming=False):
-        self.cache = {}
-        self.streaming = streaming
+    def __init__(self, streaming=True, get_logger=default_get_logger):
+        BasicCache.__init__(self, streaming, get_logger)
         self.inotify = INotify(self.__update)
 
     def _is_current(self, path):

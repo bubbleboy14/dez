@@ -13,11 +13,9 @@ class StaticHandler(object):
         self.log.debug("__init__")
         self.server_name = server_name
         try:
-            self.cache = INotifyCache()
-            #print "static cache: INotifyCache"
+            self.cache = INotifyCache(get_logger=get_logger)
         except:
-            self.cache = NaiveCache()
-            #print "static cache: NaiveCache"
+            self.cache = NaiveCache(get_logger=get_logger)
 
     def __respond(self, req, path=None, ctype=False, headers={}, data=[], stream=False):
         if stream:
