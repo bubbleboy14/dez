@@ -5,8 +5,11 @@ from dez import io
 import os, urllib, event
 
 class StaticHandler(object):
+    id = 0
     def __init__(self, server_name, get_logger=default_get_logger):
-        self.log = get_logger("StaticHandler")
+        StaticHandler.id += 1
+        self.id = StaticHandler.id
+        self.log = get_logger("StaticHandler(%s)"%(self.id,))
         self.log.debug("__init__")
         self.server_name = server_name
         try:
@@ -45,12 +48,12 @@ class StaticHandler(object):
             response.dispatch()
 
     def __call__(self, req, prefix, directory):
-        self.log.debug("__call__", prefix, directory)
         url = urllib.unquote(req.url)
         if "*" in prefix: # regex
             path = directory + url
         else:
             path = os.path.join(directory, url[len(prefix):])
+        self.log.debug("__call__", path)
         if os.path.isdir(path):
             if not self._try_index(req, path):
                 if url.endswith('/'):
@@ -98,6 +101,6 @@ class StaticHandler(object):
         limit -= len(data)
         if data == "":
             openfile.close()
-            return response.end()
-        self.cache.add_content(path, data)
+            return response.end_or_close()
+#        self.cache.add_content(path, data)
         event.timeout(0, response.write, data, self.__write_file, [response, openfile, path, limit])
