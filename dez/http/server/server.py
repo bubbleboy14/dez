@@ -3,7 +3,7 @@ from dez import io
 from dez.buffer import Buffer
 from dez.logging import default_get_logger
 from dez.http.server.router import Router
-from dez.http.server.response import HTTPResponse
+from dez.http.server.response import KEEPALIVE, HTTPResponse
 from dez.http.server.request import HTTPRequest
 
 class HTTPDaemon(object):
@@ -65,9 +65,10 @@ class HTTPConnection(object):
         self.current_args = None
         self.current_eb = None
         self.current_ebargs = None
+        self.__close_cb = None
+        self._timeout = event.timeout(None, self.timeout)
         self.wevent = event.write(self.sock, self.write_ready)
         self.revent = event.read(self.sock, self.read_ready)
-        self.__close_cb = None
         self.buffer = Buffer()
         self.write_buffer = Buffer()
         self.start_request()
@@ -76,13 +77,25 @@ class HTTPConnection(object):
         self.__close_cb = (cb, args)
 
     def start_request(self):
-        self.log.debug("start_request", self.buffer, self.request and self.request.state or "no request")
-        self.wevent.delete()
-        self.revent.add()
+        self.log.debug("start_request", len(self.buffer), len(self.response_queue),
+            len(self.write_buffer), self.request and self.request.state or "no request")
+        self.log.debug("(deleting wevent; adding revent; new HTTPRequest)")
+        self.wevent.pending() and self.wevent.delete()
+        self.revent.pending() or self.revent.add()
         self.request = HTTPRequest(self)
         self.state = "read"
         if len(self.buffer):
             self.request.process()
+        else:
+            self._timeout.add(int(KEEPALIVE))
+
+    def cancelTimeout(self):
+        self.log.debug("cancelTimeout (request %s)"%(self.request.id,))
+        self._timeout.pending() and self._timeout.delete()
+
+    def timeout(self):
+        self.log.debug("TIMEOUT (request %s) -- closing!"%(self.request.id,))
+        self.close()
 
     def close(self, reason=""):
         self.log.debug("close")
@@ -90,8 +103,8 @@ class HTTPConnection(object):
             cb, args = self.__close_cb
             self.__close_cb = None
             cb(*args)
-        self.revent.delete()
-        self.wevent.delete()
+        self.revent.pending() and self.revent.delete()
+        self.wevent.pending() and self.wevent.delete()
         self.sock.close()
         if self.current_eb:
             self.log.debug("triggering current_eb!")
@@ -108,9 +121,11 @@ class HTTPConnection(object):
             self.current_ebargs = None
 
     def read_ready(self):
+        self.log.debug("read_ready")
         try:
             data = self.sock.recv(io.BUFFER_SIZE)
             if not data:
+                self.log.debug("no data - closing")
                 self.close()
                 return None
             return self.read(data)
@@ -121,22 +136,23 @@ class HTTPConnection(object):
 
     def read_body(self):
         self.log.debug("read_body (adding revent)")
-        self.revent.add()
+        self.revent.pending() or self.revent.add()
 
     def route(self, request):
-        self.log.debug("route", request.id, "[deleting revent]", "[dispatching router]")
-        self.revent.delete()
-        self.wevent.add()
+        self.log.debug("route", request.id, "[deleting revent, adding wevent]", "[dispatching router]")
+        self.revent.pending() and self.revent.delete()
+        self.wevent.pending() or self.wevent.add()
         request.state = "write" # questionable
         dispatch_cb, args = self.router(request.url)
         dispatch_cb(request, *args)
 
     def complete(self):
         self.log.debug("request completed (%s) -- deleting revent, adding wevent"%(self.request.id,))
-        self.revent.delete()
-        self.wevent.add()
+        self.revent.pending() and self.revent.delete()
+        self.wevent.pending() or self.wevent.add()
 
     def read(self, data):
+        self.cancelTimeout()
         self.log.debug("read", self.state)
         if self.state != "read":
             self.log.debug("Invalid additional data: %s" % data)
@@ -145,31 +161,28 @@ class HTTPConnection(object):
         self.request.process()
         return self.request.state != "waiting"
 
-    def write(self, data, cb, args, eb=None, ebargs=[]):
+    def write(self, data, cb, args=[], eb=None, ebargs=[]):
         self.log.debug("write", len(data))
         self.response_queue.append((data, cb, args, eb, ebargs))
-        self.wevent.add()
+        self.wevent.pending() or self.wevent.add()
 
     def write_ready(self):
         self.log.debug("write_ready")
         if self.write_buffer.empty():
             if self.current_cb:
                 self.log.debug("invoking current_cb", self.current_cb)
-                cb = self.current_cb
-                args = self.current_args
-                cb(*args)
+                self.current_cb(*self.current_args)
                 self.current_cb = None
             if not self.response_queue:
                 self.log.debug("no response_queue -- cutting out!")
-                self.current_cb = None
-                self.wevent.delete()
+                self.wevent.pending() and self.wevent.delete()
                 return None
             data, self.current_cb, self.current_args, self.current_eb, self.current_ebargs = self.response_queue.pop(0)
             self.write_buffer.reset(data)
             # call conn.write("", cb) to signify request complete
             if data == "":
                 self.log.debug("ending request")
-                self.wevent.delete()
+                self.wevent.pending() and self.wevent.delete()
                 self.current_cb(*self.current_args)
                 self.current_cb = None
                 self.current_args = None
@@ -177,8 +190,8 @@ class HTTPConnection(object):
                 self.current_ebargs = None
                 return None
         try:
-            self.log.debug("buffer", len(self.write_buffer.get_value()))
-            self.log.debug("queue", len(self.response_queue))
+            self.log.debug("buffer", len(self.write_buffer.get_value()),
+                "queue", len(self.response_queue))
             bsent = self.sock.send(self.write_buffer.get_value())
             self.write_buffer.move(bsent)
             return True
