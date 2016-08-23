@@ -54,6 +54,7 @@ class HTTPConnection(object):
         HTTPConnection.id += 1
         self.id = HTTPConnection.id
         self.log = get_logger("HTTPConnection(%s)"%(self.id,))
+        self.log.debug("__init__")
         self.get_logger = get_logger
         self.sock = sock
         self.addr, self.local_port = addr
@@ -64,8 +65,8 @@ class HTTPConnection(object):
         self.current_args = None
         self.current_eb = None
         self.current_ebargs = None
-        self.wevent = None
-        self.revent = None
+        self.wevent = event.write(self.sock, self.write_ready)
+        self.revent = event.read(self.sock, self.read_ready)
         self.__close_cb = None
         self.buffer = Buffer()
         self.write_buffer = Buffer()
@@ -76,33 +77,12 @@ class HTTPConnection(object):
 
     def start_request(self):
         self.log.debug("start_request", self.buffer, self.request and self.request.state or "no request")
-        if self.wevent:
-            self.wevent.delete()
-            self.wevent = None
-        if self.revent:
-            self.revent.delete()
-            self.revent = None
-        self.revent = event.read(self.sock, self.read_ready)
+        self.wevent.delete()
+        self.revent.add()
         self.request = HTTPRequest(self)
         self.state = "read"
         if len(self.buffer):
             self.request.process()
-#        else:
-#            event.timeout(2, self.nudge_request(self.request))
-
-    def nudge_request(self, request):
-        self.log.debug("setting up nudge")
-        def _f():
-            self.log.debug("might nudge request", request.id, request.state, len(self.buffer))
-            if request.state == "action" and len(self.buffer):
-                self.log.debug("nudging!")
-                request.process()
-            elif request.state not in ["ended", "closed"]:
-                self.log.debug("closing!!?!")
-                request.close_now()
-#                self.revent.add()
-#                return request.state != "ended"
-        return _f
 
     def close(self, reason=""):
         self.log.debug("close")
@@ -110,14 +90,11 @@ class HTTPConnection(object):
             cb, args = self.__close_cb
             self.__close_cb = None
             cb(*args)
-        if self.revent:
-            self.revent.delete()
-            self.revent = None
-        if self.wevent:
-            self.wevent.delete()
-            self.wevent = None
+        self.revent.delete()
+        self.wevent.delete()
         self.sock.close()
         if self.current_eb:
+            self.log.debug("triggering current_eb!")
             self.current_eb(*self.current_ebargs)
             self.current_eb = None
             self.current_ebargs = None
@@ -125,6 +102,7 @@ class HTTPConnection(object):
             tmp = self.response_queue.pop(0)
             data, self.current_cb, self.current_args, self.current_eb, self.current_ebargs = tmp
             if self.current_eb:
+                self.log.debug("triggering current_eb (response_queue)!")
                 self.current_eb(*self.current_ebargs)
             self.current_eb = None
             self.current_ebargs = None
@@ -142,22 +120,21 @@ class HTTPConnection(object):
             return None
 
     def read_body(self):
-        self.log.debug("read_body")
-        if self.revent:
-            self.log.debug("revent exists?")
-        else:
-            self.revent = event.read(self.sock, self.read_ready)
+        self.log.debug("read_body (adding revent)")
+        self.revent.add()
 
     def route(self, request):
         self.log.debug("route", request.id, "[deleting revent]", "[dispatching router]")
+        self.revent.delete()
+        self.wevent.add()
         request.state = "write" # questionable
         dispatch_cb, args = self.router(request.url)
         dispatch_cb(request, *args)
 
     def complete(self):
-        self.log.debug("request completed (%s) -- deleting revent"%(self.request.id,))
+        self.log.debug("request completed (%s) -- deleting revent, adding wevent"%(self.request.id,))
         self.revent.delete()
-        self.revent = None
+        self.wevent.add()
 
     def read(self, data):
         self.log.debug("read", self.state)
@@ -171,27 +148,28 @@ class HTTPConnection(object):
     def write(self, data, cb, args, eb=None, ebargs=[]):
         self.log.debug("write", len(data))
         self.response_queue.append((data, cb, args, eb, ebargs))
-        if not self.wevent:
-            self.wevent = event.write(self.sock, self.write_ready)
+        self.wevent.add()
 
     def write_ready(self):
         self.log.debug("write_ready")
         if self.write_buffer.empty():
             if self.current_cb:
+                self.log.debug("invoking current_cb", self.current_cb)
                 cb = self.current_cb
                 args = self.current_args
                 cb(*args)
                 self.current_cb = None
             if not self.response_queue:
+                self.log.debug("no response_queue -- cutting out!")
                 self.current_cb = None
-                self.wevent = None
+                self.wevent.delete()
                 return None
             data, self.current_cb, self.current_args, self.current_eb, self.current_ebargs = self.response_queue.pop(0)
             self.write_buffer.reset(data)
             # call conn.write("", cb) to signify request complete
             if data == "":
                 self.log.debug("ending request")
-                self.wevent = None
+                self.wevent.delete()
                 self.current_cb(*self.current_args)
                 self.current_cb = None
                 self.current_args = None
