@@ -1,23 +1,27 @@
+from dez.logging import default_get_logger
 from dez.http.server import HTTPResponse, HTTPVariableResponse
 from dez.http.cache import NaiveCache, INotifyCache
 from dez import io
 import os, urllib, event
 
 class StaticHandler(object):
-    def __init__(self, server_name):
+    id = 0
+    def __init__(self, server_name, get_logger=default_get_logger):
+        StaticHandler.id += 1
+        self.id = StaticHandler.id
+        self.log = get_logger("StaticHandler(%s)"%(self.id,))
+        self.log.debug("__init__")
         self.server_name = server_name
         try:
-            self.cache = INotifyCache()
-            #print "static cache: INotifyCache"
+            self.cache = INotifyCache(get_logger=get_logger)
         except:
-            self.cache = NaiveCache()
-            #print "static cache: NaiveCache"
+            self.cache = NaiveCache(get_logger=get_logger)
 
     def __respond(self, req, path=None, ctype=False, headers={}, data=[], stream=False):
         if stream:
             response = HTTPVariableResponse(req)
         else:
-            response = HTTPResponse(req, False)
+            response = HTTPResponse(req)
         response.headers['Server'] = self.server_name
         if ctype:
             response.headers['Content-Type'] = self.cache.get_type(path)
@@ -35,6 +39,8 @@ class StaticHandler(object):
                 rs and openfile.seek(rs)
                 if re:
                     limit = re - rs
+                response.status = "206 Partial Content"
+            response.headers["Content-Length"] = str(limit)
             self.__write_file(response, openfile, path, limit)
         else:
             response.dispatch()
@@ -45,6 +51,7 @@ class StaticHandler(object):
             path = directory + url
         else:
             path = os.path.join(directory, url[len(prefix):])
+        self.log.debug("__call__", path)
         if os.path.isdir(path):
             if not self._try_index(req, path):
                 if url.endswith('/'):
@@ -67,7 +74,7 @@ class StaticHandler(object):
 
     def __range(self, req, headers, size):
         rs, re = req.headers["range"][6:].split("-")
-        headers["Content-Range"] = "bytes %s-%s/%s"%(rs, re or size, size)
+        headers["Content-Range"] = "bytes %s-%s/%s"%(rs, re or (size - 1), size)
         headers["Accept-Range"] = "bytes"
         return int(rs), re and int(re) or None
 
@@ -91,6 +98,7 @@ class StaticHandler(object):
         data = openfile.read(min(limit, io.BUFFER_SIZE))
         limit -= len(data)
         if data == "":
-            return response.end()
-        self.cache.add_content(path, data)
+            openfile.close()
+            return response.end_or_close()
+#        self.cache.add_content(path, data)
         event.timeout(0, response.write, data, self.__write_file, [response, openfile, path, limit])

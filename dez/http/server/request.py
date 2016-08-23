@@ -21,7 +21,6 @@ class HTTPRequest(object):
         self.remaining_content = 0
         self.pending_actions = []
         self.set_close_cb(self._onclose, [])
-        self.log.debug("init")
 
     def process(self):
         self.log.debug("process", self.state)
@@ -159,10 +158,10 @@ class HTTPRequest(object):
         self.conn.write(data, self.write_cb, (cb, args), eb, ebargs)
 
     def write_cb(self, cb=None, args=[]):
-        self.log.debug("write_cb", self.write_ended)
+        self.log.debug("write_cb", self.write_ended, cb)
         if cb:
             cb(*args)
-        if self.write_ended and not self.conn.wevent:
+        if self.write_ended and not self.conn.wevent.pending():
             if self.send_close:
                 self.log.debug("closing!!")
                 self.state = "closed"

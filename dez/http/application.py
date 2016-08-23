@@ -24,7 +24,7 @@ class HTTPApplication(object):
         self.daemon = HTTPDaemon(bind_address, port, get_logger)
         self.host = bind_address
         self.port = port
-        self.static_request = StaticHandler(server_name)
+        self.static_request = StaticHandler(server_name, get_logger)
         self.wsgi_pool = None
         
     def start(self):
