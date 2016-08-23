@@ -117,10 +117,7 @@ class HTTPVariableResponse(object):
         self.request.write(status_line + h, None)
 
     def end(self, cb=None):
-        if self.version_minor == 1:
-            self.__write_chunk("")
-            if int(self.headers.get('Keep-alive', '0')) > 0:
-                return self.request.end(cb)
+        return self.request.end(cb)
 
     def close(self, cb=None):
         self.request.close(cb)
@@ -130,7 +127,7 @@ class HTTPVariableResponse(object):
         if self.version_minor == 1:
             self.__write_chunk("")
             if int(self.headers.get('Keep-alive', '0')) > 0:
-                return self.request.end(cb)
+                return self.end(cb)
         self.request.close(cb)
 
 class RawHTTPResponse(object):
