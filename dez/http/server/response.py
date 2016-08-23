@@ -3,6 +3,8 @@ try:
 except ImportError:
     import StringIO
 
+KEEPALIVE = '5'
+
 class HTTPResponse(object):
     id = 0
     def __init__(self, request, keep_alive=True):
@@ -22,7 +24,7 @@ class HTTPResponse(object):
         if keep_alive and self.version_minor == 1 and request.headers.get("connection") == "keep-alive":
             self.keep_alive = True
             self.headers['Connection'] = 'keep-alive'
-            self.headers['Keep-alive'] = '300'
+            self.headers['Keep-alive'] = KEEPALIVE
 
     def __setitem__(self, key, val):
         self.headers[key] = val
@@ -65,6 +67,8 @@ class HTTPVariableResponse(object):
     def __init__(self, request):
         HTTPVariableResponse.id += 1
         self.id = HTTPVariableResponse.id
+        self.log = request.conn.get_logger("HTTPVariableResponse(%s)"%(self.id,))
+        self.log.debug("__init__")
         self.request = request
         self.started = False
         self.headers = {
@@ -77,7 +81,7 @@ class HTTPVariableResponse(object):
             self.headers['Transfer-encoding'] = 'chunked'
             if request.headers.get("connection") == "keep-alive":
                 self.headers['Connection'] = 'keep-alive'
-                self.headers['Keep-alive'] = '300'
+                self.headers['Keep-alive'] = KEEPALIVE
 
     def __setitem__(self, key, val):
         self.headers[key] = val
@@ -103,6 +107,7 @@ class HTTPVariableResponse(object):
             cb(*args)
 
     def __start_response(self, cb=None):
+        self.log.debug("__start_response")
         self.started = True
         status_line = "HTTP/%s.%s %s\r\n" % (
             self.version_major, self.version_minor, self.status)
@@ -112,6 +117,16 @@ class HTTPVariableResponse(object):
         self.request.write(status_line + h, None)
 
     def end(self, cb=None):
+        if self.version_minor == 1:
+            self.__write_chunk("")
+            if int(self.headers.get('Keep-alive', '0')) > 0:
+                return self.request.end(cb)
+
+    def close(self, cb=None):
+        self.request.close(cb)
+
+    def end_or_close(self, cb=None):
+        self.log.debug("end_or_close", cb)
         if self.version_minor == 1:
             self.__write_chunk("")
             if int(self.headers.get('Keep-alive', '0')) > 0:
