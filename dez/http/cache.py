@@ -56,6 +56,7 @@ class BasicCache(object):
             (self._stream(path) and stream_back or write_back)(req, path)
 
     def get(self, req, path, write_back, stream_back, err_back):
+        path = path.split("?")[0]
         if self._is_current(path):
             self.log.debug("get", path, "CURRENT!")
             self._return(req, path, write_back, stream_back, err_back)
