@@ -2,13 +2,16 @@ import socket
 LQUEUE_SIZE = 5
 BUFFER_SIZE = 131072
 
-def server_socket(port):
+def server_socket(port, certfile=None):
     ''' Return a listening socket bound to the given interface and port. '''
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.setblocking(0)
     sock.bind(('', port))
     sock.listen(LQUEUE_SIZE)
+    if certfile:
+        import ssl
+        return ssl.wrap_socket(sock, certfile=certfile)
     return sock
 
 def client_socket(addr, port):

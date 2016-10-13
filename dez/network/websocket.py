@@ -111,8 +111,8 @@ class WebSocketProxyConnection(object):
         self.report("Connections linked")
 
 class WebSocketDaemon(SocketDaemon):
-    def __init__(self, hostname, port, cb=None, b64=False, cbargs=[], report_cb=lambda x:None, isJSON=False):
-        SocketDaemon.__init__(self, hostname, port, cb, False, cbargs)
+    def __init__(self, hostname, port, cb=None, b64=False, cbargs=[], report_cb=lambda x:None, isJSON=False, certfile=None):
+        SocketDaemon.__init__(self, hostname, port, cb, False, cbargs, certfile)
         real_cb = self.cb
         def handshake_cb(conn):
             self.report("Handshake initiated")

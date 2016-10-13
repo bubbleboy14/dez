@@ -1,4 +1,4 @@
-import event
+import event, ssl
 from dez import io
 from dez.buffer import Buffer
 from dez.logging import default_get_logger
@@ -7,13 +7,13 @@ from dez.http.server.response import KEEPALIVE, HTTPResponse
 from dez.http.server.request import HTTPRequest
 
 class HTTPDaemon(object):
-    def __init__(self, host, port, get_logger=default_get_logger):
+    def __init__(self, host, port, get_logger=default_get_logger, certfile=None):
         self.log = get_logger("HTTPDaemon")
         self.get_logger = get_logger
         self.host = host
         self.port = port
         self.log.info("Listening on %s:%s" % (host, port))
-        self.sock = io.server_socket(self.port)
+        self.sock = io.server_socket(self.port, certfile)
         self.listen = event.read(self.sock, self.accept_connection, None, self.sock, None)
         self.router = Router(self.default_cb)
 
@@ -44,7 +44,11 @@ class HTTPDaemon(object):
         return self.default_404_cb(request)
 
     def accept_connection(self, ev, sock, event_type, *arg):
-        sock, addr = sock.accept()
+        try:
+            sock, addr = sock.accept()
+        except ssl.SSLError, e:
+            self.log.info("closing connection on SSLError: %s"%(e,))
+            return self.sock.close()
         HTTPConnection(sock, addr, self.router, self.get_logger)
         return True
 
