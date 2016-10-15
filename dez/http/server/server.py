@@ -7,13 +7,13 @@ from dez.http.server.response import KEEPALIVE, HTTPResponse
 from dez.http.server.request import HTTPRequest
 
 class HTTPDaemon(object):
-    def __init__(self, host, port, get_logger=default_get_logger, certfile=None):
+    def __init__(self, host, port, get_logger=default_get_logger, certfile=None, keyfile=None):
         self.log = get_logger("HTTPDaemon")
         self.get_logger = get_logger
         self.host = host
         self.port = port
         self.log.info("Listening on %s:%s" % (host, port))
-        self.sock = io.server_socket(self.port, certfile)
+        self.sock = io.server_socket(self.port, certfile, keyfile)
         self.listen = event.read(self.sock, self.accept_connection, None, self.sock, None)
         self.router = Router(self.default_cb)
 
