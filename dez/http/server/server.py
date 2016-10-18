@@ -47,8 +47,8 @@ class HTTPDaemon(object):
         try:
             sock, addr = sock.accept()
         except ssl.SSLError, e:
-            self.log.info("closing connection on SSLError: %s"%(e,))
-            return self.sock.close()
+            self.log.info("abandoning connection on SSLError: %s"%(e,))
+            return True
         HTTPConnection(sock, addr, self.router, self.get_logger)
         return True
 
