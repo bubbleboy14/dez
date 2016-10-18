@@ -5,6 +5,12 @@ except ImportError:
 
 KEEPALIVE = '5'
 
+def renderResponse(data="", version_major=1, version_minor=0, status="200 OK", headers={}):
+    status_line = "HTTP/%s.%s %s\r\n" % (version_major, version_minor, status)
+    headers['Content-Length'] = str(len(data))
+    h = "\r\n".join(": ".join((k, v)) for (k, v) in headers.items())
+    return status_line + h + "\r\n\r\n" + data
+
 class HTTPResponse(object):
     id = 0
     def __init__(self, request, keep_alive=True):
@@ -45,12 +51,8 @@ class HTTPResponse(object):
             self.request.close(cb)
 
     def render(self):
-        status_line = "HTTP/%s.%s %s\r\n" % (
-            self.version_major, self.version_minor, self.status)
-        self.headers['Content-Length'] = str(sum([len(s) for s in self.buffer]))
-        h = "\r\n".join(": ".join((k, v)) for (k, v) in self.headers.items())
-        h += "\r\n\r\n"
-        response = status_line + h + "".join(self.buffer)
+        response = renderResponse("".join(self.buffer), self.version_major,
+            self.version_minor, self.status, self.headers)
         self.buffer = []
         self.log.debug("render", len(response))
         return response
