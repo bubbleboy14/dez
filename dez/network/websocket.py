@@ -6,6 +6,7 @@ from dez.buffer import Buffer
 from dez.json import encode, decode
 from dez.network.server import SocketDaemon
 from dez.network.client import SimpleClient
+from dez.http.server.response import renderResponse
 
 GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
@@ -146,6 +147,12 @@ class WebSocketHandshake(object):
         self.report("Connection closed")
         self.conn.close()
 
+    def _https_validate(self):
+        self.report("Received HTTPS validation request")
+        self.report("Connection closed")
+        self.conn.write(renderResponse("you did it! your computer now considers this website legit. nice work!"))
+        self.conn.soft_close()
+
     def _recv_action(self, data):
         self.report("Processing action line")
         tokens = data.split(' ')
@@ -163,7 +170,9 @@ class WebSocketHandshake(object):
             if len(header) != 2:
                 return self._handshake_error("Invalid headers")
             self.headers.__setitem__(*header)
-        for required_header in ['Host', 'Origin', 'Sec-WebSocket-Key']:
+        if 'Sec-WebSocket-Key' not in self.headers:
+            return self._https_validate()
+        for required_header in ['Host', 'Origin']:
             if required_header not in self.headers:
                 return self._handshake_error("Missing header: %s"%(required_header,))
         response_headers = [
