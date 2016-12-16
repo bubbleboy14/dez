@@ -39,10 +39,12 @@ BIG_FILES = ["mp3", "png", "jpg", "jpeg", "gif", "pdf", "csv", "mov",
     "zip", "doc", "docx", "jar", "data", "db", "xlsx", "geojson"] # more?
 
 class ReverseProxy(object):
-    def __init__(self, port, verbose):
+    def __init__(self, port, verbose, redirect=False, protocol="http"):
         self.port = port
         self.default_address = None
         self.verbose = verbose
+        self.redirect = redirect
+        self.protocol = protocol
         self.domains = {}
         self.daemon = SocketDaemon('', port, self.new_connection)
 
@@ -54,7 +56,7 @@ class ReverseProxy(object):
         conn.set_rmode_delimiter('\r\n\r\n', self.route_connection, [conn])
 
     def _302(self, conn, domain, path): # from hostTrick
-        conn.write("HTTP/1.1 302 Found\r\nLocation: http://%s%s\r\n\r\n"%(domain, path))
+        conn.write("HTTP/1.1 302 Found\r\nLocation: %s://%s%s\r\n\r\n"%(self.protocol, domain, path))
         conn.soft_close()
 
     def domain2hostport(self, domain):
@@ -73,7 +75,7 @@ class ReverseProxy(object):
         conn.halt_read()
         domain = None
         path = None
-        should302 = False
+        should302 = self.redirect
         for line in data.split('\r\n'):
             if line.startswith("GET"):
                 path = line.split(" ")[1]
@@ -122,39 +124,48 @@ def startreverseproxy():
     parser.add_option("-o", "--override_redirect", action="store_true",
         dest="override_redirect", default=False,
         help="prevent 302 redirect of large files (necessary if incoming host matters to target)")
+    parser.add_option("-s", "--ssl_redirect", dest="ssl_redirect", default=None,
+        help="if specified, 302 redirect ALL requests to https (port 443) application at specified host - ignores config")
     options, arguments = parser.parse_args()
+    BIG_302 = not options.override_redirect
     try:
         options.port = int(options.port)
     except:
         error('invalid port specified -- int required')
-    if len(arguments) < 1:
-        error("no config specified")
-    config = arguments[0]
-    if not os.path.isfile(config):
-        error('no valid config - "%s" not found'%config)
-    BIG_302 = not options.override_redirect
-    f = open(config)
-    lines = f.readlines()
-    f.close()
     try:
         controller = ReverseProxy(options.port, options.verbose)
     except:
         error('could not start server! try running as root!')
-    for line in lines:
-        line = line.split("#")[0]
-        try:
-            domain, back_addr = line.split('->')
-            domain = domain.strip()
-            host, port = back_addr.split(':')
-            host = host.strip()
-            port = int(port)
-        except:
-            error('could not parse config. expected "incoming_hostname -> forwarding_address_hostname:forwarding_address_port". failed on line: "%s"'%line)
-        if domain == "*":
-            print "Setting default forwarding address to %s:%s"%(host, port)
-            controller.register_default(host, port)
-        else:
-            print "Mapping %s to %s:%s"%(domain, host, port)
-            controller.register_domain(domain, host, port)
+    if options.ssl_redirect:
+        controller.redirect = True
+        controller.protocol = "https"
+        print "Redirecting traffic to https (port 443)"
+        controller.register_default(options.ssl_redirect, 443)
+    else:
+        if len(arguments) < 1:
+            error("no config specified")
+        config = arguments[0]
+        if not os.path.isfile(config):
+            error('no valid config - "%s" not found'%config)
+        f = open(config)
+        lines = f.readlines()
+        f.close()
+        for line in lines:
+            line = line.split("#")[0]
+            if line: # allows comment lines
+                try:
+                    domain, back_addr = line.split('->')
+                    domain = domain.strip()
+                    host, port = back_addr.split(':')
+                    host = host.strip()
+                    port = int(port)
+                except:
+                    error('could not parse config. expected "incoming_hostname -> forwarding_address_hostname:forwarding_address_port". failed on line: "%s"'%line)
+                if domain == "*":
+                    print "Setting default forwarding address to %s:%s"%(host, port)
+                    controller.register_default(host, port)
+                else:
+                    print "Mapping %s to %s:%s"%(domain, host, port)
+                    controller.register_domain(domain, host, port)
     print "Starting reverse proxy router on port %s"%(options.port)
     controller.start()
