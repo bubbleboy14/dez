@@ -25,7 +25,8 @@ setup(
     zip_safe = False,
     install_requires = [
         "rel >= 0.3.5",
-        "demjson"
+        "demjson",
+        "python-magic >= 0.4.11"
     ],
     entry_points = '''
         [console_scripts]

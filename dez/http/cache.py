@@ -1,4 +1,4 @@
-import mimetypes, os
+import os, magic, mimetypes
 from dez.logging import default_get_logger
 from dez.http.inotify import INotify
 from dez import io
@@ -9,14 +9,17 @@ class BasicCache(object):
         BasicCache.id += 1
         self.id = BasicCache.id
         self.cache = {}
+        self.mimetypes = {}
         self.streaming = streaming # True|False|"auto"
         self.log = get_logger("%s(%s)"%(self.__class__.__name__, self.id))
         self.log.debug("__init__")
 
     def _mimetype(self, url):
-        mimetype = mimetypes.guess_type(url)[0]
+        mimetype = self.mimetypes.get(url)
         if not mimetype:
-            mimetype = "application/octet-stream"
+            self.mimetypes[url] = mimetype = mimetypes.guess_type(url)[0]
+            if not mimetype:
+                self.mimetypes[url] = mimetype = magic.from_file(url.strip("/"), True) or "application/octet-stream"
         return mimetype
 
     def __update(self, path):
