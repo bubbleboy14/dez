@@ -162,6 +162,7 @@ class HTTPRequest(object):
         if cb:
             cb(*args)
         if self.write_ended and not self.conn.wevent.pending():
+            self.conn.counter.dec("requests")
             if self.send_close:
                 self.log.debug("closing!!")
                 self.state = "closed"

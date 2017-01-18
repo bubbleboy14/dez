@@ -12,6 +12,7 @@ class HTTPDaemon(object):
         self.get_logger = get_logger
         self.host = host
         self.port = port
+        self.counter = Counter()
         self.log.info("Listening on %s:%s" % (host, port))
         self.sock = io.server_socket(self.port, certfile, keyfile)
         self.listen = event.read(self.sock, self.accept_connection, None, self.sock, None)
@@ -52,12 +53,35 @@ class HTTPDaemon(object):
         except ssl.SSLError, e:
             self.log.info("abandoning connection on SSLError: %s"%(e,))
             return True
-        HTTPConnection(sock, addr, self.router, self.get_logger)
+        HTTPConnection(sock, addr, self.router, self.get_logger, self.counter)
         return True
+
+class Counter(object):
+    def __init__(self):
+        self.requests = 0
+        self.connections = 0
+        self.total_requests = 0
+        self.total_connections = 0
+
+    def inc(self, ctype):
+        ts = "total_%s"%(ctype,)
+        setattr(self, ts, getattr(self, ts) + 1)
+        setattr(self, ctype, getattr(self, ctype) + 1)
+
+    def dec(self, ctype):
+        setattr(self, ctype, getattr(self, ctype) - 1)
+
+    def report(self):
+        return {
+            "requests": self.requests,
+            "connections": self.connections,
+            "total_requests": self.total_requests,
+            "total_connections": self.total_connections
+        }
 
 class HTTPConnection(object):
     id = 0
-    def __init__(self, sock, addr, router, get_logger):
+    def __init__(self, sock, addr, router, get_logger, counter=None):
         HTTPConnection.id += 1
         self.id = HTTPConnection.id
         self.log = get_logger("HTTPConnection(%s)"%(self.id,))
@@ -66,6 +90,8 @@ class HTTPConnection(object):
         self.sock = sock
         self.addr, self.local_port = addr
         self.router = router
+        self.counter = counter or Counter()
+        self.counter.inc("connections")
         self.response_queue = []
         self.request = None
         self.current_cb = None
@@ -87,6 +113,7 @@ class HTTPConnection(object):
         self.log.debug("start_request", len(self.buffer), len(self.response_queue),
             len(self.write_buffer), self.request and self.request.state or "no request")
         self.log.debug("(deleting wevent; adding revent; new HTTPRequest)")
+        self.counter.inc("requests")
         self.wevent.pending() and self.wevent.delete()
         self.revent.pending() or self.revent.add()
         self.request = HTTPRequest(self)
@@ -106,6 +133,7 @@ class HTTPConnection(object):
 
     def close(self, reason=""):
         self.log.debug("close")
+        self.counter.dec("connections")
         if self.__close_cb:
             cb, args = self.__close_cb
             self.__close_cb = None
