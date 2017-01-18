@@ -39,14 +39,14 @@ BIG_FILES = ["mp3", "png", "jpg", "jpeg", "gif", "pdf", "csv", "mov",
     "zip", "doc", "docx", "jar", "data", "db", "xlsx", "geojson"] # more?
 
 class ReverseProxy(object):
-    def __init__(self, port, verbose, redirect=False, protocol="http"):
+    def __init__(self, port, verbose, redirect=False, protocol="http", certfile=None):
         self.port = port
         self.default_address = None
         self.verbose = verbose
         self.redirect = redirect
         self.protocol = protocol
         self.domains = {}
-        self.daemon = SocketDaemon('', port, self.new_connection)
+        self.daemon = SocketDaemon('', port, self.new_connection, certfile=certfile)
 
     def log(self, data):
         if self.verbose:
@@ -124,16 +124,21 @@ def startreverseproxy():
     parser.add_option("-o", "--override_redirect", action="store_true",
         dest="override_redirect", default=False,
         help="prevent 302 redirect of large files (necessary if incoming host matters to target)")
+    parser.add_option("-c", "--cert", dest="cert", default=None,
+        help="your ssl certificate -- if port is unspecified, uses port 443")
     parser.add_option("-s", "--ssl_redirect", dest="ssl_redirect", default=None,
         help="if specified, 302 redirect ALL requests to https (port 443) application at specified host - ignores config")
     options, arguments = parser.parse_args()
     BIG_302 = not options.override_redirect
+    if options.cert and options.port == "80":
+        options.port = 443
+    else:
+        try:
+            options.port = int(options.port)
+        except:
+            error('invalid port specified -- int required')
     try:
-        options.port = int(options.port)
-    except:
-        error('invalid port specified -- int required')
-    try:
-        controller = ReverseProxy(options.port, options.verbose)
+        controller = ReverseProxy(options.port, options.verbose, certfile=options.cert)
     except:
         error('could not start server! try running as root!')
     if options.ssl_redirect:
