@@ -1,4 +1,4 @@
-import event, ssl
+import event, socket, ssl
 from dez import io
 from dez.logging import default_get_logger
 from dez.network.connection import Connection
@@ -17,6 +17,9 @@ class SocketDaemon(object):
     def accept_connection(self):
         try:
             sock, addr = self.sock.accept()
+        except socket.error, e:
+            self.log.info("abandoning connection on socket error: %s"%(e,))
+            return True
         except ssl.SSLError, e:
             self.log.info("abandoning connection on SSLError: %s"%(e,))
             return True
