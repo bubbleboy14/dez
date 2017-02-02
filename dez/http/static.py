@@ -46,7 +46,8 @@ class StaticHandler(object):
             response.dispatch()
 
     def __call__(self, req, prefix, directory):
-        url = urllib.unquote(req.url.split("?")[0]) # remove qs (probs to get around caching)
+        req.url = req.url.split("?")[0] # remove qs (sometimes used to get around caching)
+        url = urllib.unquote(req.url)
         if "*" in prefix: # regex
             path = directory + url
         else:
