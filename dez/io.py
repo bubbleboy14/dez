@@ -2,7 +2,7 @@ import socket, ssl
 LQUEUE_SIZE = 5
 BUFFER_SIZE = 131072
 
-def server_socket(port, certfile=None, keyfile=None):
+def server_socket(port, certfile=None, keyfile=None, cacerts=None):
     ''' Return a listening socket bound to the given interface and port. '''
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -10,8 +10,13 @@ def server_socket(port, certfile=None, keyfile=None):
     sock.bind(('', port))
     sock.listen(LQUEUE_SIZE)
     if certfile:
-        return ssl.wrap_socket(sock, certfile=certfile,
-            keyfile=keyfile, server_side=True)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        ctx.load_cert_chain(certfile, keyfile)
+        ctx.load_default_certs()
+        if cacerts:
+            ctx.verify_mode = ssl.CERT_OPTIONAL
+            ctx.load_verify_locations(cacerts)
+        return ctx.wrap_socket(sock, server_side=True)
     return sock
 
 def client_socket(addr, port, certfile=None, keyfile=None):
