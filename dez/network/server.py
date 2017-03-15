@@ -4,11 +4,11 @@ from dez.logging import default_get_logger
 from dez.network.connection import Connection
 
 class SocketDaemon(object):
-    def __init__(self, hostname, port, cb=None, b64=False, cbargs=[], certfile=None, keyfile=None):
+    def __init__(self, hostname, port, cb=None, b64=False, cbargs=[], certfile=None, keyfile=None, cacerts=None):
         self.log = default_get_logger("SocketDaemon")
         self.hostname = hostname
         self.port = port
-        self.sock = io.server_socket(self.port, certfile, keyfile)
+        self.sock = io.server_socket(self.port, certfile, keyfile, cacerts)
         self.cb = cb
         self.cbargs = cbargs
         self.b64 = b64
