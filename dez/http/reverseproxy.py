@@ -139,8 +139,8 @@ def startreverseproxy():
             error('invalid port specified -- int required')
     try:
         controller = ReverseProxy(options.port, options.verbose, certfile=options.cert)
-    except:
-        error('could not start server! try running as root!')
+    except Exception, e:
+        error(options.verbose and "failed: %s"%(e,) or 'could not start server! try running as root!')
     if options.ssl_redirect:
         controller.redirect = True
         controller.protocol = "https"
