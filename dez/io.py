@@ -10,13 +10,16 @@ def server_socket(port, certfile=None, keyfile=None, cacerts=None):
     sock.bind(('', port))
     sock.listen(LQUEUE_SIZE)
     if certfile:
-        ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-        ctx.load_cert_chain(certfile, keyfile)
-        ctx.load_default_certs()
-        if cacerts:
-            ctx.verify_mode = ssl.CERT_OPTIONAL
-            ctx.load_verify_locations(cacerts)
-        return ctx.wrap_socket(sock, server_side=True)
+        if hasattr(ssl, "SSLContext"):
+            ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            ctx.load_cert_chain(certfile, keyfile)
+            ctx.load_default_certs()
+            if cacerts:
+                ctx.verify_mode = ssl.CERT_OPTIONAL
+                ctx.load_verify_locations(cacerts)
+            return ctx.wrap_socket(sock, server_side=True)
+        return ssl.wrap_socket(sock, certfile=certfile,
+            keyfile=keyfile, server_side=True)
     return sock
 
 def client_socket(addr, port, certfile=None, keyfile=None):
