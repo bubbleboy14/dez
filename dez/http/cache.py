@@ -1,4 +1,4 @@
-import os, magic, mimetypes
+import os, magic, mimetypes, time
 from dez.logging import default_get_logger
 from dez.http.inotify import INotify
 from dez import io
@@ -31,12 +31,17 @@ class BasicCache(object):
             self.cache[path]['content'] = f.read()
             f.close()
 
-    def _stream(self, path):
+    def _stream(self, path, req=None):
         p = self.cache[path]
         p['size'] = os.stat(path).st_size
         stream = self.streaming
         if stream == "auto":
             stream = p['size'] > io.BUFFER_SIZE * 5
+            if stream and req:
+                ua = req.headers["user-agent"]
+                for iflag in ["iPad", "iPod", "iPhone"]:
+                    if iflag in ua:
+                        stream = False # iOS is sometimes too dumb to reconstruct chunked media
         self.log.debug("_stream", path, p['size'], stream)
         return stream
 
@@ -45,6 +50,12 @@ class BasicCache(object):
 
     def get_content(self, path):
         return self.cache[path]['content']
+
+    def get_mtime(self, path, pretty=False):
+        mt = self.cache[path]['mtime']
+        if pretty:
+            return time.strftime('%a, %d %b %Y %H:%M:%S %Z', time.localtime(mt))
+        return mt
 
     def add_content(self, path, data):
         self.cache[path]['content'] += data
@@ -56,7 +67,7 @@ class BasicCache(object):
         if self._empty(path):
             err_back(req)
         else:
-            (self._stream(path) and stream_back or write_back)(req, path)
+            (self._stream(path, req) and stream_back or write_back)(req, path)
 
     def get(self, req, path, write_back, stream_back, err_back):
         path = path.split("?")[0]
