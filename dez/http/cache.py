@@ -22,9 +22,9 @@ class BasicCache(object):
                 self.mimetypes[url] = mimetype = magic.from_file(url.strip("/"), True) or "application/octet-stream"
         return mimetype
 
-    def __update(self, path):
+    def __update(self, path, req=None):
         self.log.debug("__update", path)
-        if self._stream(path):
+        if self._stream(path, req):
             self.cache[path]['content'] = bool(self.cache[path]['size'])
         else:
             f = open(path,'r')
@@ -77,7 +77,7 @@ class BasicCache(object):
         elif os.path.isfile(path):
             self.log.debug("get", path, "INITIALIZING FILE!")
             self._new_path(path, req.url)
-            self.__update(path)
+            self.__update(path, req)
             self._return(req, path, write_back, stream_back, err_back)
         else:
             self.log.debug("get", path, "404!")
