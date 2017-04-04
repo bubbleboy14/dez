@@ -18,8 +18,16 @@ class StaticHandler(object):
         except:
             self.cache = NaiveCache(get_logger=get_logger)
 
+    def __isi(self, req):
+        ua = req.headers["user-agent"]
+        for iflag in ["iPad", "iPod", "iPhone"]:
+            if iflag in ua:
+                return True
+        return False
+
     def __respond(self, req, path=None, ctype=False, headers={}, data=[], stream=False):
-        if stream:
+        chunked = stream and not self.__isi(req)
+        if chunked: # i devices choke on chunked media sometimes...
             response = HTTPVariableResponse(req)
         else:
             response = HTTPResponse(req)
@@ -45,7 +53,12 @@ class StaticHandler(object):
                     limit = re - rs
                 response.status = "206 Partial Content"
             response.headers["Content-Length"] = str(limit)
-            self.__write_file(response, openfile, path, limit)
+            if chunked:
+                self.__write_file(response, openfile, path, limit)
+            else:
+                response.write(openfile.read(limit))
+                openfile.close()
+                response.dispatch()
         else:
             response.dispatch()
 

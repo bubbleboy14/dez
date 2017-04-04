@@ -22,29 +22,21 @@ class BasicCache(object):
                 self.mimetypes[url] = mimetype = magic.from_file(url.strip("/"), True) or "application/octet-stream"
         return mimetype
 
-    def __update(self, path, req=None):
+    def __update(self, path):
         self.log.debug("__update", path)
-        if self._stream(path, req):
+        if self._stream(path):
             self.cache[path]['content'] = bool(self.cache[path]['size'])
         else:
             f = open(path,'r')
             self.cache[path]['content'] = f.read()
             f.close()
 
-    def _stream(self, path, req=None):
+    def _stream(self, path):
         p = self.cache[path]
         p['size'] = os.stat(path).st_size
         stream = self.streaming
         if stream == "auto":
             stream = p['size'] > io.BUFFER_SIZE * 5
-            if stream and req:
-                ua = req.headers["user-agent"]
-                 # some devices can choke on chunked media
-                if "Android" in ua and "Mobile" not in ua:
-                    stream = False
-                for iflag in ["iPad", "iPod", "iPhone"]:
-                    if iflag in ua:
-                        stream = False
         self.log.debug("_stream", path, p['size'], stream)
         return stream
 
@@ -73,7 +65,7 @@ class BasicCache(object):
         if self._empty(path):
             err_back(req)
         else:
-            (self._stream(path, req) and stream_back or write_back)(req, path)
+            (self._stream(path) and stream_back or write_back)(req, path)
 
     def get(self, req, path, write_back, stream_back, err_back):
         path = path.split("?")[0]
@@ -83,7 +75,7 @@ class BasicCache(object):
         elif os.path.isfile(path):
             self.log.debug("get", path, "INITIALIZING FILE!")
             self._new_path(path, req.url)
-            self.__update(path, req)
+            self.__update(path)
             self._return(req, path, write_back, stream_back, err_back)
         else:
             self.log.debug("get", path, "404!")
