@@ -52,7 +52,7 @@ class BasicCache(object):
         return self.cache[path]['content']
 
     def get_mtime(self, path, pretty=False):
-        mt = self.cache[path]['mtime']
+        mt = self.cache[path].get('mtime', os.path.getmtime(path)) # not in inotify!!
         if pretty:
             return time.strftime('%a, %d %b %Y %H:%M:%S %Z', time.localtime(mt))
         return mt
