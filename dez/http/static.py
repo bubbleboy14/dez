@@ -25,7 +25,7 @@ class StaticHandler(object):
             response = HTTPResponse(req)
         response.headers['Server'] = self.server_name
         response.headers["Accept-Range"] = "bytes"
-        if self.timestamp:
+        if self.timestamp and path:
             response.headers['Last-Modified'] = self.cache.get_mtime(path, True)
         if ctype:
             response.headers['Content-Type'] = self.cache.get_type(path)
