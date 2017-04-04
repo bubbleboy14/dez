@@ -18,13 +18,13 @@ class HTTPApplication(object):
         construct the appropriate RawHTTPResponse or HTTPResponse as required.
     """
 
-    def __init__(self, bind_address, port, get_logger=None, server_name="Dez", certfile=None, keyfile=None, cacerts=None):
+    def __init__(self, bind_address, port, get_logger=None, server_name="Dez", certfile=None, keyfile=None, cacerts=None, static_timestamp=False):
         """start listening on the given port (this doesn't include a call to
            event.dispatch)"""
         self.daemon = HTTPDaemon(bind_address, port, get_logger, certfile, keyfile, cacerts)
         self.host = bind_address
         self.port = port
-        self.static_request = StaticHandler(server_name, get_logger)
+        self.static_request = StaticHandler(server_name, get_logger, static_timestamp)
         self.wsgi_pool = None
         
     def start(self):

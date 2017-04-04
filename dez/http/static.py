@@ -6,12 +6,13 @@ import os, urllib, event
 
 class StaticHandler(object):
     id = 0
-    def __init__(self, server_name, get_logger=default_get_logger):
+    def __init__(self, server_name, get_logger=default_get_logger, timestamp=False):
         StaticHandler.id += 1
         self.id = StaticHandler.id
         self.log = get_logger("StaticHandler(%s)"%(self.id,))
         self.log.debug("__init__")
         self.server_name = server_name
+        self.timestamp = timestamp
         try:
             self.cache = INotifyCache(get_logger=get_logger)
         except:
@@ -23,6 +24,9 @@ class StaticHandler(object):
         else:
             response = HTTPResponse(req)
         response.headers['Server'] = self.server_name
+        response.headers["Accept-Range"] = "bytes"
+        if self.timestamp:
+            response.headers['Last-Modified'] = self.cache.get_mtime(path, True)
         if ctype:
             response.headers['Content-Type'] = self.cache.get_type(path)
         for header in headers:
@@ -76,7 +80,6 @@ class StaticHandler(object):
     def __range(self, req, headers, size):
         rs, re = req.headers["range"][6:].split("-")
         headers["Content-Range"] = "bytes %s-%s/%s"%(rs, re or (size - 1), size)
-        headers["Accept-Range"] = "bytes"
         return int(rs), re and int(re) or None
 
     def __write(self, req, path):
