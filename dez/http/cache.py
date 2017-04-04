@@ -39,9 +39,12 @@ class BasicCache(object):
             stream = p['size'] > io.BUFFER_SIZE * 5
             if stream and req:
                 ua = req.headers["user-agent"]
+                 # some devices can choke on chunked media
+                if "Android" in ua and "Mobile" not in ua:
+                    stream = False
                 for iflag in ["iPad", "iPod", "iPhone"]:
                     if iflag in ua:
-                        stream = False # iOS is sometimes too dumb to reconstruct chunked media
+                        stream = False
         self.log.debug("_stream", path, p['size'], stream)
         return stream
 
