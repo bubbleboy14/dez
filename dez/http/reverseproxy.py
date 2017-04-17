@@ -39,14 +39,14 @@ BIG_FILES = ["mp3", "png", "jpg", "jpeg", "gif", "pdf", "csv", "mov",
     "zip", "doc", "docx", "jar", "data", "db", "xlsx", "geojson"] # more?
 
 class ReverseProxy(object):
-    def __init__(self, port, verbose, redirect=False, protocol="http", certfile=None):
+    def __init__(self, port, verbose, redirect=False, protocol="http", certfile=None, keyfile=None):
         self.port = port
         self.default_address = None
         self.verbose = verbose
         self.redirect = redirect
         self.protocol = protocol
         self.domains = {}
-        self.daemon = SocketDaemon('', port, self.new_connection, certfile=certfile)
+        self.daemon = SocketDaemon('', port, self.new_connection, certfile=certfile, keyfile=keyfile)
 
     def log(self, data):
         if self.verbose:
@@ -126,6 +126,8 @@ def startreverseproxy():
         help="prevent 302 redirect of large files (necessary if incoming host matters to target)")
     parser.add_option("-c", "--cert", dest="cert", default=None,
         help="your ssl certificate -- if port is unspecified, uses port 443")
+    parser.add_option("-k", "--key", dest="key", default=None,
+        help="your ssl key -- if port is unspecified, uses port 443")
     parser.add_option("-s", "--ssl_redirect", dest="ssl_redirect", default=None,
         help="if specified, 302 redirect ALL requests to https (port 443) application at specified host - ignores config")
     options, arguments = parser.parse_args()
@@ -138,7 +140,7 @@ def startreverseproxy():
         except:
             error('invalid port specified -- int required')
     try:
-        controller = ReverseProxy(options.port, options.verbose, certfile=options.cert)
+        controller = ReverseProxy(options.port, options.verbose, certfile=options.cert, keyfile=options.key)
     except Exception, e:
         error(options.verbose and "failed: %s"%(e,) or 'could not start server! try running as root!')
     if options.ssl_redirect:
