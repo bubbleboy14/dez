@@ -7,7 +7,7 @@ from dez.http.server.response import KEEPALIVE, HTTPResponse
 from dez.http.server.request import HTTPRequest
 
 class HTTPDaemon(object):
-    def __init__(self, host, port, get_logger=default_get_logger, certfile=None, keyfile=None, cacerts=None):
+    def __init__(self, host, port, get_logger=default_get_logger, certfile=None, keyfile=None, cacerts=None, rollz={}):
         self.log = get_logger("HTTPDaemon")
         self.get_logger = get_logger
         self.host = host
@@ -16,7 +16,7 @@ class HTTPDaemon(object):
         self.log.info("Listening on %s:%s" % (host, port))
         self.sock = io.server_socket(self.port, certfile, keyfile, cacerts)
         self.listen = event.read(self.sock, self.accept_connection, None, self.sock, None)
-        self.router = Router(self.default_cb)
+        self.router = Router(self.default_cb, roll_cb=self.roll_cb, rollz=rollz)
 
     def register_prefix(self, prefix, cb, args=[]):
         self.router.register_prefix(prefix, cb, args)
@@ -25,13 +25,20 @@ class HTTPDaemon(object):
         self.log.info("Registering callback: %s"%(signature,))
         self.router.register_cb(signature, cb, args)
 
-    def respond(self, request, data=None, status="200 OK"):
+    def respond(self, request, data=None, status="200 OK", headers={}):
         self.log.access("response (%s): '%s', '%s'"%(request.url, status, data))
         r = HTTPResponse(request)
         r.status = status
+        for k, v in headers.items():
+            r.headers[k] = v
         if data:
             r.write(data)
         r.dispatch()
+
+    def roll_cb(self, request):
+        self.log.info("302 (rolled!): %s"%(request.url,))
+        self.respond(request, "rolled!", "302 Found",
+            { "Location": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" })
 
     def default_404_cb(self, request):
         self.log.access("404: %s"%(request.url,))
@@ -178,7 +185,7 @@ class HTTPConnection(object):
         self.revent.pending() and self.revent.delete()
         self.wevent.pending() or self.wevent.add()
         request.state = "write" # questionable
-        dispatch_cb, args = self.router(request.url)
+        dispatch_cb, args = self.router(request)
         dispatch_cb(request, *args)
 
     def complete(self):

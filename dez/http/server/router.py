@@ -1,9 +1,11 @@
 import re
 
 class Router(object):
-    def __init__(self, default_cb, default_args=[]):
+    def __init__(self, default_cb, default_args=[], roll_cb=None, rollz={}):
         self.default_cb = default_cb
         self.default_args = default_args
+        self.roll_cb = roll_cb
+        self.rollz = rollz
         self.prefixes = []
         self.regexs = []
 
@@ -23,7 +25,10 @@ class Router(object):
     def pref_order(self, b, a):
         return cmp(len(a[0]),len(b[0]))
 
-    def _check(self, url):
+    def _check(self, url, req=None):
+        for flag, domain in self.rollz.items():
+            if url.startswith(flag) and req and domain not in req.headers.get("referer", ""):
+                return self.roll_cb, []
         for rx, cb, args in self.regexs:
             if rx.match(url):
                 return cb, args
@@ -34,8 +39,9 @@ class Router(object):
     def _try_index(self, url):
         return self._check(url + "index.html")
 
-    def __call__(self, url):
-        match = self._check(url) or self._try_index(url)
+    def __call__(self, req):
+        url = req.url
+        match = self._check(url, req) or self._try_index(url)
         if match:
             return match[0], match[1]
         return self.default_cb, self.default_args
