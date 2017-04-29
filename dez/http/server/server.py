@@ -16,7 +16,7 @@ class HTTPDaemon(object):
         self.log.info("Listening on %s:%s" % (host, port))
         self.sock = io.server_socket(self.port, certfile, keyfile, cacerts)
         self.listen = event.read(self.sock, self.accept_connection, None, self.sock, None)
-        self.router = Router(self.default_cb, roll_cb=self.roll_cb, rollz=rollz)
+        self.router = Router(self.default_cb, roll_cb=self.roll_cb, rollz=rollz, get_logger=get_logger)
 
     def register_prefix(self, prefix, cb, args=[]):
         self.router.register_prefix(prefix, cb, args)

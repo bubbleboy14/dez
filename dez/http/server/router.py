@@ -1,7 +1,9 @@
 import re
+from dez.logging import default_get_logger
 
 class Router(object):
-    def __init__(self, default_cb, default_args=[], roll_cb=None, rollz={}):
+    def __init__(self, default_cb, default_args=[], roll_cb=None, rollz={}, get_logger=default_get_logger):
+        self.log = get_logger("Router")
         self.default_cb = default_cb
         self.default_args = default_args
         self.roll_cb = roll_cb
@@ -27,8 +29,12 @@ class Router(object):
 
     def _check(self, url, req=None):
         for flag, domain in self.rollz.items():
-            if url.startswith(flag) and req and domain not in req.headers.get("referer", ""):
-                return self.roll_cb, []
+            if url.startswith(flag) and req:
+                ref = req.headers.get("referer", "")
+                self.log.access("roll check! url: %s. referer: %s"%(url, ref))
+                if not ref or domain not in ref:
+                    return self.roll_cb, []
+                self.log.access("passed!")
         for rx, cb, args in self.regexs:
             if rx.match(url):
                 return cb, args
