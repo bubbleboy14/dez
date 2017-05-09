@@ -22,7 +22,7 @@ def fetch(host, path="/", port=80, cb=None, timeout=1, json=False, dispatch=Fals
 		F = Fetcher()
 	if json:
 		cb = lambda data : cb(decode(data))
-	F.fetch(host, cb, path, port, timeout)
+	F.fetch(host, path, port, cb, timeout)
 	if dispatch:
 		import event
 		event.signal(2, event.abort)
