@@ -37,6 +37,7 @@ class HTTPDaemon(object):
 
     def roll_cb(self, request):
         self.log.info("302 (rolled!): %s"%(request.url,))
+        self.counter.roll()
         self.respond(request, "rolled!", "302 Found",
             { "Location": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" })
 
@@ -65,10 +66,20 @@ class HTTPDaemon(object):
 
 class Counter(object):
     def __init__(self):
+        self.rolls = 0
+        self.devices = {}
         self.requests = 0
         self.connections = 0
         self.total_requests = 0
         self.total_connections = 0
+
+    def roll(self):
+        self.rolls += 1
+
+    def device(self, useragent):
+        if useragent not in self.devices:
+            self.devices[useragent] = 0
+        self.devices[useragent] += 1
 
     def inc(self, ctype):
         ts = "total_%s"%(ctype,)
@@ -80,6 +91,8 @@ class Counter(object):
 
     def report(self):
         return {
+            "rolls": self.rolls,
+            "devices": self.devices,
             "requests": self.requests,
             "connections": self.connections,
             "total_requests": self.total_requests,
@@ -182,6 +195,7 @@ class HTTPConnection(object):
 
     def route(self, request):
         self.log.debug("route", request.id, "[deleting revent, adding wevent]", "[dispatching router]")
+        self.counter.device(request.headers["user-agent"])
         self.revent.pending() and self.revent.delete()
         self.wevent.pending() or self.wevent.add()
         request.state = "write" # questionable
