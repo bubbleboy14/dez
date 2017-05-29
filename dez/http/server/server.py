@@ -195,7 +195,7 @@ class HTTPConnection(object):
 
     def route(self, request):
         self.log.debug("route", request.id, "[deleting revent, adding wevent]", "[dispatching router]")
-        self.counter.device(request.headers["user-agent"])
+        self.counter.device(request.headers.get("user-agent", "none"))
         self.revent.pending() and self.revent.delete()
         self.wevent.pending() or self.wevent.add()
         request.state = "write" # questionable
