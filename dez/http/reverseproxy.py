@@ -1,3 +1,4 @@
+import json
 from dez.network import SocketDaemon, SimpleClient
 from dez.http.counter import Counter
 from dez.http.server import HTTPDaemon
@@ -13,7 +14,7 @@ class ReverseProxyConnection(object):
         self.logger = logger
         self.log("Initializing connection")
         self.counter = counter or Counter()
-        self.counter.inc("connections")
+        self.counter.inc("connections", conn.sock)
         SimpleClient().connect(h2, p2, self.onConnect, [start_data])
 
     def log(self, msg):

@@ -77,7 +77,7 @@ class HTTPConnection(object):
         self.addr, self.local_port = addr
         self.router = router
         self.counter = counter or Counter()
-        self.counter.inc("connections")
+        self.counter.inc("connections", sock)
         self.response_queue = []
         self.request = None
         self.current_cb = None
