@@ -1,8 +1,9 @@
 from dez.network import SocketDaemon, SimpleClient
+from dez.http.counter import Counter
 from datetime import datetime
 
 class ReverseProxyConnection(object):
-    def __init__(self, conn, h1, p1, h2, p2, logger, start_data):
+    def __init__(self, conn, h1, p1, h2, p2, logger, start_data, counter=None):
         self.front_conn = conn
         self.front_host = h1
         self.front_port = p1
@@ -10,6 +11,8 @@ class ReverseProxyConnection(object):
         self.back_port = p2
         self.logger = logger
         self.log("Initializing connection")
+        self.counter = counter or Counter()
+        self.counter.inc("connections")
         SimpleClient().connect(h2, p2, self.onConnect, [start_data])
 
     def log(self, msg):
@@ -26,6 +29,7 @@ class ReverseProxyConnection(object):
 
     def onClose(self, conn):
         self.log("Connection closed")
+        self.counter.dec("connections")
         self.front_conn.set_close_cb(None)
         self.back_conn.set_close_cb(None)
         self.front_conn.halt_read()
@@ -46,6 +50,7 @@ class ReverseProxy(object):
         self.redirect = redirect
         self.protocol = protocol
         self.domains = {}
+        self.counter = Counter()
         self.daemon = SocketDaemon('', port, self.new_connection, certfile=certfile, keyfile=keyfile)
 
     def log(self, data):
@@ -86,6 +91,8 @@ class ReverseProxy(object):
                 if ":" in domain:
                     domain = domain.split(":")[0]
                 break
+            elif line.startswith("User-Agent: "):
+                self.counter.device(line[12:])
         if not domain:
             return conn.close('no host header')
         self.dispatch(data+'\r\n\r\n', conn, domain, should302, path)
@@ -97,7 +104,7 @@ class ReverseProxy(object):
         if should302 and BIG_302:
             self._302(conn, "%s:%s"%(host, port), path)
         else:
-            ReverseProxyConnection(conn, domain, self.port, host, port, self.log, data)
+            ReverseProxyConnection(conn, domain, self.port, host, port, self.log, data, self.counter)
 
     def register_default(self, host, port):
         self.default_address = (host, port)
