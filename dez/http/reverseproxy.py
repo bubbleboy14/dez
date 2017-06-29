@@ -1,5 +1,6 @@
 from dez.network import SocketDaemon, SimpleClient
 from dez.http.counter import Counter
+from dez.http.server import HTTPDaemon
 from datetime import datetime
 
 class ReverseProxyConnection(object):
@@ -43,7 +44,7 @@ BIG_FILES = ["mp3", "png", "jpg", "jpeg", "gif", "pdf", "csv", "mov",
     "zip", "doc", "docx", "jar", "data", "db", "xlsx", "geojson"] # more?
 
 class ReverseProxy(object):
-    def __init__(self, port, verbose, redirect=False, protocol="http", certfile=None, keyfile=None):
+    def __init__(self, port, verbose, redirect=False, protocol="http", certfile=None, keyfile=None, monitor=None):
         self.port = port
         self.default_address = None
         self.verbose = verbose
@@ -52,6 +53,13 @@ class ReverseProxy(object):
         self.domains = {}
         self.counter = Counter()
         self.daemon = SocketDaemon('', port, self.new_connection, certfile=certfile, keyfile=keyfile)
+        if monitor:
+            self.monitor = HTTPDaemon('', int(monitor))
+            self.monitor.register_prefix("/_report", self.report)
+
+    def report(self, req):
+        req.write("HTTP/1.0 200 OK\r\n\r\n%s"%(json.dumps(self.counter.report()),))
+        req.close()
 
     def log(self, data):
         if self.verbose:
@@ -137,6 +145,8 @@ def startreverseproxy():
         help="your ssl key -- if port is unspecified, uses port 443")
     parser.add_option("-s", "--ssl_redirect", dest="ssl_redirect", default=None,
         help="if specified, 302 redirect ALL requests to https (port 443) application at specified host - ignores config")
+    parser.add_option("-m", "--monitor", dest="monitor", default=None,
+        help="listen on specified port for /_report requests (default: None)")
     options, arguments = parser.parse_args()
     BIG_302 = not options.override_redirect
     if options.cert and options.port == "80":
@@ -147,7 +157,8 @@ def startreverseproxy():
         except:
             error('invalid port specified -- int required')
     try:
-        controller = ReverseProxy(options.port, options.verbose, certfile=options.cert, keyfile=options.key)
+        controller = ReverseProxy(options.port, options.verbose,
+            certfile=options.cert, keyfile=options.key, monitor=options.monitor)
     except Exception, e:
         error(options.verbose and "failed: %s"%(e,) or 'could not start server! try running as root!')
     if options.ssl_redirect:
