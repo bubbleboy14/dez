@@ -13,8 +13,7 @@ class Counter(object):
     def roll(self):
         self.rolls += 1
 
-    def ip(self):
-        ip = os.environ["REMOTE_ADDR"]
+    def ip(self, ip):
         if ip not in self.ips:
             self.ips[ip] = 0
         self.ips[ip] += 1
@@ -24,12 +23,12 @@ class Counter(object):
             self.devices[useragent] = 0
         self.devices[useragent] += 1
 
-    def inc(self, ctype):
+    def inc(self, ctype, sock=None):
         ts = "total_%s"%(ctype,)
         setattr(self, ts, getattr(self, ts) + 1)
         setattr(self, ctype, getattr(self, ctype) + 1)
-        if ctype == "connections":
-            self.ip()
+        if sock:
+            self.ip(sock.getpeername()[0])
 
     def dec(self, ctype):
         setattr(self, ctype, getattr(self, ctype) - 1)
