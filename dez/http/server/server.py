@@ -2,6 +2,7 @@ import event, socket, ssl
 from dez import io
 from dez.buffer import Buffer
 from dez.logging import default_get_logger
+from dez.http.counter import Counter
 from dez.http.server.router import Router
 from dez.http.server.response import KEEPALIVE, HTTPResponse
 from dez.http.server.request import HTTPRequest
@@ -64,41 +65,6 @@ class HTTPDaemon(object):
         HTTPConnection(sock, addr, self.router, self.get_logger, self.counter)
         return True
 
-class Counter(object):
-    def __init__(self):
-        self.rolls = 0
-        self.devices = {}
-        self.requests = 0
-        self.connections = 0
-        self.total_requests = 0
-        self.total_connections = 0
-
-    def roll(self):
-        self.rolls += 1
-
-    def device(self, useragent):
-        if useragent not in self.devices:
-            self.devices[useragent] = 0
-        self.devices[useragent] += 1
-
-    def inc(self, ctype):
-        ts = "total_%s"%(ctype,)
-        setattr(self, ts, getattr(self, ts) + 1)
-        setattr(self, ctype, getattr(self, ctype) + 1)
-
-    def dec(self, ctype):
-        setattr(self, ctype, getattr(self, ctype) - 1)
-
-    def report(self):
-        return {
-            "rolls": self.rolls,
-            "devices": self.devices,
-            "requests": self.requests,
-            "connections": self.connections,
-            "total_requests": self.total_requests,
-            "total_connections": self.total_connections
-        }
-
 class HTTPConnection(object):
     id = 0
     def __init__(self, sock, addr, router, get_logger, counter=None):
@@ -111,7 +77,7 @@ class HTTPConnection(object):
         self.addr, self.local_port = addr
         self.router = router
         self.counter = counter or Counter()
-        self.counter.inc("connections")
+        self.counter.inc("connections", sock)
         self.response_queue = []
         self.request = None
         self.current_cb = None
