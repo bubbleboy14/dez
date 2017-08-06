@@ -1,4 +1,4 @@
-import event, socket, ssl
+import event, socket
 from dez import io
 from dez.buffer import Buffer
 from dez.logging import default_get_logger
@@ -13,6 +13,7 @@ class HTTPDaemon(object):
         self.get_logger = get_logger
         self.host = host
         self.port = port
+        self.secure = bool(certfile)
         self.counter = Counter()
         self.log.info("Listening on %s:%s" % (host, port))
         self.sock = io.server_socket(self.port, certfile, keyfile, cacerts)
@@ -53,14 +54,19 @@ class HTTPDaemon(object):
     def default_cb(self, request):
         return self.default_404_cb(request)
 
+    def handshake_cb(self, sock, addr):
+        def cb():
+            HTTPConnection(sock, addr, self.router, self.get_logger, self.counter)
+        return cb
+
     def accept_connection(self, ev, sock, event_type, *arg):
         try:
             sock, addr = sock.accept()
+            if self.secure:
+                io.ssl_handshake(sock, self.handshake_cb(sock, addr))
+                return True
         except socket.error, e:
             self.log.info("abandoning connection on socket error: %s"%(e,))
-            return True
-        except ssl.SSLError, e:
-            self.log.info("abandoning connection on SSLError: %s"%(e,))
             return True
         HTTPConnection(sock, addr, self.router, self.get_logger, self.counter)
         return True

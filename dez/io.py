@@ -1,6 +1,24 @@
-import socket, ssl
+import socket, ssl, time, event
 LQUEUE_SIZE = 5
 BUFFER_SIZE = 131072
+SSL_HANDSHAKE_TICK = 0.1
+SSL_HANDSHAKE_TIMEOUT = 1
+
+def ssl_handshake(sock, cb):
+    deadline = time.time() + SSL_HANDSHAKE_TIMEOUT
+    def shaker():
+        try:
+            sock.settimeout(SSL_HANDSHAKE_TICK)
+            sock.do_handshake()
+            sock.settimeout(0)
+        except Exception, e:
+            if time.time() > deadline:
+                sock.close()
+            else:
+                return True
+        else:
+            cb()
+    event.timeout(SSL_HANDSHAKE_TICK, shaker)
 
 def server_socket(port, certfile=None, keyfile=None, cacerts=None):
     ''' Return a listening socket bound to the given interface and port. '''
@@ -17,9 +35,9 @@ def server_socket(port, certfile=None, keyfile=None, cacerts=None):
             if cacerts:
                 ctx.verify_mode = ssl.CERT_OPTIONAL
                 ctx.load_verify_locations(cacerts)
-            return ctx.wrap_socket(sock, server_side=True)
+            return ctx.wrap_socket(sock, server_side=True, do_handshake_on_connect=False)
         return ssl.wrap_socket(sock, certfile=certfile,
-            keyfile=keyfile, server_side=True)
+            keyfile=keyfile, server_side=True, do_handshake_on_connect=False)
     return sock
 
 def client_socket(addr, port, certfile=None, keyfile=None):
