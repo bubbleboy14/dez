@@ -1,4 +1,4 @@
-import event, socket
+import event
 from dez import io
 from dez.buffer import Buffer
 from dez.logging import default_get_logger
@@ -65,7 +65,7 @@ class HTTPDaemon(object):
             if self.secure:
                 io.ssl_handshake(sock, self.handshake_cb(sock, addr))
                 return True
-        except socket.error, e:
+        except io.socket.error, e:
             self.log.info("abandoning connection on socket error: %s"%(e,))
             return True
         HTTPConnection(sock, addr, self.router, self.get_logger, self.counter)
@@ -156,8 +156,11 @@ class HTTPConnection(object):
                 self.close()
                 return None
             return self.read(data)
+        except io.ssl.SSLWantReadError, e:
+            self.log.debug("read_ready (waiting)", "SSLWantReadError", e)
+            return True # wait
         except io.socket.error, e:
-            self.log.debug("read_ready", "io.socket.error", e)
+            self.log.debug("read_ready (closing)", "io.socket.error", e)
             self.close()
             return None
 
