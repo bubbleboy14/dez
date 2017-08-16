@@ -156,11 +156,8 @@ class HTTPConnection(object):
                 self.close()
                 return None
             return self.read(data)
-        except io.ssl.SSLError, e: # for python 2.7.6
+        except io.ssl.SSLError, e: # not SSLWantReadError for python 2.7.6
             self.log.debug("read_ready (waiting)", "SSLError", e)
-            return True # wait
-        except io.ssl.SSLWantReadError, e:
-            self.log.debug("read_ready (waiting)", "SSLWantReadError", e)
             return True # wait
         except io.socket.error, e:
             self.log.debug("read_ready (closing)", "io.socket.error", e)
