@@ -77,6 +77,8 @@ class ReverseProxy(object):
         if domain in self.domains:
             return self.domains[domain]
         if self.default_address:
+            if self.default_address[0] == "auto":
+                return (domain, self.default_address[1])
             return self.default_address
         return None, None
 
@@ -145,7 +147,7 @@ def startreverseproxy():
     parser.add_option("-k", "--key", dest="key", default=None,
         help="your ssl key -- if port is unspecified, uses port 443")
     parser.add_option("-s", "--ssl_redirect", dest="ssl_redirect", default=None,
-        help="if specified, 302 redirect ALL requests to https (port 443) application at specified host - ignores config")
+        help="if specified, 302 redirect ALL requests to https (port 443) application at specified host ('auto' leaves host unchanged) - ignores config")
     parser.add_option("-m", "--monitor", dest="monitor", default=None,
         help="listen on specified port for /_report requests (default: None)")
     options, arguments = parser.parse_args()
