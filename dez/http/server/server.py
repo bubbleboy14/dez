@@ -56,7 +56,7 @@ class HTTPDaemon(object):
 
     def handshake_cb(self, sock, addr):
         def cb():
-            HTTPConnection(sock, addr, self.router, self.get_logger, self.counter, self.secure)
+            HTTPConnection(sock, addr, self.router, self.get_logger, self.counter)
         return cb
 
     def accept_connection(self, ev, sock, event_type, *arg):
@@ -68,12 +68,12 @@ class HTTPDaemon(object):
         except io.socket.error, e:
             self.log.info("abandoning connection on socket error: %s"%(e,))
             return True
-        HTTPConnection(sock, addr, self.router, self.get_logger, self.counter, self.secure)
+        HTTPConnection(sock, addr, self.router, self.get_logger, self.counter)
         return True
 
 class HTTPConnection(object):
     id = 0
-    def __init__(self, sock, addr, router, get_logger, counter=None, secure=False):
+    def __init__(self, sock, addr, router, get_logger, counter=None):
         HTTPConnection.id += 1
         self.id = HTTPConnection.id
         self.log = get_logger("HTTPConnection(%s)"%(self.id,))
@@ -82,7 +82,6 @@ class HTTPConnection(object):
         self.sock = sock
         self.addr, self.local_port = addr
         self.router = router
-        self.secure = secure
         self.counter = counter or Counter()
         self.counter.inc("connections", sock)
         self.response_queue = []
@@ -153,10 +152,6 @@ class HTTPConnection(object):
         try:
             data = self.sock.recv(io.BUFFER_SIZE)
             if not data:
-                if self.secure and not self._secure_close: # may be SSLWantReadError equivalent for python 2.7.12
-                    self.log.debug("no data - waiting")
-                    self._secure_close = True
-                    return True
                 self.log.debug("no data - closing")
                 self.close()
                 return None
