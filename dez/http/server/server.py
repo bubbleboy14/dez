@@ -65,10 +65,10 @@ class HTTPDaemon(object):
             if self.secure:
                 io.ssl_handshake(sock, self.handshake_cb(sock, addr))
                 return True
+            HTTPConnection(sock, addr, self.router, self.get_logger, self.counter)
         except io.socket.error, e:
             self.log.info("abandoning connection on socket error: %s"%(e,))
             return True
-        HTTPConnection(sock, addr, self.router, self.get_logger, self.counter)
         return True
 
 class HTTPConnection(object):
