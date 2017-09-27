@@ -14,7 +14,11 @@ class ReverseProxyConnection(object):
         self.logger = logger
         self.log("Initializing connection")
         self.counter = counter or Counter()
-        self.counter.inc("connections", conn.sock)
+        try:
+            self.counter.inc("connections", conn.sock)
+        except:
+            self.front_conn = None
+            return self.log("Transport endpoint is not connected - aborting ReverseProxyConnection")
         SimpleClient().connect(h2, p2, self.onConnect, [start_data])
 
     def log(self, msg):
