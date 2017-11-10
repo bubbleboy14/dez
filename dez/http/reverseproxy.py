@@ -1,4 +1,4 @@
-import json
+import json, random
 from dez.network import SocketDaemon, SimpleClient
 from dez.http.counter import Counter
 from dez.http.server import HTTPDaemon
@@ -79,11 +79,12 @@ class ReverseProxy(object):
 
     def domain2hostport(self, domain):
         if domain in self.domains:
-            return self.domains[domain]
+            return random.choice(self.domains[domain])
         if self.default_address:
-            if self.default_address[0] == "auto":
-                return (domain, self.default_address[1])
-            return self.default_address
+            da = random.choice(self.default_address)
+            if da[0] == "auto":
+                return (domain, da[1])
+            return da
         return None, None
 
     def cantroute(self, domain, conn):
@@ -122,10 +123,22 @@ class ReverseProxy(object):
             ReverseProxyConnection(conn, domain, self.port, host, port, self.log, data, self.counter)
 
     def register_default(self, host, port):
-        self.default_address = (host, port)
+        if not self.default_address:
+            self.default_address = []
+        self.default_address.append((host, port))
 
     def register_domain(self, domain, host, port):
-        self.domains[domain] = (host, port)
+        if domain not in self.domains:
+            self.domains[domain] = []
+        self.domains[domain].append((host, port))
+
+    def loud_register(self, domain, host, port):
+        if domain == "*":
+            self.log("Setting default forwarding address to %s:%s"%(host, port))
+            self.register_default(host, port)
+        else:
+            self.log("Mapping %s to %s:%s"%(domain, host, port))
+            self.register_domain(domain, host, port)
 
     def start(self):
         self.daemon.start()
@@ -182,22 +195,27 @@ def startreverseproxy():
         f = open(config)
         lines = f.readlines()
         f.close()
-        for line in lines:
-            line = line.split("#")[0]
-            if line: # allows comment lines
-                try:
-                    domain, back_addr = line.split('->')
-                    domain = domain.strip()
-                    host, port = back_addr.split(':')
-                    host = host.strip()
-                    port = int(port)
-                except:
-                    error('could not parse config. expected "incoming_hostname -> forwarding_address_hostname:forwarding_address_port". failed on line: "%s"'%line)
-                if domain == "*":
-                    print "Setting default forwarding address to %s:%s"%(host, port)
-                    controller.register_default(host, port)
-                else:
-                    print "Mapping %s to %s:%s"%(domain, host, port)
-                    controller.register_domain(domain, host, port)
+        try:
+            print "checking for JSON config"
+            cfg = json.loads("".join([l.strip() for l in lines]))
+            print "JSON detected - congratulations!"
+            for domain, targets in cfg["domains"].items():
+                for target in targets:
+                    host, port = target.split(':')
+                    controller.loud_register(domain, host, int(port))
+        except:
+            print "nope! parsing legacy config."
+            for line in lines:
+                line = line.split("#")[0]
+                if line: # allows comment lines
+                    try:
+                        domain, back_addr = line.split('->')
+                        domain = domain.strip()
+                        host, port = back_addr.split(':')
+                        host = host.strip()
+                        port = int(port)
+                    except:
+                        error('could not parse config. expected "incoming_hostname -> forwarding_address_hostname:forwarding_address_port". failed on line: "%s"'%line)
+                    controller.loud_register(domain, host, port)
     print "Starting reverse proxy router on port %s"%(options.port)
     controller.start()
