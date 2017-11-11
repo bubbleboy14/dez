@@ -148,9 +148,22 @@ def error(msg):
     import sys
     sys.exit(0)
 
-def startreverseproxy():
-    global BIG_302
-    import os, optparse
+def get_controller(port, verbose, cert, key, monitor):
+    if cert and port == "80":
+        port = 443
+    else:
+        try:
+            port = int(port)
+        except:
+            error('invalid port specified -- int required')
+    try:
+        controller = ReverseProxy(port, verbose, certfile=cert, keyfile=key, monitor=monitor)
+    except Exception, e:
+        error(verbose and "failed: %s"%(e,) or 'could not start server! try running as root!')
+    return controller
+
+def parse_options():
+    import optparse
     parser = optparse.OptionParser('dez_reverse_proxy [CONFIG]')
     parser.add_option("-v", "--verbose", action="store_true",
         dest="verbose", default=False, help="log proxy activity")
@@ -167,29 +180,30 @@ def startreverseproxy():
         help="if specified, 302 redirect ALL requests to https (port 443) application at specified host ('auto' leaves host unchanged) - ignores config")
     parser.add_option("-m", "--monitor", dest="monitor", default=None,
         help="listen on specified port for /_report requests (default: None)")
-    options, arguments = parser.parse_args()
+    return parser.parse_args()
+
+def process_targets(domains, controller):
+    for domain, targets in domains.items():
+        for target in targets:
+            host, port = target.split(':')
+            controller.loud_register(domain, host, int(port))
+
+def startreverseproxy(options=None):
+    global BIG_302
+    import os
+    if not options:
+        options, arguments = parse_options()    
     BIG_302 = not options.override_redirect
-    if options.cert and options.port == "80":
-        options.port = 443
-    else:
-        try:
-            options.port = int(options.port)
-        except:
-            error('invalid port specified -- int required')
-    try:
-        controller = ReverseProxy(options.port, options.verbose,
-            certfile=options.cert, keyfile=options.key, monitor=options.monitor)
-    except Exception, e:
-        error(options.verbose and "failed: %s"%(e,) or 'could not start server! try running as root!')
+    controller = get_controller(options.port, options.verbose, options.cert, options.key, options.monitor)
     if options.ssl_redirect:
         controller.redirect = True
         controller.protocol = "https"
         print "Redirecting traffic to https (port 443)"
         controller.register_default(options.ssl_redirect, 443)
     else:
-        if len(arguments) < 1:
+        config = getattr(options, "cfg", None) or len(arguments) and arguments[0]
+        if not config:
             error("no config specified")
-        config = arguments[0]
         if not os.path.isfile(config):
             error('no valid config - "%s" not found'%config)
         f = open(config)
@@ -199,10 +213,7 @@ def startreverseproxy():
             print "checking for JSON config"
             cfg = json.loads("".join([l.strip() for l in lines]))
             print "JSON detected - congratulations!"
-            for domain, targets in cfg["domains"].items():
-                for target in targets:
-                    host, port = target.split(':')
-                    controller.loud_register(domain, host, int(port))
+            process_targets(cfg["domains"], controller)
         except:
             print "nope! parsing legacy config."
             for line in lines:
