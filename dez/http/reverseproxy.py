@@ -149,7 +149,7 @@ def error(msg):
     sys.exit(0)
 
 def get_controller(port, verbose, cert, key, monitor):
-    if cert and port == "80":
+    if cert and int(port) == 80:
         port = 443
     else:
         try:
