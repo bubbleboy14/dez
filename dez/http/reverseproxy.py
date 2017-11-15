@@ -188,7 +188,7 @@ def process_targets(domains, controller):
             host, port = target.split(':')
             controller.loud_register(domain, host, int(port))
 
-def startreverseproxy(options=None):
+def startreverseproxy(options=None, start=True):
     global BIG_302
     import os
     if not options:
@@ -228,5 +228,6 @@ def startreverseproxy(options=None):
                     except:
                         error('could not parse config. expected "incoming_hostname -> forwarding_address_hostname:forwarding_address_port". failed on line: "%s"'%line)
                     controller.loud_register(domain, host, port)
-    print "Starting reverse proxy router on port %s"%(options.port)
-    controller.start()
+    if start:
+        print "Starting reverse proxy router on port %s"%(options.port)
+        controller.start()
