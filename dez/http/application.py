@@ -142,7 +142,7 @@ class ParsedHTTPRequest(object):
         if self.req.method.lower() == "get" and "?" in self.req.url:
             self.url, self.qs = self.req.url.split('?', 1)
             for qparam in self.qs.split("&"):
-                key, val = qparam.split("=")
+                key, val = qparam.split("=", 1)
                 self.qs_params[key] = val
         elif self.req.method.lower() == "post":
             self.url, self.qs = self.req.url, self.body
