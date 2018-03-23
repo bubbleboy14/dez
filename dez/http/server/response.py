@@ -9,7 +9,13 @@ def renderResponse(data="", version_major=1, version_minor=0, status="200 OK", h
     status_line = "HTTP/%s.%s %s\r\n" % (version_major, version_minor, status)
     headers['Content-Length'] = str(len(data))
     h = "\r\n".join(": ".join((k, v)) for (k, v) in headers.items())
-    return status_line + h + "\r\n\r\n" + data
+    try:
+        return status_line + h + "\r\n\r\n" + data
+    except:
+        try:
+            return status_line + h + "\r\n\r\n" + unicode.replace(data, "replace")
+        except:
+            return status_line + h + "\r\n\r\n" + unicode.replace(data, "ignore")
 
 class HTTPResponse(object):
     id = 0
