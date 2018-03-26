@@ -121,7 +121,7 @@ class HTTPConnection(object):
 
     def timeout(self):
         self.log.debug("TIMEOUT (request %s) -- closing!"%(self.request.id,))
-        self.close()
+        self.request.close()
 
     def close(self, reason=""):
         self.log.debug("close")
