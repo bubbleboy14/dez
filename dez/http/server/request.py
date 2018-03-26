@@ -162,14 +162,17 @@ class HTTPRequest(object):
         if cb:
             cb(*args)
         if self.write_ended and not self.conn.wevent.pending():
-            self.conn.counter.dec("requests")
-            if self.send_close:
-                self.log.debug("closing!!")
-                self.state = "closed"
-                self.conn.close()
-            else:
-                self.log.debug("restarting!!")
-                self.conn.start_request()
+            self._close()
+
+    def _close(self):
+        self.conn.counter.dec("requests")
+        if self.send_close:
+            self.log.debug("closing!!")
+            self.state = "closed"
+            self.conn.close()
+        else:
+            self.log.debug("restarting!!")
+            self.conn.start_request()
 
     def end(self, cb=None, args=[]):
         self.log.debug("end", self.write_ended, self.state)
@@ -184,6 +187,9 @@ class HTTPRequest(object):
 
     def close(self, cb=None, args=[]):
         self.log.debug("close", self.write_ended, self.state)
+        if self.state == "action":
+            self.send_close = True
+            return self._close()
         if self.write_ended:
             return self.log.error("CLOSE", "end already called")
         if self.state != "write":
