@@ -1,3 +1,4 @@
+import event
 try:
     import cStringIO as StringIO
 except ImportError:
@@ -38,6 +39,7 @@ class HTTPResponse(object):
             self.keep_alive = True
             self.headers['Connection'] = 'keep-alive'
             self.headers['Keep-Alive'] = KEEPALIVE
+            self.timeout = event.timeout(int(KEEPALIVE), self.end_or_close)
 
     def __setitem__(self, key, val):
         self.headers[key] = val
@@ -48,13 +50,15 @@ class HTTPResponse(object):
     def write(self, data):
         self.buffer.append(str(data))
 
-    def end_or_close(self, cb):
+    def end_or_close(self, cb=None):
         if self.keep_alive:
-            self.log.debug("end_or_close", "ending")
-            self.request.end(cb)
-        else:
-            self.log.debug("end_or_close", "closing")
-            self.request.close(cb)
+            if self.timeout.pending():
+                self.timeout.delete()
+                self.log.debug("end_or_close", "ending")
+                self.request.end(cb)
+                return
+        self.log.debug("end_or_close", "closing")
+        self.request.close(cb)
 
     def render(self):
         response = renderResponse("".join(self.buffer), self.version_major,
@@ -86,11 +90,14 @@ class HTTPVariableResponse(object):
         self.status = "200 OK"
         self.version_major = 1
         self.version_minor = min(1, request.version_minor)
+        self.keep_alive = False
         if self.version_minor == 1:
             self.headers['Transfer-encoding'] = 'chunked'
             if request.headers.get("connection") == "keep-alive":
+                self.keep_alive = True
                 self.headers['Connection'] = 'keep-alive'
                 self.headers['Keep-Alive'] = KEEPALIVE
+                self.timeout = event.timeout(int(KEEPALIVE), self.end_or_close)
 
     def __setitem__(self, key, val):
         self.headers[key] = val
@@ -137,8 +144,10 @@ class HTTPVariableResponse(object):
         self.log.debug("end_or_close", cb)
         if self.version_minor == 1:
             self.__write_chunk("")
-            if int(self.headers.get('Keep-alive', '0')) > 0:
-                return self.end(cb)
+            if self.keep_alive:
+                if self.timeout.pending():
+                    self.timeout.delete()
+                    return self.end(cb)
         self.close(cb)
 
 class RawHTTPResponse(object):
