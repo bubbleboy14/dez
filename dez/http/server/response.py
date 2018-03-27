@@ -4,7 +4,7 @@ try:
 except ImportError:
     import StringIO
 
-KEEPALIVE = '5'
+KEEPALIVE = '300'
 
 def renderResponse(data="", version_major=1, version_minor=0, status="200 OK", headers={}):
     status_line = "HTTP/%s.%s %s\r\n" % (version_major, version_minor, status)
