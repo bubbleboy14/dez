@@ -5,6 +5,7 @@ MC = None
 class Memcache(object):
 	def __init__(self):
 		self.cache = {}
+		self.last_count = {}
 
 	def get(self, key, tojson=True):
 		val = self.cache.get(key)
@@ -19,6 +20,24 @@ class Memcache(object):
 
 	def clear(self):
 		self.cache = {}
+
+	def count(self, items=False):
+		if items:
+			count = {}
+			for key, val in self.cache.items():
+				count[key] = len(val)
+			return count
+		return len(self.cache)
+
+	def diff(self):
+		diff = {}
+		count = self.count(True)
+		for key, val in count.items():
+			orig = self.last_count.get(key)
+			if val != orig:
+				diff[key] = [orig, val]
+		self.last_count = count
+		return diff
 
 def get_memcache():
 	global MC
