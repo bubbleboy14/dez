@@ -13,10 +13,10 @@ def renderResponse(data="", version_major=1, version_minor=0, status="200 OK", h
     try:
         return status_line + h + "\r\n\r\n" + data
     except:
-        try:
-            return status_line + h + "\r\n\r\n" + unicode(data, "utf-8", "replace")
-        except:
-            return status_line + h + "\r\n\r\n" + unicode(data, "utf-8", "ignore")
+        if isinstance(data, str):
+            return status_line + h + "\r\n\r\n" + data.decode("ascii", "ignore").encode("ascii")
+        elif isinstance(data, unicode):
+            return status_line + h + "\r\n\r\n" + data.encode("ascii", "ignore")
 
 class HTTPResponse(object):
     id = 0
