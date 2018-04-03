@@ -14,9 +14,9 @@ def renderResponse(data="", version_major=1, version_minor=0, status="200 OK", h
         return status_line + h + "\r\n\r\n" + data
     except:
         try:
-            return status_line + h + "\r\n\r\n" + unicode.replace(data, "replace")
+            return status_line + h + "\r\n\r\n" + unicode(data, "utf-8", "replace")
         except:
-            return status_line + h + "\r\n\r\n" + unicode.replace(data, "ignore")
+            return status_line + h + "\r\n\r\n" + unicode(data, "utf-8", "ignore")
 
 class HTTPResponse(object):
     id = 0
