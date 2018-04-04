@@ -82,7 +82,7 @@ class HTTPRequest(object):
             self.conn.buffer.move(index+2)
 
     def state_waiting(self):
-        pass
+        self.log.debug("WAITING", self.state, "(probably shouldn't happen...)")
 
     def read_body(self, cb, args=[]):
         self.log.debug("read_body", self.state, self.content_length)
@@ -177,7 +177,7 @@ class HTTPRequest(object):
     def end(self, cb=None, args=[]):
         self.log.debug("end", self.write_ended, self.state)
         if self.write_ended:
-            return self.log.error("END", "end already called")
+            return self.log.debug("END", "end already called", "(it's fine)")
         if self.state != "write":
             self.pending_actions.append(("end", None, cb, args, None, None))
             return
@@ -185,9 +185,9 @@ class HTTPRequest(object):
         self.write_ended = True
         self.conn.write("", self.write_cb, (cb, args))
 
-    def close(self, cb=None, args=[]):
+    def close(self, cb=None, args=[], hard=False):
         self.log.debug("close", self.write_ended, self.state)
-        if self.state == "action":
+        if hard or self.state == "action":
             self.send_close = True
             return self._close()
         if self.write_ended:
