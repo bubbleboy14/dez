@@ -53,12 +53,15 @@ class HTTPResponse(object):
     def end_or_close(self, cb=None):
         if self.keep_alive:
             if self.timeout.pending():
-                self.timeout.delete()
+                self.timeout.delete(True)
                 self.log.debug("end_or_close", "ending")
                 self.request.end(cb)
+                self.timeout = None
+                self.request = None
                 return
         self.log.debug("end_or_close", "closing")
         self.request.close(cb)
+        self.request = None
 
     def render(self):
         response = renderResponse("".join(self.buffer), self.version_major,
@@ -146,7 +149,8 @@ class HTTPVariableResponse(object):
             self.__write_chunk("")
             if self.keep_alive:
                 if self.timeout.pending():
-                    self.timeout.delete()
+                    self.timeout.delete(True)
+                    self.timeout = None
                     return self.end(cb)
         self.close(cb)
 
