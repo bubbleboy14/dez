@@ -164,15 +164,22 @@ class HTTPRequest(object):
         if self.write_ended and not self.conn.wevent.pending():
             self._close()
 
-    def _close(self):
+    def _close(self, reason=None):
         self.conn.counter.dec("requests")
         if self.send_close:
             self.log.debug("closing!!")
             self.state = "closed"
-            self.conn.close()
+            self.conn.close(reason)
         else:
             self.log.debug("restarting!!")
             self.conn.start_request()
+        self._dereference()
+
+    def _dereference(self):
+        self.body_stream_cb = None
+        self.body_cb = None
+        self.conn = None
+        self.log = None
 
     def end(self, cb=None, args=[]):
         self.log.debug("end", self.write_ended, self.state)
@@ -198,4 +205,4 @@ class HTTPRequest(object):
         self.end(cb, args)
 
     def close_now(self, reason="hard close"):
-        self.conn.close(reason)
+        self._close(reason)
