@@ -115,9 +115,9 @@ class HTTPConnection(object):
         else:
             self._timeout.add(int(KEEPALIVE))
 
-    def cancelTimeout(self):
+    def cancelTimeout(self, hard=False):
         self.log.debug("cancelTimeout (request %s)"%(self.request.id,))
-        self._timeout.pending() and self._timeout.delete()
+        self._timeout.pending() and self._timeout.delete(hard)
 
     def timeout(self):
         self.log.debug("TIMEOUT (request %s) -- closing!"%(self.request.id,))
@@ -125,14 +125,14 @@ class HTTPConnection(object):
 
     def close(self, reason=""):
         self.log.debug("close")
-        self.cancelTimeout()
+        self.cancelTimeout(True)
         self.counter.dec("connections")
         if self.__close_cb:
             cb, args = self.__close_cb
             self.__close_cb = None
             cb(*args)
-        self.revent.pending() and self.revent.delete()
-        self.wevent.pending() and self.wevent.delete()
+        self.revent.dereference()
+        self.wevent.dereference()
         self.sock.close()
         if self.current_eb:
             self.log.debug("triggering current_eb!")
@@ -147,6 +147,12 @@ class HTTPConnection(object):
                 self.current_eb(*self.current_ebargs)
             self.current_eb = None
             self.current_ebargs = None
+        self.request = None
+        self.buffer = None
+        self.write_buffer = None
+        self.log = None
+        self._timeout = None
+        self.__close_cb = None
 
     def read_ready(self):
         self.log.debug("read_ready")
