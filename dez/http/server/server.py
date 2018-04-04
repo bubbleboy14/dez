@@ -121,10 +121,11 @@ class HTTPConnection(object):
 
     def timeout(self):
         self.log.debug("TIMEOUT (request %s) -- closing!"%(self.request.id,))
-        self.request.close()
+        self.request.close(hard=True)
 
     def close(self, reason=""):
         self.log.debug("close")
+        self.cancelTimeout()
         self.counter.dec("connections")
         if self.__close_cb:
             cb, args = self.__close_cb
@@ -153,7 +154,7 @@ class HTTPConnection(object):
             data = self.sock.recv(io.BUFFER_SIZE)
             if not data:
                 self.log.debug("no data - closing")
-                self.close()
+                self.request.close(hard=True)
                 return None
             return self.read(data)
         except io.ssl.SSLError, e: # not SSLWantReadError for python 2.7.6
@@ -161,7 +162,7 @@ class HTTPConnection(object):
             return True # wait
         except io.socket.error, e:
             self.log.debug("read_ready (closing)", "io.socket.error", e)
-            self.close()
+            self.request.close(hard=True)
             return None
 
     def read_body(self):
@@ -187,7 +188,7 @@ class HTTPConnection(object):
         self.log.debug("read", self.state)
         if self.state != "read":
             self.log.debug("Invalid additional data: %s" % data)
-            self.close()
+            self.request.close(hard=True)
         self.buffer += data
         self.request.process()
         return self.request.state != "waiting"
@@ -228,5 +229,5 @@ class HTTPConnection(object):
             return True
         except io.socket.error, msg:
             self.log.debug('io.socket.error: %s' % msg)
-            self.close(reason=str(msg))
+            self.request.close(hard=True)#self.close(reason=str(msg))
             return None
