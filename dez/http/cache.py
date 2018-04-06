@@ -3,6 +3,10 @@ from dez.logging import default_get_logger
 from dez.http.inotify import INotify
 from dez import io
 
+extra_mimes = {
+    "wasm": "application/wasm"
+}
+
 class BasicCache(object):
     id = 0
     def __init__(self, streaming="auto", get_logger=default_get_logger):
@@ -17,9 +21,12 @@ class BasicCache(object):
     def _mimetype(self, url):
         mimetype = self.mimetypes.get(url)
         if not mimetype:
-            self.mimetypes[url] = mimetype = mimetypes.guess_type(url)[0]
+            mimetype = mimetypes.guess_type(url)[0]
+            if not mimetype and "." in url:
+                mimetype = extra_mimes.get(url.split(".")[1])
             if not mimetype:
-                self.mimetypes[url] = mimetype = magic.from_file(url.strip("/"), True) or "application/octet-stream"
+                mimetype = magic.from_file(url.strip("/"), True) or "application/octet-stream"
+            self.mimetypes[url] = mimetype
         return mimetype
 
     def __update(self, path):
