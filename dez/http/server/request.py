@@ -179,7 +179,6 @@ class HTTPRequest(object):
         self.body_stream_cb = None
         self.body_cb = None
         self.conn = None
-        self.log = None
 
     def end(self, cb=None, args=[]):
         self.log.debug("end", self.write_ended, self.state)
