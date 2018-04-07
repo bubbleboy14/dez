@@ -137,7 +137,6 @@ class ParsedHTTPRequest(object):
         self.setup_form()
         self.setup_cookies()
         self.cb(self)
-        self.req = None
         self.cb = None
 
     def setup_url(self):
