@@ -109,7 +109,6 @@ class HTTPConnection(object):
         self.wevent.pending() and self.wevent.delete()
         self.revent.pending() or self.revent.add()
         self.request = HTTPRequest(self)
-        self.state = "read"
         if len(self.buffer):
             self.request.process()
         else:
@@ -191,10 +190,10 @@ class HTTPConnection(object):
 
     def read(self, data):
         self.cancelTimeout()
-        self.log.debug("read", self.state)
-        if self.state != "read":
+        self.log.debug("read", self.request.state)
+        if self.request.state == "write":
             self.log.debug("Invalid additional data: %s" % data)
-            self.request.close(hard=True)
+            return self.request.close(hard=True)
         self.buffer += data
         self.request.process()
         return self.request.state != "waiting"
