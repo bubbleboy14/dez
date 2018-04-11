@@ -196,7 +196,7 @@ class HTTPConnection(object):
             return self.request.close(hard=True)
         self.buffer += data
         self.request.process()
-        return self.request.state != "waiting"
+        return self.request and self.request.state != "waiting"
 
     def write(self, data, cb, args=[], eb=None, ebargs=[]):
         self.log.debug("write", len(data))
