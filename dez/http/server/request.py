@@ -145,7 +145,8 @@ class HTTPRequest(object):
     def write(self, data, cb=None, args=[], eb=None, ebargs=[], override=False):
         self.log.debug("write", self.state, len(data))
         if self.write_ended and not override:
-            raise Exception, "end already called"
+            self.log.debug("WRITE", "tried to write:", data)
+            return self.log.error("WRITE", "end already called")
         if self.state != 'write':
             self.log.debug("state is not 'write'", self.state)
             self.pending_actions.append(("write", data, cb, args, eb, ebargs))
