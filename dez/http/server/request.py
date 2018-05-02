@@ -9,6 +9,7 @@ class HTTPRequest(object):
         self.log = conn.get_logger("HTTPRequest(%s)"%(self.id,))
         self.log.debug("__init__")
         self.conn = conn
+        self.ip = conn.ip
         self.state = 'action'
         self.headers = {}
         self.case_match_headers = {}
