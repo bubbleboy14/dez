@@ -116,6 +116,7 @@ class HTTPApplication(object):
 class ParsedHTTPRequest(object):
     def __init__(self, req, cb):
         self.req = req
+        self.ip = req.ip
         self.cb = cb
         self.form = {}
         self.cookies = {}
