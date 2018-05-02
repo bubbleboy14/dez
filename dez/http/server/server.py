@@ -80,6 +80,7 @@ class HTTPConnection(object):
         self.log.debug("__init__")
         self.get_logger = get_logger
         self.sock = sock
+        self.ip = sock.getpeername()[0]
         self.addr, self.local_port = addr
         self.router = router
         self.counter = counter or Counter()
