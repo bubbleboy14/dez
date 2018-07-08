@@ -34,7 +34,7 @@ class BasicCache(object):
         if self._stream(path):
             self.cache[path]['content'] = bool(self.cache[path]['size'])
         else:
-            f = open(path,'r')
+            f = open(path,'rb') # b for windowz ;)
             self.cache[path]['content'] = f.read()
             f.close()
 
