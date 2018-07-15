@@ -19,10 +19,11 @@ class StaticHandler(object):
             self.cache = NaiveCache(get_logger=get_logger)
 
     def __isi(self, req):
-        ua = req.headers["user-agent"]
-        for iflag in ["iPad", "iPod", "iPhone"]:
-            if iflag in ua:
-                return True
+        ua = req.headers.get("user-agent")
+        if ua:
+            for iflag in ["iPad", "iPod", "iPhone"]:
+                if iflag in ua:
+                    return True
         return False
 
     def __respond(self, req, path=None, ctype=False, headers={}, data=[], stream=False):
