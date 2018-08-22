@@ -51,7 +51,7 @@ class HTTPResponse(object):
         self.buffer.append(str(data))
 
     def end_or_close(self, cb=None):
-        if self.keep_alive:
+        if self.keep_alive and self.timeout:
             if self.timeout.pending():
                 self.timeout.delete(True)
                 self.log.debug("end_or_close", "ending")
