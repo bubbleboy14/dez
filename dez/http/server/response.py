@@ -59,9 +59,12 @@ class HTTPResponse(object):
                 self.timeout = None
                 self.request = None
                 return
-        self.log.debug("end_or_close", "closing")
-        self.request.close(cb)
-        self.request = None
+        if self.request:
+            self.log.debug("end_or_close", "closing")
+            self.request.close(cb)
+            self.request = None
+        else:
+            self.log.debug("end_or_close", "double close called!")
 
     def render(self):
         response = renderResponse("".join(self.buffer), self.version_major,
