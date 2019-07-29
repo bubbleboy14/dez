@@ -49,6 +49,12 @@ class Buffer(object):
     def __str__(self):
         return self.get_value()
 
+    def send(self, sock):
+        val = self.get_value()
+        enced = val.encode()
+        sent = sock.send(enced)
+        self.move(len(val) - len(enced[sent:].decode()))
+
     def get_value(self):
         ''' Return the data in consume mode, or the remainder of the data in
             index mode.
