@@ -1,4 +1,4 @@
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from dez.buffer import Buffer
 from dez.op.server.frame import Frame, SendFrame
 from dez.http.client import HTTPClient
@@ -37,7 +37,7 @@ class Callback_Handler(object):
                         final_headers.append(('recipient', recipient))
                 else:
                     final_headers.append((key, headers[key]))
-            self.http.get_url(url, "POST", {}, cb, cbarg, body=urllib.urlencode(final_headers))
+            self.http.get_url(url, "POST", {}, cb, cbarg, body=urllib.parse.urlencode(final_headers))
 
 class OPConnection(object):
     id = 0
@@ -53,7 +53,7 @@ class OPConnection(object):
         self.conn.set_rmode_delimiter(DELIM, self.__connect)
 
     def __default_app_cb(self, req):
-        print "no application callback specified"
+        print("no application callback specified")
 
     def set_request_cb(self, cb, args=()):
         self.app_cb = cb
@@ -84,7 +84,7 @@ class OPConnection(object):
 
     def __parse_headers(self, headers):
         s = ""
-        for key, val in headers.items():
+        for key, val in list(headers.items()):
             if key == "recipients":
                 for r in val:
                     s += "recipient:"+str(r)+"\r\n"

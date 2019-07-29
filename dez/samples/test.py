@@ -15,8 +15,8 @@ def parse_input():
     return parser.parse_args()
 
 def error(msg):
-    print "error:",msg
-    print 'type "dez_test -h" for help'
+    print("error: %s"%(msg,))
+    print('type "dez_test -h" for help')
 
 def main():
     options, arguments = parse_input()
@@ -39,14 +39,16 @@ def main():
         return error('non-integer port specified')
     testfunc = options.function
     try:
-        testmod = __import__("dez.samples.%s"%testfile,fromlist=["dez","samples"])
+        modpath = "dez.samples.%s"%(testfile,)
+        print("loading: %s"%(modpath,))
+        testmod = __import__(modpath,fromlist=["dez","samples"])
     except ImportError:
         return error("invalid module specified")
     if not hasattr(testmod, testfunc):
         return error("invalid function specified")
     testdomain = options.domain
-    print 'running %s:%s on http://%s:%s'%(testfile,testfunc,testdomain,testport)
+    print('running %s:%s on http://%s:%s'%(testfile,testfunc,testdomain,testport))
     try:
         getattr(testmod,testfunc)(domain=testdomain,port=testport)
     except socket.error:
-        print '\nPermission denied to use port %s. Depending on how your system is set up, you may need root privileges to run this test.'%(testport)
+        print('\nPermission denied to use port %s. Depending on how your system is set up, you may need root privileges to run this test.'%(testport))

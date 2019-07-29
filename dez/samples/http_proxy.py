@@ -11,7 +11,7 @@ def proxy(request):
 
 def connection_cb(conn, request):
     conn.write(request.action + '\r\n')
-    for (key, val) in request.headers.items():
+    for (key, val) in list(request.headers.items()):
         conn.write('%s: %s\r\n' % (key, val))
     conn.write('\r\n')
     request.read_body_stream(body_cb, [conn, request])
@@ -25,7 +25,7 @@ def body_cb(data, conn, request):
 
 def response_headers_cb(response, reader, request):
     request.write(response.status_line + '\r\n')
-    for (key, val) in response.case_match_headers.items():
+    for (key, val) in list(response.case_match_headers.items()):
         request.write('%s: %s\r\n' % (val, response.headers[key]))
     request.write('\r\n')
     reader.get_body_stream(response_body_cb, [ request])
@@ -33,7 +33,7 @@ def response_headers_cb(response, reader, request):
 def response_body_cb(response, size, request):
 #    print 'body', size
     if size == 0:
-        print 'request.end'
+        print('request.end')
         return request.end()
 #    print 'write:', len(response.body.get_value())
 #    def cb(*args):

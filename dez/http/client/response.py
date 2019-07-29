@@ -90,7 +90,7 @@ class HTTPProtocolReader(object):
             r.protocol, status_code, r.status_msg = data.split(' ',2)
             r.status_code = int(status_code)
         except ValueError:
-            raise HTTPProtocolError, "Invalid HTTP status line \"%s\"" % r.status_line
+            raise HTTPProtocolError("Invalid HTTP status line \"%s\"" % r.status_line)
         #self.protocol = self.protocol.lower()
         url_scheme, r.version = r.protocol.split('/',1)
         major, minor = r.version.split('.', 1)
@@ -123,7 +123,7 @@ class HTTPProtocolReader(object):
         if self.response.headers.get('transfer-encoding', None) == 'chunked':
             return self.conn.set_rmode_delimiter('\r\n', self.__recv_chunk_head)
 
-        raise HTTPProtocolError, "HTTP/1.1 must set content-length or transfer-encoding: chunked"
+        raise HTTPProtocolError("HTTP/1.1 must set content-length or transfer-encoding: chunked")
 
     def get_body_stream(self, cb, args):
         if self.response.content_length == 0:

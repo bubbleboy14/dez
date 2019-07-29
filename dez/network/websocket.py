@@ -59,7 +59,7 @@ def parse_frame(buf):
     # use xor and mask bytes to unmask data
     if mask:
         unmasked = [mask_bytes[i % 4] ^ ord(b)
-            for b, i in zip(payload, range(len(payload)))]
+            for b, i in zip(payload, list(range(len(payload))))]
         payload = "".join([chr(c) for c in unmasked])
 
     return payload
@@ -72,7 +72,7 @@ class WebSocketProxy(object):
 
     def _report(self, data):
         if self.verbose:
-            print "%s [WebSocketProxy] %s"%(datetime.now(), data)
+            print("%s [WebSocketProxy] %s"%(datetime.now(), data))
 
     def _new_conn(self, conn):
         self._report("Connecting to TCP server @ %s:%s"%(self.target["host"], self.target["port"]))
@@ -207,7 +207,7 @@ class WebSocketConnection(object):
         while payload:
             try:
                 self.report('Payload parsed: "%s"'%(payload.decode("utf-8"),))
-            except UnicodeDecodeError, e: # connection closed
+            except UnicodeDecodeError as e: # connection closed
                 self.report('Closing connection: %s'%(e,))
                 return self.close()
             if self.b64:
@@ -216,7 +216,7 @@ class WebSocketConnection(object):
             if self.isJSON:
                 try:
                     payload = decode(payload)
-                except ValueError, e: # connection closed
+                except ValueError as e: # connection closed
                     self.report('Closing connection: %s'%(e,))
                     return self.close()
             self.cb(payload, *self.cbargs)
@@ -257,23 +257,23 @@ def startwebsocketproxy():
     try:
         hostname, port = args
     except:
-        print '\ndez_websocket_proxy is run with two arguments: the hostname and port of the server being proxied to. For example:\n\ndez_websocket_proxy mydomain.com 5555\n\nwill run a WebSocket server that listens for connections on port 81 and proxies them to a TCP server at mydomain.com:5555.'
+        print('\ndez_websocket_proxy is run with two arguments: the hostname and port of the server being proxied to. For example:\n\ndez_websocket_proxy mydomain.com 5555\n\nwill run a WebSocket server that listens for connections on port 81 and proxies them to a TCP server at mydomain.com:5555.')
         return
     try:
         port = int(port)
     except:
-        print '\nThe second argument must be an integer. The command should look like this:\n\ndez_websocket_proxy mydomain.com 5555\n\nTry again!'
+        print('\nThe second argument must be an integer. The command should look like this:\n\ndez_websocket_proxy mydomain.com 5555\n\nTry again!')
         return
     try:
         options.port = int(options.port)
     except:
-        print '\nThe -p (or --port) option must be an integer. The command should look like this:\n\ndez_websocket_proxy mydomain.com 5555 -p 82 (or something)\n\nTry again!'
+        print('\nThe -p (or --port) option must be an integer. The command should look like this:\n\ndez_websocket_proxy mydomain.com 5555 -p 82 (or something)\n\nTry again!')
         return
     try:
         proxy = WebSocketProxy('localhost', options.port, hostname, port, verbose=options.verbose)
     except:
-        print '\nPermission denied to use port %s. Depending on how your system is set up, you may need root privileges to run the proxy.'%(port)
+        print('\nPermission denied to use port %s. Depending on how your system is set up, you may need root privileges to run the proxy.'%(port))
         return
-    print 'running WebSocket server on port', options.port
-    print 'proxying to %s:%s'%(hostname, port)
+    print('running WebSocket server on port', options.port)
+    print('proxying to %s:%s'%(hostname, port))
     proxy.start()

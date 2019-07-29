@@ -16,7 +16,7 @@ def main(**kwargs):
     
 def response_cb(response, i):
 #    print 'woot
-    print i, time.time(), response.status_line
+    print(i, time.time(), response.status_line)
 #    print response.headers
 #    print "#########"    
 #    print "body len:", len(response.body)

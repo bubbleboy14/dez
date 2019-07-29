@@ -1,21 +1,21 @@
 import event
 try:
-    import cStringIO as StringIO
+    import io as StringIO
 except ImportError:
-    import StringIO
+    import io
 
 KEEPALIVE = '300'
 
 def renderResponse(data="", version_major=1, version_minor=0, status="200 OK", headers={}):
     status_line = "HTTP/%s.%s %s\r\n" % (version_major, version_minor, status)
     headers['Content-Length'] = str(len(data))
-    h = "\r\n".join(": ".join((k, v)) for (k, v) in headers.items())
+    h = "\r\n".join(": ".join((k, v)) for (k, v) in list(headers.items()))
     try:
         return status_line + h + "\r\n\r\n" + data
     except:
         if isinstance(data, str):
             return status_line + h + "\r\n\r\n" + data.decode("ascii", "ignore").encode("ascii")
-        elif isinstance(data, unicode):
+        elif isinstance(data, str):
             return status_line + h + "\r\n\r\n" + data.encode("ascii", "ignore")
 
 class HTTPResponse(object):
@@ -133,7 +133,7 @@ class HTTPVariableResponse(object):
         self.started = True
         status_line = "HTTP/%s.%s %s\r\n" % (
             self.version_major, self.version_minor, self.status)
-        h = "\r\n".join(": ".join((k, v)) for (k, v) in self.headers.items())
+        h = "\r\n".join(": ".join((k, v)) for (k, v) in list(self.headers.items()))
         h += "\r\n\r\n"
         response = status_line + h
         self.request.write(status_line + h, None)
@@ -198,7 +198,7 @@ class WSGIResponse(object):
         self.port = port
         self.response = HTTPResponse(self.request)
         self.environ = {}
-        self.stderror = StringIO.StringIO()
+        self.stderror = io.StringIO()
         
         self.start_response_called = False
         self.headers_sent = False
@@ -221,8 +221,8 @@ class WSGIResponse(object):
         output = iter(output)
         
         try:
-            first_iteration = output.next()
-        except StopIteration, e:
+            first_iteration = next(output)
+        except StopIteration as e:
             self.log.debug("body_cb", "StopIteration", e)
             first_iteration = ""
         if self.headers_sent:
@@ -247,7 +247,7 @@ class WSGIResponse(object):
         if exc_info:
             try:
                 if self.headers_sent:
-                    raise exc_info[0],exc_info[1],exc_info[2]
+                    raise exc_info[0](exc_info[1]).with_traceback(exc_info[2])
             finally:
                 exc_info = None
         elif self.start_response_called:
@@ -284,12 +284,12 @@ class WSGIResponse(object):
 #        content_length = len(body)
         environ['CONTENT_LENGTH'] = len(body)
         environ['wsgi.url_scheme']    = 'http'
-        environ['wsgi.input']        = StringIO.StringIO(body)
+        environ['wsgi.input']        = io.StringIO(body)
         environ['wsgi.errors']       = self.stderror
         environ['wsgi.version']      = (1,1) # TODO: use version_minor and version_major
         environ['wsgi.multithread']  = False
         environ['wsgi.multiprocess'] = False
         environ['wsgi.run_once']     = False
-        for key, val in self.request.headers.items():
+        for key, val in list(self.request.headers.items()):
             environ['HTTP_%s' % (key.upper().replace('-', '_'),)] = val
             

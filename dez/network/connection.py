@@ -105,8 +105,8 @@ class Connection(object):
         if not self.__release_timer:
             self.__ready()
         else:
-            print 'pool', self.pool
-            print 'release_timer', self.__release_timer
+            print('pool', self.pool)
+            print('release_timer', self.__release_timer)
             raise "What?"
 
     def __release_timer_cb(self):
@@ -126,7 +126,7 @@ class Connection(object):
             data = str(data)
         self.__write_queue.append(WriteChunk(data, cb, cbargs, eb, ebargs))
         if not self.wevent:
-            raise ConnectionClosedException, "Connection %s is closed and can no longer write. Call Connection.set_close_cb for close notification."%self.id
+            raise ConnectionClosedException("Connection %s is closed and can no longer write. Call Connection.set_close_cb for close notification."%self.id)
         if not self.wevent.pending():
             self.wevent.add()
 
@@ -175,7 +175,7 @@ class Connection(object):
 
     def __start_read(self):
         if self.mode == None:
-            raise Exception("NoModeSet"), "First set a read mode"
+            raise Exception("NoModeSet")("First set a read mode")
         self.__read("")
 
     # Keep a queue of things to write and their related callbacks
@@ -196,7 +196,7 @@ class Connection(object):
             bsent = self.sock.send(self.__write_buffer.get_value())
             self.__write_buffer.move(bsent)
             return True
-        except dez.io.socket.error, msg:
+        except dez.io.socket.error as msg:
             self.close(reason=str(msg))
             return None
 
@@ -220,7 +220,7 @@ class Connection(object):
     def __read_ready(self):
         try:
             data = self.sock.recv(dez.io.BUFFER_SIZE)
-        except dez.io.ssl.SSLError, e: # not SSLWantReadError for python 2.7.6
+        except dez.io.ssl.SSLError as e: # not SSLWantReadError for python 2.7.6
             return True # wait a tick
         except dez.io.socket.error:
             self.close()
@@ -305,7 +305,7 @@ class CloseReadMode(object):
         return False
 
     def send_data(self, buffer):
-        raise Exception("InvalidCall"), "How did this get called?"
+        raise Exception("InvalidCall")("How did this get called?")
 
     def close(self, buffer):
         self.cb(buffer.get_value(), *self.args)
@@ -411,7 +411,7 @@ class XMLReadMode(object):
                 return False
             if buff[0] != "<":
                 if not self.silent:
-                    raise InvalidXMLException, 'Invalid first character in XML node: %s found instead of "<"'%buff[0]
+                    raise InvalidXMLException('Invalid first character in XML node: %s found instead of "<"'%buff[0])
                 self.checked_index = 0
                 buffer.move(1)
                 return self.ready(buffer)

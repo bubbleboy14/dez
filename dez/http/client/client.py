@@ -1,5 +1,5 @@
-from request import HTTPClientRequest, HTTPClientWriter
-from response import HTTPClientResponse, HTTPClientReader
+from .request import HTTPClientRequest, HTTPClientWriter
+from .response import HTTPClientResponse, HTTPClientReader
 from dez.network import SocketClient
 from dez.logging import get_logger_getter
 import event

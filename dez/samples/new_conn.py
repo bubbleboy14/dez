@@ -12,7 +12,7 @@ class TestCloseChunked(object):
         self.conn.set_rmode_close_chunked(self.data_received)
 
     def data_received(self, data):
-        print data.replace("\r\n", "\\r\\n\n")
+        print(data.replace("\r\n", "\\r\\n\n"))
 
 
 class TestClose(object):
@@ -21,7 +21,7 @@ class TestClose(object):
         self.conn.set_rmode_close(self.data_received)
 
     def data_received(self, data):
-        print data.replace("\r\n", "\\r\\n\n")
+        print(data.replace("\r\n", "\\r\\n\n"))
 
 
 class TestSizeChunked(object):
@@ -30,7 +30,7 @@ class TestSizeChunked(object):
         self.conn.set_rmode_size_chunked(15, self.data_received)
 
     def data_received(self, data):
-        print data.replace("\r\n", "\\r\\n\n")
+        print(data.replace("\r\n", "\\r\\n\n"))
 
 class TestSize(object):
     def __init__(self, conn):
@@ -38,7 +38,7 @@ class TestSize(object):
         self.conn.set_rmode_size(15, self.data_received)
 
     def data_received(self, data):
-        print data.replace("\r\n", "\\r\\n\n")
+        print(data.replace("\r\n", "\\r\\n\n"))
 
 
 class TestDelimiter(object):
@@ -47,7 +47,7 @@ class TestDelimiter(object):
         self.conn.set_rmode_delimiter('\r\n', self.data_received)
 
     def data_received(self, data):
-        print data
+        print(data)
 
 #    def close(self):
 #        self.conn.close()

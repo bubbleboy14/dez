@@ -28,7 +28,7 @@ class Router(object):
         return cmp(len(a[0]),len(b[0]))
 
     def _check(self, url, req=None):
-        for flag, domain in self.rollz.items():
+        for flag, domain in list(self.rollz.items()):
             if url.startswith(flag) and req:
                 ref = req.headers.get("referer", "")
                 self.log.access("roll check! url: %s. referer: %s"%(url, ref))

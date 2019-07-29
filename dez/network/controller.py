@@ -36,7 +36,7 @@ class SocketController(object):
 
     def start(self, onstop=False):
         if not self.daemons:
-            print "SocketController doesn't know where to listen. Use register_address(hostname, port, callback) to register server addresses."
+            print("SocketController doesn't know where to listen. Use register_address(hostname, port, callback) to register server addresses.")
             return
         self.onstop = onstop
         event.signal(2, self._abort)

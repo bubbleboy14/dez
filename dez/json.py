@@ -28,4 +28,4 @@ except ImportError:
                 encode = demjson.encode
                 decode = demjson.decode
             except ImportError:
-                raise ImportError, "could not load one of: json, cjson, simplejson, demjson"
+                raise ImportError("could not load one of: json, cjson, simplejson, demjson")

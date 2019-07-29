@@ -1,5 +1,5 @@
 import threading
-import Queue
+import queue
 
 class WSGIThreadPool(object):
   
@@ -7,14 +7,14 @@ class WSGIThreadPool(object):
     
     def __init__(self, num_threads=5, ):
         self.num_threads = num_threads
-        self.work_queue = Queue.Queue()
+        self.work_queue = queue.Queue()
         self.threads = []
         for i in range(self.num_threads):
             self.threads.append(threading.Thread(target=self.run))
             
     def start(self):
         for i, thread in enumerate(self.threads):
-            print "Starting WSGI thread", thread.getName()
+            print("Starting WSGI thread", thread.getName())
             thread.start()
 
     def dispatch(self, response):
@@ -28,12 +28,12 @@ class WSGIThreadPool(object):
                 if not response:
                     break
                 response.dispatch()
-            except Exception, e:
+            except Exception as e:
                 import sys, traceback
-                print "error:", e
-                print "todo: fix exception handling in threads"
-                print traceback.print_tb(sys.exc_info()[2])
-        print "Shutting down thread", name
+                print("error:", e)
+                print("todo: fix exception handling in threads")
+                print(traceback.print_tb(sys.exc_info()[2]))
+        print("Shutting down thread", name)
                 
     def stop(self):
         for t in self.threads:

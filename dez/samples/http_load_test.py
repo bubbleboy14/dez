@@ -9,11 +9,11 @@ class LoadTester(object):
         self.number = number
         self.concurrency = concurrency
         self.responses = 0
-        print "\nInitializing Load Tester"
+        print("\nInitializing Load Tester")
         display(" server url: %s"%self.url)
         display("     number: %s"%self.number)
         display("concurrency: %s"%self.concurrency)
-        print "\nBuilding Connection Pool"
+        print("\nBuilding Connection Pool")
         self.client = HTTPClient()
         self.client.client.start_connections(host, port, self.concurrency, self.connections_open, max_conn=concurrency)
         self.t_start = time.time()
@@ -45,10 +45,10 @@ def ms(bigger, smaller):
     return int(1000*(bigger - smaller))
 
 def display(msg):
-    print "   ",msg
+    print("   ",msg)
 
 def error(m1, m2):
-    print '\n%s\n%s\n\ntry this: "dbench HOSTNAME PORT NUMBER CONCURRENCY"\nor "dbench -h" for help\n'%(m1,m2)
+    print('\n%s\n%s\n\ntry this: "dbench HOSTNAME PORT NUMBER CONCURRENCY"\nor "dbench -h" for help\n'%(m1,m2))
 
 def main():
     parser = OptionParser("dbench HOSTNAME PORT NUMBER CONCURRENCY")
@@ -64,13 +64,13 @@ def main():
         concurrency = int(args[3])
     except:
         return error("invalid argument","PORT, NUMBER, and CONCURRENCY must all be integers")
-    print "\nLoading Event Listener"
+    print("\nLoading Event Listener")
     display(" requesting: %s"%ops.event)
     e = rel.initialize([ops.event])
     if e != ops.event:
         display("failed to load %s!"%ops.event)
     display("     loaded: %s"%e)
-    print "\nTesting Server"
+    print("\nTesting Server")
     test_sock = socket.socket()
     try:
         test_sock.connect((hostname, port))
@@ -79,8 +79,8 @@ def main():
         return display("no server at %s:%s!\n\ngoodbye\n"%(hostname, port))
     display("valid server")
     def abort(msg):
-        print ""
-        print msg
+        print("")
+        print(msg)
         rel.abort()
     rel.signal(2, abort, "Test aborted by user")
     rel.timeout(30, abort, "Test aborted after 30 seconds")
@@ -88,8 +88,8 @@ def main():
     try:
         rel.dispatch()
     except HTTPProtocolError:
-        print "\nerror communicating with server:"
-        print "http protocol violation"
+        print("\nerror communicating with server:")
+        print("http protocol violation")
     finally:
-        print "\ngoodbye\n"
+        print("\ngoodbye\n")
         rel.abort()

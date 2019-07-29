@@ -10,7 +10,7 @@ class TestApp(object):
         self.connections = {}
 
     def connection_opened(self, conn):
-        print 'connection_opened'
+        print('connection_opened')
         conn.set_request_cb(self.request)
         self.connections[conn.id] = conn
 
@@ -18,7 +18,7 @@ class TestApp(object):
         del self.connections[conn.id]
 
     def request(self, req):
-        print 'request'
+        print('request')
         if getattr(self,req.action.lower())(req):
             req.received()
 
@@ -34,7 +34,7 @@ class TestApp(object):
     def connect(self, req):
         cid = req.headers["connection_id"]
         if cid in self.connections:
-            print 'connection_id in use'
+            print('connection_id in use')
             req.error("'connection_id' %s in use"%cid)
             return False
         return True

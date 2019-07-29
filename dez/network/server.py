@@ -29,7 +29,7 @@ class SocketDaemon(object):
             if self.secure:
                 io.ssl_handshake(sock, cb)
                 return True
-        except io.socket.error, e:
+        except io.socket.error as e:
             self.log.info("abandoning connection on socket error: %s"%(e,))
             return True
         cb()
