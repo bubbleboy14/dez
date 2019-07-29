@@ -51,7 +51,10 @@ class Buffer(object):
 
     def send(self, sock):
         val = self.get_value()
-        enced = val.encode()
+        try:
+            enced = val.encode()
+        except: # img, etc
+            enced = val
         sent = sock.send(enced)
         self.move(len(val) - len(enced[sent:].decode()))
 
