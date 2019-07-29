@@ -129,6 +129,8 @@ class Buffer(object):
 
     def __add__(self, add_data):
         ''' Add the passed-in string to the buffer '''
+        if type(add_data) == bytes:
+            add_data = add_data.decode()
         self.data += add_data
         return self
 
