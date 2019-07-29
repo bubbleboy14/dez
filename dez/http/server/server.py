@@ -230,8 +230,7 @@ class HTTPConnection(object):
         try:
             self.log.debug("buffer", len(self.write_buffer.get_value()),
                 "queue", len(self.response_queue))
-            bsent = self.sock.send(self.write_buffer.get_value())
-            self.write_buffer.move(bsent)
+            self.write_buffer.send(self.sock)
             return True
         except io.socket.error as msg:
             self.log.debug('io.socket.error: %s' % msg)
