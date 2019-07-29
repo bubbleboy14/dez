@@ -48,7 +48,7 @@ class HTTPResponse(object):
         return self.headers[key]
 
     def write(self, data):
-        self.buffer.append(str(data))
+        self.buffer.append(hasattr(data, "decode") and data.decode() or data)
 
     def end_or_close(self, cb=None):
         if self.keep_alive and self.timeout:
