@@ -193,8 +193,7 @@ class Connection(object):
             self.__write_chunk = self.__write_queue.pop(0)
             self.__write_buffer.reset(self.__write_chunk.data)
         try:
-            bsent = self.sock.send(self.__write_buffer.get_value())
-            self.__write_buffer.move(bsent)
+            self.__write_buffer.send(self.sock)
             return True
         except dez.io.socket.error as msg:
             self.close(reason=str(msg))
