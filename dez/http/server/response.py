@@ -1,8 +1,4 @@
-import event
-try:
-    import io as StringIO
-except ImportError:
-    import io
+import event, io
 
 KEEPALIVE = '300'
 
@@ -10,13 +6,12 @@ def renderResponse(data="", version_major=1, version_minor=0, status="200 OK", h
     status_line = "HTTP/%s.%s %s\r\n" % (version_major, version_minor, status)
     headers['Content-Length'] = str(len(data))
     h = "\r\n".join(": ".join((k, v)) for (k, v) in list(headers.items()))
-    try:
-        return status_line + h + "\r\n\r\n" + data
-    except:
-        if isinstance(data, str):
-            return status_line + h + "\r\n\r\n" + data.decode("ascii", "ignore").encode("ascii")
-        elif isinstance(data, str):
-            return status_line + h + "\r\n\r\n" + data.encode("ascii", "ignore")
+    if isinstance(data, list):
+        print("list", len(data))
+        data = b"".join([hasattr(d, "encode") and d.encode() or d for d in data])
+    elif hasattr(data, "encode"):
+        data = data.encode()
+    return (status_line + h + "\r\n\r\n").encode() + data
 
 class HTTPResponse(object):
     id = 0
@@ -48,7 +43,7 @@ class HTTPResponse(object):
         return self.headers[key]
 
     def write(self, data):
-        self.buffer.append(hasattr(data, "decode") and data.decode() or data)
+        self.buffer.append(data)
 
     def end_or_close(self, cb=None):
         if self.keep_alive and self.timeout:
@@ -67,7 +62,7 @@ class HTTPResponse(object):
             self.log.debug("end_or_close", "double close called!")
 
     def render(self):
-        response = renderResponse("".join(self.buffer), self.version_major,
+        response = renderResponse(self.buffer, self.version_major,
             self.version_minor, self.status, self.headers)
         self.buffer = []
         self.log.debug("render", len(response))
