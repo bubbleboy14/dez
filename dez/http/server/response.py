@@ -4,7 +4,6 @@ KEEPALIVE = '300'
 
 def renderResponse(data="", version_major=1, version_minor=0, status="200 OK", headers={}):
     if isinstance(data, list):
-        print("list", len(data))
         data = b"".join([hasattr(d, "encode") and d.encode() or d for d in data])
     elif hasattr(data, "encode"):
         data = data.encode()
