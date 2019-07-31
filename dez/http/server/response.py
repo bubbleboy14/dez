@@ -3,14 +3,14 @@ import event, io
 KEEPALIVE = '300'
 
 def renderResponse(data="", version_major=1, version_minor=0, status="200 OK", headers={}):
-    status_line = "HTTP/%s.%s %s\r\n" % (version_major, version_minor, status)
-    headers['Content-Length'] = str(len(data))
-    h = "\r\n".join(": ".join((k, v)) for (k, v) in list(headers.items()))
     if isinstance(data, list):
         print("list", len(data))
         data = b"".join([hasattr(d, "encode") and d.encode() or d for d in data])
     elif hasattr(data, "encode"):
         data = data.encode()
+    status_line = "HTTP/%s.%s %s\r\n" % (version_major, version_minor, status)
+    headers['Content-Length'] = str(len(data))
+    h = "\r\n".join(": ".join((k, v)) for (k, v) in list(headers.items()))
     return (status_line + h + "\r\n\r\n").encode() + data
 
 class HTTPResponse(object):
