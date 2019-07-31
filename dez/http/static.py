@@ -49,7 +49,7 @@ class StaticHandler(object):
         for d in data:
             response.write(d)
         if stream:
-            openfile = open(path)
+            openfile = open(path, "rb")
             limit = os.stat(path).st_size
             if "range" in req.headers:
                 rs, re = self.__range(req, response.headers, limit)
