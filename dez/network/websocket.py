@@ -11,7 +11,7 @@ from dez.http.server.response import renderResponse
 GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 def key2accept(key):
-    return b64encode(sha1(key + GUID).digest())
+    return b64encode(sha1((key + GUID).encode()).digest()).decode()
 
 def parse_frame(buf):
     """
@@ -45,7 +45,8 @@ def parse_frame(buf):
         payload_start += 4
 
     if mask:
-        mask_bytes = [ord(b) for b in buf[payload_start:payload_start + 4]]
+        mask_bytes = buf[payload_start:payload_start + 4]
+#        mask_bytes = [ord(b) for b in buf[payload_start:payload_start + 4]]
         payload_start += 4
 
     # is there a complete frame in the buffer?
@@ -58,7 +59,7 @@ def parse_frame(buf):
 
     # use xor and mask bytes to unmask data
     if mask:
-        unmasked = [mask_bytes[i % 4] ^ ord(b)
+        unmasked = [mask_bytes[i % 4] ^ b#ord(b)
             for b, i in zip(payload, list(range(len(payload))))]
         payload = "".join([chr(c) for c in unmasked])
 
@@ -206,7 +207,7 @@ class WebSocketConnection(object):
         payload = parse_frame(self.buff)
         while payload:
             try:
-                self.report('Payload parsed: "%s"'%(payload.decode("utf-8"),))
+                self.report('Payload parsed: "%s"'%(payload,))#.decode("utf-8"),))
             except UnicodeDecodeError as e: # connection closed
                 self.report('Closing connection: %s'%(e,))
                 return self.close()
@@ -237,14 +238,15 @@ class WebSocketConnection(object):
         if self.b64:
             data = b64encode(data)
             self.report('B64 version: "%s"'%(data,))
+        data = data.encode()
         dl = len(data)
         if dl < 126:
-            lenchars = chr(dl)
+            lenchars = chr(dl).encode()
         elif dl < 65536: # 2 bytes
-            lenchars = chr(126) + struct.pack("=H", dl)[::-1]
+            lenchars = chr(126).encode() + struct.pack("=H", dl)[::-1]
         else: # 8 bytes
-            lenchars = chr(127) + struct.pack("=Q", dl)[::-1]
-        self.conn.write(chr(0x81) + lenchars + data)
+            lenchars = chr(127).encode() + struct.pack("=Q", dl)[::-1]
+        self.conn.write(b'\x81' + lenchars + data)
 
     def close(self):
         self.conn.close()
