@@ -119,7 +119,7 @@ class StaticHandler(object):
     def __write_file(self, response, openfile, path, limit):
         data = openfile.read(min(limit, io.BUFFER_SIZE))
         limit -= len(data)
-        if data == "":
+        if not data:
             openfile.close()
             return response.end_or_close()
 #        self.cache.add_content(path, data)

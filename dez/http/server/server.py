@@ -218,7 +218,7 @@ class HTTPConnection(object):
             data, self.current_cb, self.current_args, self.current_eb, self.current_ebargs = self.response_queue.pop(0)
             self.write_buffer.reset(data)
             # call conn.write("", cb) to signify request complete
-            if data == "":
+            if not data:
                 self.log.debug("ending request")
                 self.wevent.pending() and self.wevent.delete()
                 self.current_cb(*self.current_args)

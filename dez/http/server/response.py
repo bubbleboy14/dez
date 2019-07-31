@@ -143,7 +143,7 @@ class HTTPVariableResponse(object):
     def end_or_close(self, cb=None):
         self.log.debug("end_or_close", cb)
         if self.version_minor == 1:
-            self.__write_chunk("")
+            self.__write_chunk(b"")
             if self.keep_alive:
                 if self.timeout.pending():
                     self.timeout.delete(True)
