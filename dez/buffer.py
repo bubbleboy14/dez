@@ -38,6 +38,8 @@ class Buffer(object):
             self.pos = None
 
     def find(self, marker, i=0):
+        if hasattr(marker, "encode") and not hasattr(self.data, "encode"):
+            marker = marker.encode()
         if self.mode == 'consume':
             return self.data.find(marker, i)
         elif self.mode == 'index':
@@ -108,17 +110,25 @@ class Buffer(object):
 
     def part(self, start, end):
         if self.mode == 'consume':
-            return self.data[start:end]
+            d = self.data[start:end]
         elif self.mode == 'index':
-            return self.data[self.pos + start: self.pos + end]
+            d = self.data[self.pos + start: self.pos + end]
+        try:
+            return d.decode()
+        except:
+            return d
 
     def __contains__(self, data):
+        if hasattr(data, "encode") and not hasattr(self.data, "encode"):
+            data = data.encode()
         if self.mode == 'consume':
             return data in self.data
         elif self.mode == 'index':
             return self.data.find(data, self.pos) != -1
 
     def __eq__(self, data):
+        if hasattr(data, "encode") and not hasattr(self.data, "encode"):
+            data = data.encode()
         if self.mode == 'consume':
             return self.data == data
         elif self.mode == 'index':
