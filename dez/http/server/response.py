@@ -118,7 +118,7 @@ class HTTPVariableResponse(object):
             self.request.write(data, cb, args)
 
     def __write_chunk(self, data, cb=None, args=[]):
-        self.request.write("%X\r\n%s\r\n"%(len(data), data))
+        self.request.write(b"%X\r\n%s\r\n"%(len(data), data))
         if cb:
             cb(*args)
 
