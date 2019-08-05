@@ -144,10 +144,7 @@ class Buffer(object):
         return self.part(self, start, end)
 
     def __getitem__(self, key):
-        item = self.data[key]
-        if isinstance(item, int):
-            return chr(item)
-        return item
+        return self.data[key]
 
     def __add__(self, add_data):
         ''' Add the passed-in string to the buffer '''
