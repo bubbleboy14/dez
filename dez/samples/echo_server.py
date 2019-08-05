@@ -29,7 +29,7 @@ class EchoChunked(object):
         self.conn.set_rmode_close_chunked(self._recv)
 
     def _recv(self, data):
-        print 'received:',data
+        print('received:',data)
         self.conn.write(data)
 
 class EchoConnection(object):
@@ -40,7 +40,7 @@ class EchoConnection(object):
 
     def line_received(self, data):
         self.conn.write("S: " + data + self.delim)
-        print data
+        print(data)
         #self.conn.set_rmode_close(self.line_received)
 
 class LocalEchoHTTPClient(object):
@@ -51,13 +51,13 @@ class LocalEchoHTTPClient(object):
         
     def line_received(self, data):
         if data == "": # end of headers
-            print "[end of headers]"
+            print("[end of headers]")
             self.conn.set_rmode_close(self.body)
         else:
-            print data
+            print(data)
             
     def body(self, data):
-        print data
+        print(data)
         sys.exit(0)
 
 class EchoHTTP(object):

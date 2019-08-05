@@ -49,7 +49,7 @@ class HTTPRequest(object):
             self.version_major = int(major)
             self.version_minor = int(minor)
             self.url_scheme = url_scheme.lower()
-        except ValueError, e:
+        except ValueError as e:
             self.log.error("state_action", "ValueError", e)
             return self.close_now()
 #            raise HTTPProtocolError, "Invalid HTTP status line"
@@ -74,7 +74,7 @@ class HTTPRequest(object):
                 return True
             try:
                 key, value = self.conn.buffer.part(0, index).split(': ', 1)
-            except ValueError, e:
+            except ValueError as e:
                 self.log.debug("state_headers", "ValueError", e)
                 return self.close_now()
 #                raise HTTPProtocolError, "Invalid HTTP header format"

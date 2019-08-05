@@ -1,4 +1,4 @@
-import json
+from . import json
 
 MC = None
 
@@ -24,7 +24,7 @@ class Memcache(object):
 	def count(self, items=False):
 		if items:
 			count = {}
-			for key, val in self.cache.items():
+			for key, val in list(self.cache.items()):
 				count[key] = len(val)
 			return count
 		return len(self.cache)
@@ -32,7 +32,7 @@ class Memcache(object):
 	def diff(self):
 		diff = {}
 		count = self.count(True)
-		for key, val in count.items():
+		for key, val in list(count.items()):
 			orig = self.last_count.get(key)
 			if val != orig:
 				diff[key] = [orig, val]

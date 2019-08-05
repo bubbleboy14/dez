@@ -1,5 +1,14 @@
-import re
+import re, sys
 from dez.logging import default_get_logger
+from functools import cmp_to_key
+if sys.version_info > (3, 0):
+    def cmp(v1, v2):
+        if (v1 < v2):
+            return -1
+        elif (v1 == v2):
+            return 0
+        elif (v1 > v2):
+            return 1
 
 class Router(object):
     def __init__(self, default_cb, default_args=[], roll_cb=None, rollz={}, get_logger=default_get_logger):
@@ -22,13 +31,13 @@ class Router(object):
 
     def register_prefix(self, prefix, cb, args):
         self.prefixes.append((prefix, cb, args))
-        self.prefixes.sort(self.pref_order)
+        self.prefixes.sort(key=cmp_to_key(self.pref_order))
 
     def pref_order(self, b, a):
         return cmp(len(a[0]),len(b[0]))
 
     def _check(self, url, req=None):
-        for flag, domain in self.rollz.items():
+        for flag, domain in list(self.rollz.items()):
             if url.startswith(flag) and req:
                 ref = req.headers.get("referer", "")
                 self.log.access("roll check! url: %s. referer: %s"%(url, ref))

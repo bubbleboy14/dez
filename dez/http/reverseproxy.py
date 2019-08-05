@@ -68,7 +68,7 @@ class ReverseProxy(object):
 
     def log(self, data):
         if self.verbose:
-            print "[%s] %s"%(datetime.now(), data)
+            print("[%s] %s"%(datetime.now(), data))
 
     def new_connection(self, conn):
         conn.set_rmode_delimiter('\r\n\r\n', self.route_connection, [conn])
@@ -144,7 +144,7 @@ class ReverseProxy(object):
         self.daemon.start()
 
 def error(msg):
-    print "error:",msg
+    print("error:",msg)
     import sys
     sys.exit(0)
 
@@ -158,7 +158,7 @@ def get_controller(port, verbose, cert, key, monitor):
             error('invalid port specified -- int required')
     try:
         controller = ReverseProxy(port, verbose, certfile=cert, keyfile=key, monitor=monitor)
-    except Exception, e:
+    except Exception as e:
         error(verbose and "failed: %s"%(e,) or 'could not start server! try running as root!')
     return controller
 
@@ -183,7 +183,7 @@ def parse_options():
     return parser.parse_args()
 
 def process_targets(domains, controller):
-    for domain, targets in domains.items():
+    for domain, targets in list(domains.items()):
         for target in targets:
             host, port = target.split(':')
             controller.loud_register(domain, host, int(port))
@@ -198,7 +198,7 @@ def startreverseproxy(options=None, start=True):
     if options.ssl_redirect:
         controller.redirect = True
         controller.protocol = "https"
-        print "Redirecting traffic to https (port 443)"
+        print("Redirecting traffic to https (port 443)")
         controller.register_default(options.ssl_redirect, 443)
     else:
         config = getattr(options, "cfg", None) or len(arguments) and arguments[0]
@@ -210,12 +210,12 @@ def startreverseproxy(options=None, start=True):
         lines = f.readlines()
         f.close()
         try:
-            print "checking for JSON config"
+            print("checking for JSON config")
             cfg = json.loads("".join([l.strip() for l in lines]))
-            print "JSON detected - congratulations!"
+            print("JSON detected - congratulations!")
             process_targets(cfg["domains"], controller)
         except:
-            print "nope! parsing legacy config."
+            print("nope! parsing legacy config.")
             for line in lines:
                 line = line.split("#")[0]
                 if line: # allows comment lines
@@ -229,5 +229,5 @@ def startreverseproxy(options=None, start=True):
                         error('could not parse config. expected "incoming_hostname -> forwarding_address_hostname:forwarding_address_port". failed on line: "%s"'%line)
                     controller.loud_register(domain, host, port)
     if start:
-        print "Starting reverse proxy router on port %s"%(options.port)
+        print("Starting reverse proxy router on port %s"%(options.port))
         controller.start()

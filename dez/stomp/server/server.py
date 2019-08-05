@@ -17,4 +17,4 @@ class STOMPServer(object):
     def __connect_cb(self, c):
         if self.__app_connect_cb:
             return self.__app_connect_cb(STOMPConnection(c, self.__val))
-        print "Application server not available"
+        print("Application server not available")

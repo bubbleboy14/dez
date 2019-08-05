@@ -31,7 +31,7 @@ class HTTPDaemon(object):
         self.log.access("response (%s): '%s', '%s'"%(request.url, status, data))
         r = HTTPResponse(request)
         r.status = status
-        for k, v in headers.items():
+        for k, v in list(headers.items()):
             r.headers[k] = v
         if data:
             r.write(data)
@@ -66,7 +66,7 @@ class HTTPDaemon(object):
                 io.ssl_handshake(sock, self.handshake_cb(sock, addr))
                 return True
             HTTPConnection(sock, addr, self.router, self.get_logger, self.counter)
-        except io.socket.error, e:
+        except io.socket.error as e:
             self.log.info("abandoning connection on socket error: %s"%(e,))
             return True
         return True
@@ -163,10 +163,10 @@ class HTTPConnection(object):
                 self.request.close(hard=True)
                 return None
             return self.read(data)
-        except io.ssl.SSLError, e: # not SSLWantReadError for python 2.7.6
+        except io.ssl.SSLError as e: # not SSLWantReadError for python 2.7.6
             self.log.debug("read_ready (waiting)", "SSLError", e)
             return True # wait
-        except io.socket.error, e:
+        except io.socket.error as e:
             self.log.debug("read_ready (closing)", "io.socket.error", e)
             self.request.close(hard=True)
             return None
@@ -218,7 +218,7 @@ class HTTPConnection(object):
             data, self.current_cb, self.current_args, self.current_eb, self.current_ebargs = self.response_queue.pop(0)
             self.write_buffer.reset(data)
             # call conn.write("", cb) to signify request complete
-            if data == "":
+            if not data:
                 self.log.debug("ending request")
                 self.wevent.pending() and self.wevent.delete()
                 self.current_cb(*self.current_args)
@@ -230,10 +230,9 @@ class HTTPConnection(object):
         try:
             self.log.debug("buffer", len(self.write_buffer.get_value()),
                 "queue", len(self.response_queue))
-            bsent = self.sock.send(self.write_buffer.get_value())
-            self.write_buffer.move(bsent)
+            self.write_buffer.send(self.sock)
             return True
-        except io.socket.error, msg:
+        except io.socket.error as msg:
             self.log.debug('io.socket.error: %s' % msg)
             self.request.close(hard=True)#self.close(reason=str(msg))
             return None

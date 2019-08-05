@@ -21,7 +21,7 @@ class XMLNode(object):
 
     def _full_name(self):
         if self.attributes:
-            return self.name + ' ' + ' '.join(["%s='%s'"%(key, val) for key, val in self.attributes.items()])
+            return self.name + ' ' + ' '.join(["%s='%s'"%(key, val) for key, val in list(self.attributes.items())])
         return self.name
 
     def has_children(self):
@@ -43,7 +43,7 @@ def new_node(dnode):
     if dnode.nodeType == dnode.TEXT_NODE:
         return dnode.data.replace(AMP_ESCAPE, "&")
     node = XMLNode(dnode.nodeName)
-    for key, val in dnode.attributes.items():
+    for key, val in list(dnode.attributes.items()):
         node.add_attribute(key, val)
     for child in dnode.childNodes:
         node.add_child(new_node(child))

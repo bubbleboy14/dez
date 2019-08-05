@@ -38,6 +38,8 @@ class Buffer(object):
             self.pos = None
 
     def find(self, marker, i=0):
+        if hasattr(marker, "encode") and not hasattr(self.data, "encode"):
+            marker = marker.encode()
         if self.mode == 'consume':
             return self.data.find(marker, i)
         elif self.mode == 'index':
@@ -48,6 +50,15 @@ class Buffer(object):
 
     def __str__(self):
         return self.get_value()
+
+    def send(self, sock):
+        val = self.get_value()
+        try:
+            enced = val.encode()
+        except: # img, etc
+            enced = val
+        sent = sock.send(enced)
+        self.move(len(val) - len(enced[sent:].decode()))
 
     def get_value(self):
         ''' Return the data in consume mode, or the remainder of the data in
@@ -99,17 +110,25 @@ class Buffer(object):
 
     def part(self, start, end):
         if self.mode == 'consume':
-            return self.data[start:end]
+            d = self.data[start:end]
         elif self.mode == 'index':
-            return self.data[self.pos + start: self.pos + end]
+            d = self.data[self.pos + start: self.pos + end]
+        try:
+            return d.decode()
+        except:
+            return d
 
     def __contains__(self, data):
+        if hasattr(data, "encode") and not hasattr(self.data, "encode"):
+            data = data.encode()
         if self.mode == 'consume':
             return data in self.data
         elif self.mode == 'index':
             return self.data.find(data, self.pos) != -1
 
     def __eq__(self, data):
+        if hasattr(data, "encode") and not hasattr(self.data, "encode"):
+            data = data.encode()
         if self.mode == 'consume':
             return self.data == data
         elif self.mode == 'index':
@@ -125,11 +144,22 @@ class Buffer(object):
         return self.part(self, start, end)
 
     def __getitem__(self, key):
-        return self.data[key]
+        item = self.data[key]
+        if isinstance(item, int):
+            return chr(item)
+        return item
 
     def __add__(self, add_data):
         ''' Add the passed-in string to the buffer '''
-        self.data += add_data
+        if type(add_data) == bytes:
+            try:
+                add_data = add_data.decode()
+            except:
+                pass # media etc
+        try:
+            self.data += add_data
+        except:
+            self.data = add_data
         return self
 
 class B64ReadBuffer(Buffer):

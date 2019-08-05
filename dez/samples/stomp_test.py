@@ -10,12 +10,12 @@ def _deliver(d):
 
 class TestDaemon(object):
     def request_cb(self, frame, *args):
-        print 'request_cb called'
-        print 'args',args
-        print 'request:'
-        print '----'
-        print frame.request
-        print '----'
+        print('request_cb called')
+        print('args',args)
+        print('request:')
+        print('----')
+        print(frame.request)
+        print('----')
         if frame.action == "CONNECT":
             frame.connected(_key())
         elif frame.action == "DISCONNECT":
@@ -32,8 +32,8 @@ class TestDaemon(object):
             frame.failure(message.failure_recipients)
 
     def close_cb(self, conn, *args):
-        print 'connection %s closed' % conn
-        print 'args:',args
+        print('connection %s closed' % conn)
+        print('args:',args)
 
     def connect_cb(self, conn):
         conn.set_request_cb(self.request_cb, ['print', 'this', 'out'])

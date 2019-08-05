@@ -8,7 +8,7 @@ class INotify(object):
         self.__clib = ctypes.cdll.LoadLibrary(ctypes.util.find_library('libc'))
         self.__fd = self.__clib.inotify_init()
         if self.__fd < 0:
-            raise Exception, "INotify: bad file descriptor! Make sure your kernel supports inotify."
+            raise Exception("INotify: bad file descriptor! Make sure your kernel supports inotify.")
         event.read(self.__fd, self.__read_ready)
 
     def __read_ready(self):

@@ -11,7 +11,7 @@ def ssl_handshake(sock, cb):
             sock.settimeout(SSL_HANDSHAKE_TICK)
             sock.do_handshake()
             sock.settimeout(0)
-        except Exception, e:
+        except Exception as e:
             if time.time() > deadline:
                 sock.close()
             else:
@@ -49,7 +49,7 @@ def client_socket(addr, port, certfile=None, keyfile=None):
         # this seems to happen when there are
         # > 1016 connections, for some reason.
         # we need to get to the bottom of this
-        raise SocketError, "the python socket cannot open another connection"
+        raise SocketError("the python socket cannot open another connection")
     if certfile:
         return ssl.wrap_socket(sock, certfile=certfile, keyfile=keyfile)
     return sock

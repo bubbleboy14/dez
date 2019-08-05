@@ -7,7 +7,7 @@ def new_conn(conn):
     conn.set_cb(recv)
 
 def log(msg):
-    print "* " + msg
+    print("* " + msg)
 
 def main(domain, port):
     log("starting WebSocket Test")

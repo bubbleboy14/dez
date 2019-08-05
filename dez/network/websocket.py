@@ -11,7 +11,7 @@ from dez.http.server.response import renderResponse
 GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 def key2accept(key):
-    return b64encode(sha1(key + GUID).digest())
+    return b64encode(sha1((key + GUID).encode()).digest()).decode()
 
 def parse_frame(buf):
     """
@@ -45,7 +45,8 @@ def parse_frame(buf):
         payload_start += 4
 
     if mask:
-        mask_bytes = [ord(b) for b in buf[payload_start:payload_start + 4]]
+        mask_bytes = buf[payload_start:payload_start + 4]
+#        mask_bytes = [ord(b) for b in buf[payload_start:payload_start + 4]]
         payload_start += 4
 
     # is there a complete frame in the buffer?
@@ -58,8 +59,8 @@ def parse_frame(buf):
 
     # use xor and mask bytes to unmask data
     if mask:
-        unmasked = [mask_bytes[i % 4] ^ ord(b)
-            for b, i in zip(payload, range(len(payload)))]
+        unmasked = [mask_bytes[i % 4] ^ b#ord(b)
+            for b, i in zip(payload, list(range(len(payload))))]
         payload = "".join([chr(c) for c in unmasked])
 
     return payload
@@ -72,7 +73,7 @@ class WebSocketProxy(object):
 
     def _report(self, data):
         if self.verbose:
-            print "%s [WebSocketProxy] %s"%(datetime.now(), data)
+            print("%s [WebSocketProxy] %s"%(datetime.now(), data))
 
     def _new_conn(self, conn):
         self._report("Connecting to TCP server @ %s:%s"%(self.target["host"], self.target["port"]))
@@ -206,8 +207,8 @@ class WebSocketConnection(object):
         payload = parse_frame(self.buff)
         while payload:
             try:
-                self.report('Payload parsed: "%s"'%(payload.decode("utf-8"),))
-            except UnicodeDecodeError, e: # connection closed
+                self.report('Payload parsed: "%s"'%(payload,))#.decode("utf-8"),))
+            except UnicodeDecodeError as e: # connection closed
                 self.report('Closing connection: %s'%(e,))
                 return self.close()
             if self.b64:
@@ -216,7 +217,7 @@ class WebSocketConnection(object):
             if self.isJSON:
                 try:
                     payload = decode(payload)
-                except ValueError, e: # connection closed
+                except ValueError as e: # connection closed
                     self.report('Closing connection: %s'%(e,))
                     return self.close()
             self.cb(payload, *self.cbargs)
@@ -237,14 +238,15 @@ class WebSocketConnection(object):
         if self.b64:
             data = b64encode(data)
             self.report('B64 version: "%s"'%(data,))
+        data = data.encode()
         dl = len(data)
         if dl < 126:
-            lenchars = chr(dl)
+            lenchars = chr(dl).encode()
         elif dl < 65536: # 2 bytes
-            lenchars = chr(126) + struct.pack("=H", dl)[::-1]
+            lenchars = chr(126).encode() + struct.pack("=H", dl)[::-1]
         else: # 8 bytes
-            lenchars = chr(127) + struct.pack("=Q", dl)[::-1]
-        self.conn.write(chr(0x81) + lenchars + data)
+            lenchars = chr(127).encode() + struct.pack("=Q", dl)[::-1]
+        self.conn.write(b'\x81' + lenchars + data)
 
     def close(self):
         self.conn.close()
@@ -257,23 +259,23 @@ def startwebsocketproxy():
     try:
         hostname, port = args
     except:
-        print '\ndez_websocket_proxy is run with two arguments: the hostname and port of the server being proxied to. For example:\n\ndez_websocket_proxy mydomain.com 5555\n\nwill run a WebSocket server that listens for connections on port 81 and proxies them to a TCP server at mydomain.com:5555.'
+        print('\ndez_websocket_proxy is run with two arguments: the hostname and port of the server being proxied to. For example:\n\ndez_websocket_proxy mydomain.com 5555\n\nwill run a WebSocket server that listens for connections on port 81 and proxies them to a TCP server at mydomain.com:5555.')
         return
     try:
         port = int(port)
     except:
-        print '\nThe second argument must be an integer. The command should look like this:\n\ndez_websocket_proxy mydomain.com 5555\n\nTry again!'
+        print('\nThe second argument must be an integer. The command should look like this:\n\ndez_websocket_proxy mydomain.com 5555\n\nTry again!')
         return
     try:
         options.port = int(options.port)
     except:
-        print '\nThe -p (or --port) option must be an integer. The command should look like this:\n\ndez_websocket_proxy mydomain.com 5555 -p 82 (or something)\n\nTry again!'
+        print('\nThe -p (or --port) option must be an integer. The command should look like this:\n\ndez_websocket_proxy mydomain.com 5555 -p 82 (or something)\n\nTry again!')
         return
     try:
         proxy = WebSocketProxy('localhost', options.port, hostname, port, verbose=options.verbose)
     except:
-        print '\nPermission denied to use port %s. Depending on how your system is set up, you may need root privileges to run the proxy.'%(port)
+        print('\nPermission denied to use port %s. Depending on how your system is set up, you may need root privileges to run the proxy.'%(port))
         return
-    print 'running WebSocket server on port', options.port
-    print 'proxying to %s:%s'%(hostname, port)
+    print('running WebSocket server on port', options.port)
+    print('proxying to %s:%s'%(hostname, port))
     proxy.start()

@@ -157,7 +157,7 @@ class ParsedHTTPRequest(object):
             for key, val in cgi.parse_qsl(self.qs):
                 self.form[key] = val
         except ValueError:
-            raise HTTPProtocolError, "Invalid querystring format"
+            raise HTTPProtocolError("Invalid querystring format")
 
     def setup_cookies(self):
         pass
@@ -172,7 +172,7 @@ def serve_wsgi_application(application, global_conf, **kwargs):
     host = kwargs.pop("host", "127.0.0.1")
     port = int(kwargs.pop("port", "8888"))
     
-    print "listening on %s:%s" % (host, port)
+    print("listening on %s:%s" % (host, port))
     httpd = HTTPApplication(host, port, **kwargs)
     httpd.add_wsgi_rule("/", application)
     httpd.start() 

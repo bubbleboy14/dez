@@ -22,5 +22,5 @@ def get_connection_cb(conn, payload):
 
 def hello_world_cb(conn):
     conn.release()
-    print 'releasing'
+    print('releasing')
     

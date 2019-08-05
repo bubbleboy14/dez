@@ -1,8 +1,8 @@
 from dez.http.application import HTTPApplication
 
 def simple_app(environ, start_response):
-    print 'POST DATA:'
-    print environ['wsgi.input'].read()
+    print('POST DATA:')
+    print(environ['wsgi.input'].read())
     return []
     
 def main(**kwargs):

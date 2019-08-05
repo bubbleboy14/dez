@@ -10,4 +10,4 @@ def main(**kwargs):
     event.dispatch()
 
 def req_cb(response):
-    print response.status_line
+    print(response.status_line)

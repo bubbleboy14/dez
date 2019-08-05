@@ -2,7 +2,11 @@ from dez.logging import default_get_logger
 from dez.http.server import HTTPResponse, HTTPVariableResponse
 from dez.http.cache import NaiveCache, INotifyCache
 from dez import io
-import os, urllib, event
+import os, event
+try:
+    from urllib import parse # py3
+except:
+    import urllib as parse # py2.7
 
 class StaticHandler(object):
     id = 0
@@ -45,7 +49,7 @@ class StaticHandler(object):
         for d in data:
             response.write(d)
         if stream:
-            openfile = open(path)
+            openfile = open(path, "rb")
             limit = os.stat(path).st_size
             if "range" in req.headers:
                 rs, re = self.__range(req, response.headers, limit)
@@ -65,7 +69,7 @@ class StaticHandler(object):
 
     def __call__(self, req, prefix, directory):
         req.url = req.url.split("?")[0] # remove qs (sometimes used to get around caching)
-        url = urllib.unquote(req.url)
+        url = parse.unquote(req.url)
         if "*" in prefix: # regex
             path = directory + url
         else:
@@ -78,7 +82,7 @@ class StaticHandler(object):
                 return self.__respond(req, data=[
                     '<b>%s</b><br><br>'%(url,),
                     "<a href=%s>..</a><br>"%(os.path.split(url)[0],)
-                ] + ["<a href=%s>%s</a><br>"%(urllib.quote("%s/%s"%(url,
+                ] + ["<a href=%s>%s</a><br>"%(parse.quote("%s/%s"%(url,
                     child)),child) for child in os.listdir(path)])
         else:
             self.cache.get(req, path, self.__write, self.__stream, self.__404)
@@ -115,7 +119,7 @@ class StaticHandler(object):
     def __write_file(self, response, openfile, path, limit):
         data = openfile.read(min(limit, io.BUFFER_SIZE))
         limit -= len(data)
-        if data == "":
+        if not data:
             openfile.close()
             return response.end_or_close()
 #        self.cache.add_content(path, data)

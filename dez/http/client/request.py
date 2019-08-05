@@ -25,7 +25,7 @@ class HTTPClientRequest(object):
 
     def render(self):
         output = "%s %s %s\r\n" % (self.method, self.path, self.protocol)
-        output += "\r\n".join( [": ".join((key, val)) for (key, val) in self.headers.items() ])
+        output += "\r\n".join( [": ".join((key, val)) for (key, val) in list(self.headers.items()) ])
         output += "\r\n\r\n"
         output += self.body.data
         return output
