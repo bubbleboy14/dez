@@ -45,8 +45,7 @@ def parse_frame(buf):
         payload_start += 4
 
     if mask:
-        mask_bytes = buf[payload_start:payload_start + 4]
-#        mask_bytes = [ord(b) for b in buf[payload_start:payload_start + 4]]
+        mask_bytes = [ord(b) for b in buf[payload_start:payload_start + 4]]
         payload_start += 4
 
     # is there a complete frame in the buffer?
@@ -59,7 +58,7 @@ def parse_frame(buf):
 
     # use xor and mask bytes to unmask data
     if mask:
-        unmasked = [mask_bytes[i % 4] ^ b#ord(b)
+        unmasked = [mask_bytes[i % 4] ^ ord(b)
             for b, i in zip(payload, list(range(len(payload))))]
         payload = "".join([chr(c) for c in unmasked])
 
