@@ -5,4 +5,4 @@ if sys.version_info < (3, 0) and sys.getdefaultencoding() == 'ascii':
 import rel
 rel.override()
 
-__version__ = "0.10.9.12"
+__version__ = "0.10.9.13"
