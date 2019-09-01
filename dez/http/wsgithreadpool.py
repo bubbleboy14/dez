@@ -1,5 +1,8 @@
 import threading
-import queue
+try:
+    import queue
+except:
+    import Queue as queue
 
 class WSGIThreadPool(object):
   
