@@ -75,7 +75,11 @@ class StaticHandler(object):
         else:
             path = os.path.join(directory, url[len(prefix):])
         self.log.debug("__call__", path)
-        if os.path.isdir(path):
+        try:
+            isdir = os.path.isdir(path)
+        except:
+            return self.__404(req)
+        if isdir:
             if not self._try_index(req, path):
                 if url.endswith('/'):
                     url = url[:-1]
