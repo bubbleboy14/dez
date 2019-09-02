@@ -75,6 +75,8 @@ class StaticHandler(object):
         else:
             path = os.path.join(directory, url[len(prefix):])
         self.log.debug("__call__", path)
+        if ".." in path:
+            return self.__404(req)
         try:
             isdir = os.path.isdir(path)
         except:
