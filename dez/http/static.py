@@ -10,13 +10,14 @@ except:
 
 class StaticHandler(object):
     id = 0
-    def __init__(self, server_name, get_logger=default_get_logger, timestamp=False):
+    def __init__(self, server_name, get_logger=default_get_logger, timestamp=False, dir_404=False):
         StaticHandler.id += 1
         self.id = StaticHandler.id
         self.log = get_logger("StaticHandler(%s)"%(self.id,))
         self.log.debug("__init__")
         self.server_name = server_name
         self.timestamp = timestamp
+        self.dir_404 = dir_404
         try:
             self.cache = INotifyCache(get_logger=get_logger)
         except:
@@ -83,6 +84,8 @@ class StaticHandler(object):
             return self.__404(req)
         if isdir:
             if not self._try_index(req, path):
+                if self.dir_404:
+                    return self.__404(req)
                 if url.endswith('/'):
                     url = url[:-1]
                 return self.__respond(req, data=[
