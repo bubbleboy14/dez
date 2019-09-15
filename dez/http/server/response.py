@@ -5,7 +5,7 @@ KEEPALIVE = '300'
 
 def renderResponse(data="", version_major=1, version_minor=0, status="200 OK", headers={}):
     if isinstance(data, list):
-        data = b"".join([isinstance(d, binary_type) and d or d.encode() for d in data])
+        data = b"".join([isinstance(d, binary_type) and d or d.encode() for d in data if d])
     elif hasattr(data, "encode"):
         data = data.encode()
     status_line = "HTTP/%s.%s %s\r\n" % (version_major, version_minor, status)
