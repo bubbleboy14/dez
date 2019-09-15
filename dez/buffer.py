@@ -53,12 +53,14 @@ class Buffer(object):
 
     def send(self, sock):
         val = self.get_value()
+        de = False
         try:
             enced = val.encode()
+            de = True
         except: # img, etc
             enced = val
         sent = sock.send(enced)
-        self.move(len(val) - len(enced[sent:].decode()))
+        self.move(de and len(enced[:sent].decode()) or sent)
 
     def get_value(self):
         ''' Return the data in consume mode, or the remainder of the data in
