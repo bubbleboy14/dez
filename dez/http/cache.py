@@ -59,7 +59,7 @@ class BasicCache(object):
         else: # not in inotify!!
             mt = os.path.getmtime(path)
         if pretty:
-            return time.strftime('%a, %d %b %Y %H:%M:%S %Z', time.localtime(mt))
+            return time.strftime('%a, %d %b %Y %H:%M:%S GMT', time.gmtime(mt))
         return mt
 
     def add_content(self, path, data):
