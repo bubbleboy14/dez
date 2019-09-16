@@ -1,6 +1,6 @@
 import socket, ssl, time, event
 LQUEUE_SIZE = 5
-BUFFER_SIZE = 131072
+BUFFER_SIZE = 16000 # higher values (previously 131072) break ssl sometimes
 SSL_HANDSHAKE_TICK = 0.1
 SSL_HANDSHAKE_TIMEOUT = 1
 
