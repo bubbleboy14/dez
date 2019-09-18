@@ -3,6 +3,7 @@ from dez.network import SocketDaemon, SimpleClient
 from dez.http.counter import Counter
 from dez.http.server import HTTPDaemon
 from datetime import datetime
+from six import binary_type
 
 class ReverseProxyConnection(object):
     def __init__(self, conn, h1, p1, h2, p2, logger, start_data, counter=None):
@@ -94,6 +95,10 @@ class ReverseProxy(object):
 
     def route_connection(self, data, conn):
         conn.halt_read()
+        if isinstance(data, binary_type):
+            print("reverseproxy closing connection due to illegal bytes in header! data:")
+            print(data)
+            return self.cantroute("weird bytes!", conn)
         domain = None
         path = None
         should302 = self.redirect
