@@ -11,12 +11,13 @@ if sys.version_info > (3, 0):
             return 1
 
 class Router(object):
-    def __init__(self, default_cb, default_args=[], roll_cb=None, rollz={}, get_logger=default_get_logger):
+    def __init__(self, default_cb, default_args=[], roll_cb=None, rollz={}, get_logger=default_get_logger, whitelist=[]):
         self.log = get_logger("Router")
         self.default_cb = default_cb
         self.default_args = default_args
         self.roll_cb = roll_cb
         self.rollz = rollz
+        self.whitelist = whitelist
         self.prefixes = []
         self.regexs = []
 
@@ -37,13 +38,16 @@ class Router(object):
         return cmp(len(a[0]),len(b[0]))
 
     def _check(self, url, req=None):
-        for flag, domain in list(self.rollz.items()):
-            if url.startswith(flag) and req:
-                ref = req.headers.get("referer", "")
-                self.log.access("roll check! url: %s. referer: %s"%(url, ref))
-                if not ref or domain not in ref:
-                    return self.roll_cb, []
-                self.log.access("passed!")
+        if req and (self.whitelist or self.rollz):
+            ref = req.headers.get("referer", "")
+            if self.whitelist and req.ip not in self.whitelist:
+                return self.roll_cb, []
+            for flag, domain in list(self.rollz.items()):
+                if url.startswith(flag):
+                    self.log.access("ref roll check! url: %s. referer: %s. ip: %s"%(url, ref, ip))
+                    if not ref or domain not in ref:
+                        return self.roll_cb, []
+                    self.log.access("passed!")
         for rx, cb, args in self.regexs:
             if rx.match(url):
                 return cb, args
