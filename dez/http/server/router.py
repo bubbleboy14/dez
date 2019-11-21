@@ -40,6 +40,8 @@ class Router(object):
     def _check(self, url, req=None):
         if req and (self.whitelist or self.rollz):
             ip = req.ip
+            if ip == "127.0.0.1":
+                ip = req.headers.get("drp_ip", ip)
             ref = req.headers.get("referer", "")
             self.log.access("roll check!\nurl: %s\nreferer: %s\nip: %s"%(url, ref, ip))
             if self.whitelist and ip not in self.whitelist:

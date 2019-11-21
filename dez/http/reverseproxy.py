@@ -25,12 +25,15 @@ class ReverseProxyConnection(object):
     def log(self, msg):
         self.logger("%s:%s -> %s:%s > %s"%(self.front_host, self.front_port, self.back_host, self.back_port, msg))
 
+    def relay(self, data):
+        self.back_conn.write(data.replace("\r\nHost: ", "\r\ndrp_ip: %s\r\nHost: "%(self.front_conn.ip,)))
+
     def onConnect(self, conn, start_data):
         self.log("Connection established")
         self.back_conn = conn
         self.front_conn.set_close_cb(self.onClose, [self.back_conn])
         self.back_conn.set_close_cb(self.onClose, [self.front_conn])
-        self.front_conn.set_rmode_close_chunked(self.back_conn.write)
+        self.front_conn.set_rmode_close_chunked(self.relay)
         self.back_conn.set_rmode_close_chunked(self.front_conn.write)
         self.back_conn.write(start_data)
 
@@ -116,7 +119,7 @@ class ReverseProxy(object):
                 self.counter.device(line[12:])
         if not domain:
             return conn.close('no host header')
-        self.dispatch(data+'\r\n\r\n', conn, domain, should302, path)
+        self.dispatch(data + '\r\n\r\n', conn, domain, should302, path)
 
     def dispatch(self, data, conn, domain, should302=False, path=None):
         host, port = self.domain2hostport(domain)
