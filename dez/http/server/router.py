@@ -39,15 +39,16 @@ class Router(object):
 
     def _check(self, url, req=None):
         if req and (self.whitelist or self.rollz):
-            if self.whitelist and req.ip not in self.whitelist:
+            ip = req.ip
+            ref = req.headers.get("referer", "")
+            self.log.access("roll check!\nurl: %s\nreferer: %s\nip: %s"%(url, ref, ip))
+            if self.whitelist and ip not in self.whitelist:
                 return self.roll_cb, []
             for flag, domain in list(self.rollz.items()):
                 if url.startswith(flag):
-                    ref = req.headers.get("referer", "")
-                    self.log.access("ref roll check! url: %s. referer: %s. ip: %s"%(url, ref, ip))
                     if not ref or domain not in ref:
                         return self.roll_cb, []
-                    self.log.access("passed!")
+            self.log.access("passed!")
         for rx, cb, args in self.regexs:
             if rx.match(url):
                 return cb, args
