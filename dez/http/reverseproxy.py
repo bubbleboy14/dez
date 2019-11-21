@@ -116,7 +116,7 @@ class ReverseProxy(object):
                 self.counter.device(line[12:])
         if not domain:
             return conn.close('no host header')
-        self.dispatch(data+'\r\n\r\n', conn, domain, should302, path)
+        self.dispatch('%s\r\ndrp_ip: %s;\r\n\r\n'%(data, conn.ip), conn, domain, should302, path)
 
     def dispatch(self, data, conn, domain, should302=False, path=None):
         host, port = self.domain2hostport(domain)
