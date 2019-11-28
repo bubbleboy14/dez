@@ -15,7 +15,10 @@ class Connection(object):
         self.pool = pool
         self.addr = addr
         self.sock = sock
-        self.ip = sock.getpeername()[0]
+        try:
+            self.ip = sock.getpeername()[0]
+        except: # immediate disconnect?
+            self.ip = "unknown"
         self.b64 = b64
         self.mode = None
         self.__write_queue = []
