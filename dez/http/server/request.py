@@ -9,7 +9,7 @@ class HTTPRequest(object):
         self.log = conn.get_logger("HTTPRequest(%s)"%(self.id,))
         self.log.debug("__init__")
         self.conn = conn
-        self.ip = conn.ip
+        self.ip = self.real_ip = conn.ip
         self.state = 'action'
         self.headers = {}
         self.case_match_headers = {}
@@ -74,6 +74,8 @@ class HTTPRequest(object):
                 return True
             try:
                 key, value = self.conn.buffer.part(0, index).split(': ', 1)
+                if key == "drp_ip" and self.ip == "127.0.0.1":
+                    self.real_ip = value
             except ValueError as e:
                 self.log.debug("state_headers", "ValueError", e)
                 return self.close_now()
