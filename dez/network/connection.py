@@ -19,7 +19,6 @@ class Connection(object):
             self.ip = sock.getpeername()[0]
         except: # immediate disconnect?
             self.ip = "unknown"
-        self.real_ip = self.ip # subject to later modification based on request headers
         self.b64 = b64
         self.mode = None
         self.__write_queue = []

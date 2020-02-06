@@ -81,6 +81,7 @@ class HTTPConnection(object):
         self.get_logger = get_logger
         self.sock = sock
         self.ip = sock.getpeername()[0]
+        self.real_ip = self.ip # subject to later modification based on request headers
         self.addr, self.local_port = addr
         self.router = router
         self.counter = counter or Counter()
