@@ -106,14 +106,15 @@ class HTTPRequest(object):
         return self.state_body()
 
     def state_body(self):
+        buf = self.conn.buffer
         if self.body_stream_cb:
-            bytes_available = min(len(self.conn.buffer), self.remaining_content)
+            bytes_available = min(len(buf), self.remaining_content)
             self.remaining_content -= bytes_available
             cb, args = self.body_stream_cb
-            cb(self.conn.buffer.part(0,bytes_available), *args)
-            self.conn.buffer.move(bytes_available)
+            cb(buf.part(0, bytes_available), *args)
+            buf.move(bytes_available)
         # Quick hack to fix body bug. TODO: clean up this whole function.
-        elif len(self.conn.buffer) >= self.content_length:
+        elif len(buf) >= self.content_length or len(buf.data.encode()) == self.content_length:
             self.remaining_content = 0
         if self.remaining_content == 0:
             return self.complete()
