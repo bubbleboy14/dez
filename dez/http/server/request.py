@@ -114,8 +114,14 @@ class HTTPRequest(object):
             cb(buf.part(0, bytes_available), *args)
             buf.move(bytes_available)
         # Quick hack to fix body bug. TODO: clean up this whole function.
-        elif len(buf) >= self.content_length or len(buf.data.encode()) == self.content_length:
+        elif len(buf) >= self.content_length:
             self.remaining_content = 0
+        else:
+            try:
+                if len(buf.data.encode()) == self.content_length:
+                    self.remaining_content = 0
+            except:
+                pass
         if self.remaining_content == 0:
             return self.complete()
 
