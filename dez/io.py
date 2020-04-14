@@ -31,13 +31,14 @@ def server_socket(port, certfile=None, keyfile=None, cacerts=None):
         if hasattr(ssl, "SSLContext"):
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
             ctx.load_cert_chain(certfile, keyfile)
+            ctx.options |= ssl.OP_NO_SSLv2
             ctx.options |= ssl.OP_NO_SSLv3
             ctx.load_default_certs()
             if cacerts:
                 ctx.verify_mode = ssl.CERT_OPTIONAL
                 ctx.load_verify_locations(cacerts)
             return ctx.wrap_socket(sock, server_side=True, do_handshake_on_connect=False)
-        return ssl.wrap_socket(sock, certfile=certfile,
+        return ssl.wrap_socket(sock, certfile=certfile, ssl_version=ssl.PROTOCOL_TLSv1,
             keyfile=keyfile, server_side=True, do_handshake_on_connect=False)
     return sock
 
