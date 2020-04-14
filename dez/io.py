@@ -37,7 +37,7 @@ def server_socket(port, certfile=None, keyfile=None, cacerts=None):
                 ctx.verify_mode = ssl.CERT_OPTIONAL
                 ctx.load_verify_locations(cacerts)
             return ctx.wrap_socket(sock, server_side=True, do_handshake_on_connect=False)
-        return ssl.wrap_socket(sock, certfile=certfile,
+        return ssl.wrap_socket(sock, certfile=certfile, cert_reqs=ssl.OP_NO_SSLv3,
             keyfile=keyfile, server_side=True, do_handshake_on_connect=False)
     return sock
 
