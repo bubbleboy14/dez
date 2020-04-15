@@ -35,7 +35,7 @@ def server_socket(port, certfile=None, keyfile=None, cacerts=None):
     sock.listen(LQUEUE_SIZE)
     if certfile:
         if hasattr(ssl, "SSLContext"):
-            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
+            ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             ctx.load_cert_chain(certfile, keyfile)
             ctx.options |= ssl.OP_NO_SSLv2
             ctx.options |= ssl.OP_NO_SSLv3
