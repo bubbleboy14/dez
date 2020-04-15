@@ -3,6 +3,12 @@ LQUEUE_SIZE = 5
 BUFFER_SIZE = 16000 # higher values (previously 131072) break ssl sometimes
 SSL_HANDSHAKE_TICK = 0.1
 SSL_HANDSHAKE_TIMEOUT = 1
+# pre-2.7.9 ssl
+# - cipher list adapted from https://bugs.python.org/issue20995
+# - don't force (old) TLSv1 
+#   - would avoid (broken) SSLv2 and SSLv3
+#   - but TLSv1 sux :(
+PY27_OLD_CIPHERS = "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:ECDH+HIGH:DH+HIGH:RSA+HIGH:!aNULL:!eNULL:!MD5:!DSS"
 
 def ssl_handshake(sock, cb):
     deadline = time.time() + SSL_HANDSHAKE_TIMEOUT
@@ -29,15 +35,17 @@ def server_socket(port, certfile=None, keyfile=None, cacerts=None):
     sock.listen(LQUEUE_SIZE)
     if certfile:
         if hasattr(ssl, "SSLContext"):
-            ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
             ctx.load_cert_chain(certfile, keyfile)
+            ctx.options |= ssl.OP_NO_SSLv2
+            ctx.options |= ssl.OP_NO_SSLv3
             ctx.load_default_certs()
             if cacerts:
                 ctx.verify_mode = ssl.CERT_OPTIONAL
                 ctx.load_verify_locations(cacerts)
             return ctx.wrap_socket(sock, server_side=True, do_handshake_on_connect=False)
-        return ssl.wrap_socket(sock, certfile=certfile,
-            keyfile=keyfile, server_side=True, do_handshake_on_connect=False)
+        return ssl.wrap_socket(sock, certfile=certfile, keyfile=keyfile,
+            ciphers=PY27_OLD_CIPHERS, server_side=True, do_handshake_on_connect=False)
     return sock
 
 def client_socket(addr, port, certfile=None, keyfile=None):
