@@ -26,7 +26,11 @@ class ReverseProxyConnection(object):
         self.logger("%s:%s -> %s:%s > %s"%(self.front_host, self.front_port, self.back_host, self.back_port, msg))
 
     def relay(self, data):
-        self.back_conn.write(data.replace("\r\nHost: ", "\r\ndrp_ip: %s\r\nHost: "%(self.front_conn.ip,)))
+        try:
+            data = data.replace("\r\nHost: ", "\r\ndrp_ip: %s\r\nHost: "%(self.front_conn.ip,))
+        except:
+            pass # py3 bytes stuff - not a big deal
+        self.back_conn.write(data)
 
     def onConnect(self, conn, start_data):
         self.log("Connection established")
