@@ -8,9 +8,9 @@ from dez.http.errors import HTTPProtocolError
 
 import event
 try:
-    from cgi import parse_qsl as parse_qs # else py>=3.8(?)
+    from cgi import parse_qsl # else py>=3.8(?)
 except:
-    from urllib.parse import parse_qs
+    from urllib.parse import parse_qsl
 
 class HTTPApplication(object):
     """
@@ -157,7 +157,7 @@ class ParsedHTTPRequest(object):
 
     def setup_form(self):
         try:
-            for key, val in parse_qs(self.qs):
+            for key, val in parse_qsl(self.qs):
                 self.form[key] = val
         except ValueError:
             raise HTTPProtocolError("Invalid querystring format")
