@@ -7,7 +7,10 @@ from dez.http.proxy.proxy import proxy
 from dez.http.errors import HTTPProtocolError
 
 import event
-import cgi
+try:
+    from cgi import parse_qsl as parse_qs # else py>=3.8(?)
+except:
+    from urllib.parse import parse_qs
 
 class HTTPApplication(object):
     """
@@ -154,7 +157,7 @@ class ParsedHTTPRequest(object):
 
     def setup_form(self):
         try:
-            for key, val in cgi.parse_qsl(self.qs):
+            for key, val in parse_qs(self.qs):
                 self.form[key] = val
         except ValueError:
             raise HTTPProtocolError("Invalid querystring format")
