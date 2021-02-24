@@ -147,15 +147,15 @@ class Buffer(object):
 
     def __add__(self, add_data):
         ''' Add the passed-in string to the buffer '''
-        if type(add_data) == bytes:
-            try:
-                add_data = add_data.decode()
-            except:
-                pass # media etc
         try:
             self.data += add_data
-        except:
-            self.data = add_data
+        except: # this seems kinda messed up.....
+            if type(add_data) == bytes:
+                try:
+                    add_data = add_data.decode()
+                except:
+                    pass # media etc
+            self.data += add_data # at least this line should fail if above doesn't work...
         return self
 
 class B64ReadBuffer(Buffer):
