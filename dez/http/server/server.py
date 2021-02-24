@@ -192,7 +192,7 @@ class HTTPConnection(object):
 
     def read(self, data):
         self.cancelTimeout()
-        self.log.debug("read", self.request.state)
+        self.log.debug("read", self.request.state, len(data))
         if self.request.state == "write":
             self.log.debug("Invalid additional data: %s" % data)
             return self.request.close(hard=True)
