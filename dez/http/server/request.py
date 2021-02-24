@@ -33,7 +33,7 @@ class HTTPRequest(object):
 
     def set_close_cb(self, cb, args):
         self.conn.set_close_cb(cb, args)
-    
+
     def state_action(self):
         if '\r\n' not in self.conn.buffer:
             return False
@@ -107,18 +107,24 @@ class HTTPRequest(object):
 
     def state_body(self):
         buf = self.conn.buffer
+        blen = len(buf)
+        self.log.debug("state_body", "clen:", self.content_length, "blen:", blen)
         if self.body_stream_cb:
-            bytes_available = min(len(buf), self.remaining_content)
+            bytes_available = min(blen, self.remaining_content)
+            self.log.debug("state_body", "available:", bytes_available, "remaining:", self.remaining_content)
             self.remaining_content -= bytes_available
             cb, args = self.body_stream_cb
             cb(buf.part(0, bytes_available), *args)
             buf.move(bytes_available)
         # Quick hack to fix body bug. TODO: clean up this whole function.
-        elif len(buf) >= self.content_length:
+        elif blen >= self.content_length:
+            self.log.debug("state_body", "len(buff) >= clen")
             self.remaining_content = 0
-        else:
+        elif blen >= self.content_length - 40: # this part is highly questionable!!!
+            self.log.debug("state_body", "close - checking encode()d")
             try:
                 if len(buf.data.encode()) == self.content_length:
+                    self.log.debug("state_body", "passed encode()d clen check")
                     self.remaining_content = 0
             except:
                 pass
