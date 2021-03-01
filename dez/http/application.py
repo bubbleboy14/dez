@@ -159,8 +159,8 @@ class ParsedHTTPRequest(object):
         try:
             for key, val in parse_qsl(self.qs):
                 self.form[key] = val
-        except ValueError:
-            raise HTTPProtocolError("Invalid querystring format")
+        except:
+            pass
 
     def setup_cookies(self):
         pass
