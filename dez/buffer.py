@@ -13,7 +13,7 @@ class Buffer(object):
         If you experience memory leaks, make sure you don't have
         buffers sitting around in 'index' mode.
     '''
-    def __init__(self, initial_data='', mode='consume'):
+    def __init__(self, initial_data=b'', mode='consume'):
         self.mode = None
         self.pos = None
         self.data = initial_data
@@ -147,15 +147,7 @@ class Buffer(object):
 
     def __add__(self, add_data):
         ''' Add the passed-in string to the buffer '''
-        try:
-            self.data += add_data
-        except: # this seems kinda messed up.....
-            if type(add_data) == bytes:
-                try:
-                    add_data = add_data.decode()
-                except:
-                    pass # media etc
-            self.data += add_data # at least this line should fail if above doesn't work...
+        self.data += add_data
         return self
 
 class B64ReadBuffer(Buffer):
