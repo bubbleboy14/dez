@@ -77,7 +77,7 @@ class Buffer(object):
             consume mode, sets data to empty.
         '''
         if self.mode == 'consume':
-            self.data = ''
+            self.data = b''
         elif self.mode == 'index':
             self.pos = len(self.data)
 
@@ -147,15 +147,20 @@ class Buffer(object):
 
     def __add__(self, add_data):
         ''' Add the passed-in string to the buffer '''
-        self.data += add_data
+        if hasattr(add_data, "encode") and not hasattr(self.data, "encode"):
+            add_data = add_data.encode()
+        if self.data:
+            self.data += add_data
+        else: # shouldn't be necessary ... py3 string/bytes stuff...
+            self.data = add_data
         return self
 
 class B64ReadBuffer(Buffer):
     ''' This works exactly like the Buffer class, except it
         reads base64-encoded strings separated by whitespace.
     '''
-    def __init__(self, initial_data='', mode='consume'):
-        self.raw_data = ''
+    def __init__(self, initial_data=b'', mode='consume'):
+        self.raw_data = b''
         Buffer.__init__(self, initial_data, mode)
 
     def __add__(self, add_data):
@@ -164,7 +169,7 @@ class B64ReadBuffer(Buffer):
         if s != -1:
             self.data += b64decode(self.raw_data+add_data[:s])
             add_data = add_data[s+1:]
-            self.raw_data = ''
+            self.raw_data = b''
         self.raw_data += add_data
         return self
 
