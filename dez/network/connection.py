@@ -180,7 +180,7 @@ class Connection(object):
     def __start_read(self):
         if self.mode == None:
             raise Exception("NoModeSet")("First set a read mode")
-        self.__read("")
+        self.__read(b"")
 
     # Keep a queue of things to write and their related callbacks
     # if we just finished writing some segment, call its callback
