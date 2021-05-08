@@ -203,7 +203,7 @@ class HTTPRequest(object):
         if self.write_ended:
             return self.log.debug("END", "end already called", "(it's fine)")
         if self.state != "write":
-            self.log.debug("END", "postponing -","state (", self.state, ") not write!")
+            self.log.debug("END", "postponing -", "state (", self.state, ") not write!")
             self.pending_actions.append(("end", None, cb, args, None, None))
             return
         self.state = "ended"
