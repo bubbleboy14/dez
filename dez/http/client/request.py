@@ -27,8 +27,7 @@ class HTTPClientRequest(object):
         output = "%s %s %s\r\n" % (self.method, self.path, self.protocol)
         output += "\r\n".join( [": ".join((key, val)) for (key, val) in list(self.headers.items()) ])
         output += "\r\n\r\n"
-        output += self.body.data
-        return output
+        return output.encode() + self.body.data
 
 class HTTPClientRawRequest(object):
     def __init__(self):
