@@ -129,7 +129,7 @@ class ReverseProxy(object):
         host, port = self.domain2hostport(domain)
         if not host:
             return self.cantroute(domain, conn)
-        if should302 and BIG_302:
+        if should302 and BIG_302 and host != "localhost":
             self._302(conn, "%s:%s"%(host, port), path)
         else:
             ReverseProxyConnection(conn, domain, self.port, host, port, self.log, data, self.counter)
