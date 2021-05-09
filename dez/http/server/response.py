@@ -1,7 +1,7 @@
 import event, io
 from six import binary_type
 
-KEEPALIVE = '300'
+KEEPALIVE = 5
 
 def renderResponse(data="", version_major=1, version_minor=0, status="200 OK", headers={}):
     if isinstance(data, list):
@@ -33,8 +33,8 @@ class HTTPResponse(object):
         if keep_alive and self.version_minor == 1 and request.headers.get("connection") == "keep-alive":
             self.keep_alive = True
             self.headers['Connection'] = 'keep-alive'
-            self.headers['Keep-Alive'] = KEEPALIVE
-            self.timeout = event.timeout(int(KEEPALIVE), self.end_or_close)
+            self.headers['Keep-Alive'] = str(KEEPALIVE)
+            self.timeout = event.timeout(KEEPALIVE, self.end_or_close)
 
     def __setitem__(self, key, val):
         self.headers[key] = val
@@ -45,16 +45,22 @@ class HTTPResponse(object):
     def write(self, data):
         self.buffer.append(data)
 
+    def end(self, cb=None):
+        self.log.debug("end")
+        self.timeout.delete(True)
+        self.request.end(cb)
+        self.timeout = None
+        self.request = None
+
     def end_or_close(self, cb=None):
         if self.keep_alive and self.timeout:
             if self.timeout.pending():
-                self.timeout.delete(True)
-                self.log.debug("end_or_close", "ending")
-                self.request.end(cb)
-                self.timeout = None
-                self.request = None
-                return
+                self.log.debug("end_or_close", "timeout pending - ending")
+                return self.end(cb)
         if self.request:
+            self.log.debug("end_or_close", "buffer", len(self.request.conn.buffer))
+            if len(self.request.conn.buffer):
+                return self.end(cb)
             self.log.debug("end_or_close", "closing")
             self.request.close(cb)
             self.request = None
@@ -97,8 +103,8 @@ class HTTPVariableResponse(object):
             if request.headers.get("connection") == "keep-alive":
                 self.keep_alive = True
                 self.headers['Connection'] = 'keep-alive'
-                self.headers['Keep-Alive'] = KEEPALIVE
-                self.timeout = event.timeout(int(KEEPALIVE), self.end_or_close)
+                self.headers['Keep-Alive'] = str(KEEPALIVE)
+                self.timeout = event.timeout(KEEPALIVE, self.end_or_close)
 
     def __setitem__(self, key, val):
         self.headers[key] = val

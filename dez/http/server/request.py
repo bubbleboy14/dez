@@ -203,6 +203,7 @@ class HTTPRequest(object):
         if self.write_ended:
             return self.log.debug("END", "end already called", "(it's fine)")
         if self.state != "write":
+            self.log.debug("END", "postponing -", "state (", self.state, ") not write!")
             self.pending_actions.append(("end", None, cb, args, None, None))
             return
         self.state = "ended"
@@ -210,13 +211,14 @@ class HTTPRequest(object):
         self.conn.write("", self.write_cb, (cb, args))
 
     def close(self, cb=None, args=[], hard=False):
-        self.log.debug("close", self.write_ended, self.state)
+        self.log.debug("close", self.write_ended, self.state, hard)
         if hard or self.state == "action":
             self.send_close = True
             return self._close()
         if self.write_ended:
             return self.log.error("CLOSE", "end already called")
         if self.state != "write":
+            self.log.debug("CLOSE", "postponing -","state (", self.state, ") not write!")
             return self.pending_actions.append(("close", None, cb, args, None, None))
         self.send_close = True
         self.end(cb, args)
