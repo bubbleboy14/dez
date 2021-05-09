@@ -130,7 +130,8 @@ class HTTPConnection(object):
             self.log.debug("close", "buffer present - starting new request")
             return self.start_request()
         if len(self.write_buffer):
-            self.log.error("ALERT! attempting close() w/ write_buffer!")
+            self.log.error("ALERT! attempting close() w/ %s write_buffer!"%(len(self.write_buffer)),)
+            return self.wevent.add()
         if not self.revent.pending():
             self.log.debug("close", "revent not pending - starting new request")
             return self.start_request()
