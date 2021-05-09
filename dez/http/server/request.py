@@ -224,5 +224,6 @@ class HTTPRequest(object):
         self.end(cb, args)
 
     def close_now(self, reason="hard close"):
+        self.conn.buffer.exhaust()
         self.send_close = True
         self._close(reason)
