@@ -60,15 +60,15 @@ class HTTPDaemon(object):
         return cb
 
     def accept_connection(self, ev, sock, event_type, *arg):
+        self.log.debug("accept_connection")
         try:
             sock, addr = sock.accept()
             if self.secure:
                 io.ssl_handshake(sock, self.handshake_cb(sock, addr))
-                return True
-            HTTPConnection(sock, addr, self.router, self.get_logger, self.counter)
+            else:
+                HTTPConnection(sock, addr, self.router, self.get_logger, self.counter)
         except io.socket.error as e:
             self.log.info("abandoning connection on socket error: %s"%(e,))
-            return True
         return True
 
 class HTTPConnection(object):
@@ -114,7 +114,7 @@ class HTTPConnection(object):
         if len(self.buffer):
             self.request.process()
         else:
-            self._timeout.add(int(KEEPALIVE))
+            self._timeout.add(KEEPALIVE)
 
     def cancelTimeout(self, hard=False):
         self.log.debug("cancelTimeout (request %s)"%(self.request.id,))
@@ -122,13 +122,22 @@ class HTTPConnection(object):
 
     def timeout(self):
         self.log.debug("TIMEOUT (request %s) -- closing!"%(self.request.id,))
-        self.request.close(hard=True)
+        self.close()
 
     def close(self, reason=""):
         self.log.debug("close")
+        if len(self.buffer):
+            self.log.debug("close", "buffer present - starting new request")
+            return self.start_request()
+        if len(self.write_buffer):
+            self.log.error("ALERT! attempting close() w/ write_buffer!")
+        if not self.revent.pending():
+            self.log.debug("close", "revent not pending - starting new request")
+            return self.start_request()
         self.cancelTimeout(True)
         self.counter.dec("connections")
         if self.__close_cb:
+            self.log.debug("close - triggering __close_cb!")
             cb, args = self.__close_cb
             self.__close_cb = None
             cb(*args)
@@ -136,7 +145,7 @@ class HTTPConnection(object):
         self.wevent.dereference()
         self.sock.close()
         if self.current_eb:
-            self.log.debug("triggering current_eb!")
+            self.log.debug("close - triggering current_eb!")
             self.current_eb(*self.current_ebargs)
             self.current_eb = None
             self.current_ebargs = None
@@ -144,7 +153,7 @@ class HTTPConnection(object):
             tmp = self.response_queue.pop(0)
             data, self.current_cb, self.current_args, self.current_eb, self.current_ebargs = tmp
             if self.current_eb:
-                self.log.debug("triggering current_eb (response_queue)!")
+                self.log.debug("close - triggering current_eb (response_queue)!")
                 self.current_eb(*self.current_ebargs)
             self.current_eb = None
             self.current_ebargs = None
@@ -209,18 +218,22 @@ class HTTPConnection(object):
         self.log.debug("write_ready")
         if self.write_buffer.empty():
             if self.current_cb:
-                self.log.debug("invoking current_cb", self.current_cb)
+                self.log.debug("write_ready", "invoking current_cb", self.current_cb)
                 self.current_cb(*self.current_args)
                 self.current_cb = None
             if not self.response_queue:
-                self.log.debug("no response_queue -- cutting out!")
-                self.wevent.pending() and self.wevent.delete()
+                if len(self.buffer):
+                    self.log.debug("write_ready", "buffer present - starting new request")
+                    self.start_request()
+                else:
+                    self.log.debug("no response_queue or buffer -- cutting out!")
+                    self.wevent.pending() and self.wevent.delete()
                 return None
             data, self.current_cb, self.current_args, self.current_eb, self.current_ebargs = self.response_queue.pop(0)
             self.write_buffer.reset(data)
             # call conn.write("", cb) to signify request complete
             if not data:
-                self.log.debug("ending request")
+                self.log.debug("write_ready", "no data")
                 self.wevent.pending() and self.wevent.delete()
                 self.current_cb(*self.current_args)
                 self.current_cb = None
