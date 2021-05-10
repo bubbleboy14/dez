@@ -165,7 +165,9 @@ class HTTPRequest(object):
             self.log.debug("WRITE", "tried to write:", data)
             return self.log.error("WRITE", "end already called")
         if self.state != 'write':
-            self.log.debug("state is not 'write'", self.state)
+            self.log.debug("write - state is not 'write'", self.state)
+            if self.state == "closed":
+                return self.log.error("WRITE", "state is closed - can't write %s bytes"%(len(data),));
             self.pending_actions.append(("write", data, cb, args, eb, ebargs))
             if self.state == 'waiting':
                 self.state = 'body'
@@ -186,17 +188,17 @@ class HTTPRequest(object):
         self.conn.counter.dec("requests")
         if self.send_close:
             self.log.debug("closing!!")
-            self.state = "closed"
             self.conn.close(reason)
         else:
             self.log.debug("restarting!!")
             self.conn.start_request()
-        self._dereference()
+        self.dereference()
 
-    def _dereference(self):
+    def dereference(self):
         self.body_stream_cb = None
         self.body_cb = None
         self.conn = None
+        self.state = "closed"
 
     def end(self, cb=None, args=[]):
         self.log.debug("end", self.write_ended, self.state)
