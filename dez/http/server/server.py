@@ -213,7 +213,8 @@ class HTTPConnection(object):
 
     def write(self, data, cb, args=[], eb=None, ebargs=[]):
         if not self.log:
-            return print("connection closed - can't write")
+            print("connection closed - can't write")
+            return
         self.log.debug("write", len(data))
         self.response_queue.append((data, cb, args, eb, ebargs))
         self.wevent.pending() or self.wevent.add()
