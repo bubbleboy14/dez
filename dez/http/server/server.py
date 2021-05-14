@@ -227,9 +227,13 @@ class HTTPConnection(object):
                 self.current_cb(*self.current_args)
                 self.current_cb = None
             if not self.response_queue:
+                self.log.debug("write_ready", "buffer present")
                 if len(self.buffer):
-                    self.log.debug("write_ready", "buffer present - starting new request")
-                    self.start_request()
+                    if self.revent.pending():
+                        self.log.debug("write_ready", "revent pending - doing nothing")
+                    else:
+                        self.log.debug("write_ready", "revent not pending - starting new request")
+                        self.start_request()
                 else:
                     self.log.debug("no response_queue or buffer -- cutting out!")
                     self.wevent.pending() and self.wevent.delete()
