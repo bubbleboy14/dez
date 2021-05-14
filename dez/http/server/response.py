@@ -1,7 +1,7 @@
 import event, io
 from six import binary_type
 
-KEEPALIVE = 5
+KEEPALIVE = 60
 
 def renderResponse(data="", version_major=1, version_minor=0, status="200 OK", headers={}):
     if isinstance(data, list):
