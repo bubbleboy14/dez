@@ -52,6 +52,7 @@ class HTTPRequest(object):
             self.url_scheme = url_scheme.lower()
         except ValueError as e:
             self.log.error("state_action", "ValueError", e)
+            self.log.error(self.conn.buffer.get_value().decode(errors='replace'))
             return self.close_now()
 #            raise HTTPProtocolError, "Invalid HTTP status line"
         #self.protocol = self.protocol.lower()
