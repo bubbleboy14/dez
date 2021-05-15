@@ -87,6 +87,7 @@ class HTTPConnection(object):
         self.counter = counter or Counter()
         self.counter.inc("connections", sock)
         self.response_queue = []
+        self.fried = False
         self.request = None
         self.current_cb = None
         self.current_args = None
@@ -110,6 +111,7 @@ class HTTPConnection(object):
         self.counter.inc("requests")
         self.wevent.pending() and self.wevent.delete()
         self.revent.pending() or self.revent.add()
+        self.request and self.request.dereference()
         self.request = HTTPRequest(self)
         if len(self.buffer):
             self.request.process()
@@ -122,20 +124,34 @@ class HTTPConnection(object):
 
     def timeout(self):
         self.log.debug("TIMEOUT (request %s) -- closing!"%(self.request.id,))
-        self.request.dereference();
         self.close()
 
+    def fry(self, reason=""):
+        self.log.debug("fried", reason)
+        self.fried = True
+        self.close(reason)
+
     def close(self, reason=""):
-        self.log.debug("close")
-        if len(self.write_buffer) or len(self.response_queue):
-            self.log.error("ALERT! attempting close() w/ %s write_buffer!"%(len(self.write_buffer)),)
-            return self.wevent.add()
-        if len(self.buffer):
-            self.log.debug("close", "buffer present - starting new request")
-            return self.start_request()
-        if not self.revent.pending():
-            self.log.debug("close", "revent not pending - starting new request")
-            return self.start_request()
+        self.log.debug("close", reason)
+        if not self.fried:
+            if len(self.write_buffer) or len(self.response_queue):
+                self.log.error("ALERT! attempting close() w/ %s write_buffer!"%(len(self.write_buffer)),)
+                if self.request.write_ended:
+                    self.log.error("write ended! unending.")
+                    self.request.write_ended = False
+                if self.request.send_close:
+                    self.log.error("send close! unsendclosing.")
+                    self.request.send_close = False
+                if not self.wevent.pending():
+                    self.log.error("wevent not pending! adding.")
+                    self.wevent.add()
+                return
+            if len(self.buffer):
+                self.log.error("close", "buffer present - starting new request")
+                return self.start_request()
+            if not self.revent.pending():
+                self.log.debug("close", "revent not pending - starting new request")
+                return self.start_request()
         self.cancelTimeout(True)
         self.counter.dec("connections")
         if self.__close_cb:
@@ -143,11 +159,12 @@ class HTTPConnection(object):
             cb, args = self.__close_cb
             self.__close_cb = None
             cb(*args)
+        self.request.dereference()
         self.revent.dereference()
         self.wevent.dereference()
         self.sock.close()
         if self.current_eb:
-            self.log.debug("close - triggering current_eb!")
+            self.log.error("close - triggering current_eb!")
             self.current_eb(*self.current_ebargs)
             self.current_eb = None
             self.current_ebargs = None
@@ -155,7 +172,7 @@ class HTTPConnection(object):
             tmp = self.response_queue.pop(0)
             data, self.current_cb, self.current_args, self.current_eb, self.current_ebargs = tmp
             if self.current_eb:
-                self.log.debug("close - triggering current_eb (response_queue)!")
+                self.log.error("close - triggering current_eb (response_queue)!")
                 self.current_eb(*self.current_ebargs)
             self.current_eb = None
             self.current_ebargs = None
@@ -179,8 +196,7 @@ class HTTPConnection(object):
             self.log.debug("read_ready (waiting)", "SSLError", e)
             return True # wait
         except io.socket.error as e:
-            self.log.debug("read_ready (closing)", "io.socket.error", e)
-            self.request.close(hard=True)
+            self.fry("read_ready (closing): io.socket.error - %s"%(e,))
             return None
 
     def read_body(self):
@@ -205,7 +221,7 @@ class HTTPConnection(object):
         self.cancelTimeout()
         self.log.debug("read", self.request.state, len(data))
         if self.request.state == "write":
-            self.log.debug("Invalid additional data: %s" % data)
+            self.log.error("Invalid additional data: %s" % data)
             return self.request.close(hard=True)
         self.buffer += data
         self.request.process()
@@ -213,8 +229,8 @@ class HTTPConnection(object):
 
     def write(self, data, cb, args=[], eb=None, ebargs=[]):
         if not self.log:
-            print("connection closed - can't write")
-            return
+            print("connection closed - can't write", len(data))
+            return self.wevent.pending() and self.wevent.delete()
         self.log.debug("write", len(data))
         self.response_queue.append((data, cb, args, eb, ebargs))
         self.wevent.pending() or self.wevent.add()
@@ -256,6 +272,5 @@ class HTTPConnection(object):
             self.write_buffer.send(self.sock)
             return True
         except io.socket.error as msg:
-            self.log.debug('io.socket.error: %s' % msg)
-            self.request.close(hard=True)#self.close(reason=str(msg))
+            self.fry('io.socket.error: %s' % msg)
             return None
