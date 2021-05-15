@@ -129,7 +129,7 @@ class HTTPConnection(object):
     def fry(self, reason=""):
         self.log.debug("fried", reason)
         self.fried = True
-        self.close()
+        self.close(reason)
 
     def close(self, reason=""):
         self.log.debug("close", reason)
