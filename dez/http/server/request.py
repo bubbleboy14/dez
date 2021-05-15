@@ -155,10 +155,13 @@ class HTTPRequest(object):
             mode, data, cb, args, eb, ebargs = self.pending_actions.pop(0)
             if mode == "write":
                 self.write(data, cb, args, eb, ebargs)
-            elif mode == "end":
-                self.end(cb, args)
-            elif mode == "close":
-                self.close(cb, args)
+            elif len(self.pending_actions):
+                self.log.error("state_write - skipping:", mode)
+            else:
+                if mode == "end":
+                    self.end(cb, args)
+                elif mode == "close":
+                    self.close(cb, args)
 
     def write(self, data, cb=None, args=[], eb=None, ebargs=[], override=False):
         self.log.debug("write", self.state, len(data))
@@ -166,13 +169,14 @@ class HTTPRequest(object):
             self.log.debug("WRITE", "tried to write:", data)
             return self.log.error("WRITE", "end already called")
         if self.state != 'write':
-            self.log.debug("write - state is not 'write'", self.state)
+            self.log.error("write - state is not 'write'", self.state)
             if self.state == "closed":
                 return self.log.error("WRITE", "state is closed - can't write %s bytes"%(len(data),));
             self.pending_actions.append(("write", data, cb, args, eb, ebargs))
             if self.state == 'waiting':
+                self.log.error("write - changing state to body")
                 self.state = 'body'
-            self.log.debug("calling process() from write()")
+            self.log.error("calling process() from write()")
             return self.process()
         if len(data) == 0:
             return cb and cb(*args)
@@ -188,12 +192,11 @@ class HTTPRequest(object):
     def _close(self, reason=None):
         self.conn.counter.dec("requests")
         if self.send_close:
-            self.log.debug("closing!!")
+            self.log.debug("_close", "closing!!")
             self.conn.close(reason)
         else:
-            self.log.debug("restarting!!")
+            self.log.debug("_close", "restarting!!")
             self.conn.start_request()
-        self.dereference()
 
     def dereference(self):
         self.body_stream_cb = None
@@ -206,7 +209,7 @@ class HTTPRequest(object):
         if self.write_ended:
             return self.log.debug("END", "end already called", "(it's fine)")
         if self.state != "write":
-            self.log.debug("END", "postponing -", "state (", self.state, ") not write!")
+            self.log.error("END", "postponing -", "state (", self.state, ") not write!")
             self.pending_actions.append(("end", None, cb, args, None, None))
             return
         self.state = "ended"
@@ -221,7 +224,7 @@ class HTTPRequest(object):
         if self.write_ended:
             return self.log.error("CLOSE", "end already called")
         if self.state != "write":
-            self.log.debug("CLOSE", "postponing -","state (", self.state, ") not write!")
+            self.log.error("CLOSE", "postponing -","state (", self.state, ") not write!")
             return self.pending_actions.append(("close", None, cb, args, None, None))
         self.send_close = True
         self.end(cb, args)
