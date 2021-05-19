@@ -47,7 +47,7 @@ class HTTPResponse(object):
 
     def end(self, cb=None):
         self.log.debug("end")
-        self.timeout.delete(True)
+        hasattr(self, "timeout") and self.timeout.delete(True)
         self.request.end(cb)
         self.timeout = None
         self.request = None
