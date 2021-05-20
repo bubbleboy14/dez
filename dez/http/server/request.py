@@ -50,8 +50,8 @@ class HTTPRequest(object):
             self.version_major = int(major)
             self.version_minor = int(minor)
             self.url_scheme = url_scheme.lower()
-        except ValueError as e:
-            self.log.error("state_action", "ValueError", e)
+        except Exception as e:
+            self.log.error("state_action", "Exception", e)
             self.log.error(self.conn.buffer.get_value().decode(errors='replace'))
             return self.close_now()
 #            raise HTTPProtocolError, "Invalid HTTP status line"
