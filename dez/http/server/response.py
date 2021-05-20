@@ -80,6 +80,8 @@ class HTTPResponse(object):
 
     def dispatch(self, cb=None):
         self.log.debug("dispatch")
+        if not self.request:
+            return self.log.error("attempted dispatch() after close!")
         self.request.write(self.render(), self.end_or_close, [cb])
 
 class HTTPVariableResponse(object):
