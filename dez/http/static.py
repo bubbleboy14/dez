@@ -8,6 +8,9 @@ try:
 except:
     import urllib as parse # py2.7
 
+IDEVICES = ["iPad", "iPod", "iPhone"]
+TEXTEXTS = ["html", "css", "js"]
+
 class StaticHandler(object):
     id = 0
     def __init__(self, server_name, get_logger=default_get_logger, timestamp=False, dir_404=False):
@@ -26,7 +29,7 @@ class StaticHandler(object):
     def __isi(self, req):
         ua = req.headers.get("user-agent")
         if ua:
-            for iflag in ["iPad", "iPod", "iPhone"]:
+            for iflag in IDEVICES:
                 if iflag in ua:
                     return True
         return False
@@ -110,8 +113,11 @@ class StaticHandler(object):
         return int(rs), re and int(re) or None
 
     def __write(self, req, path):
-        data = self.cache.get_content(path)
+        gz = path.split(".").pop() in TEXTEXTS and "gzip" in req.headers['accept-encoding']
+        data = self.cache.get_content(path, compress=gz)
         headers = {}
+        if gz:
+            headers["Content-Encoding"] = "gzip"
         if "range" in req.headers:
             rs, re = self.__range(req, headers, len(data))
             data = data[rs:re]
