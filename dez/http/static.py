@@ -35,7 +35,7 @@ class StaticStore(object):
     def read(self, path, req=None):
         gz = False
         if path.split(".").pop() in TEXTEXTS:
-            if not req or "gzip" in req.headers['accept-encoding']:
+            if not req or "gzip" in req.headers.get('accept-encoding', ''):
                 gz = True
         data = self.cache.get_content(path, compress=gz)
         headers = {}
