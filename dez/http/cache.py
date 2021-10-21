@@ -1,11 +1,27 @@
-import os, magic, mimetypes, time
+import os, magic, mimetypes, time, gzip
 from dez.logging import default_get_logger
 from dez.http.inotify import INotify
 from dez import io
+try: # py2 only (for py2 gzip)
+    from StringIO import StringIO
+except:
+    pass
 
 extra_mimes = {
     "wasm": "application/wasm"
 }
+
+class Compressor(object):
+    def __init__(self):
+        self.native = hasattr(gzip, "compress")
+
+    def __call__(self, txt):
+        if self.native:
+            return gzip.compress(txt)
+        out = StringIO()
+        with gzip.GzipFile(fileobj=out, mode="w") as f:
+            f.write(txt)
+        return out.getvalue()
 
 class BasicCache(object):
     id = 0
@@ -15,6 +31,7 @@ class BasicCache(object):
         self.cache = {}
         self.mimetypes = {}
         self.streaming = streaming # True|False|"auto"
+        self.compress = Compressor()
         self.log = get_logger("%s(%s)"%(self.__class__.__name__, self.id))
         self.log.debug("__init__")
 
@@ -29,14 +46,21 @@ class BasicCache(object):
             self.mimetypes[url] = mimetype
         return mimetype
 
+    def __updateContent(self, path):
+        item = self.cache[path]
+        f = open(path,'rb') # b for windowz ;)
+        item['content'] = f.read()
+        f.close()
+        if 'gzip' in item:
+            item["gzip"] = self.compress(item['content'])
+
     def __update(self, path):
         self.log.debug("__update", path)
+        item = self.cache[path]
         if self._stream(path):
-            self.cache[path]['content'] = bool(self.cache[path]['size'])
+            item['content'] = bool(item['size'])
         else:
-            f = open(path,'rb') # b for windowz ;)
-            self.cache[path]['content'] = f.read()
-            f.close()
+            self.__updateContent(path)
 
     def _stream(self, path):
         p = self.cache[path]
@@ -50,8 +74,16 @@ class BasicCache(object):
     def get_type(self, path):
         return self.cache[path]['type']
 
-    def get_content(self, path):
-        return self.cache[path]['content']
+    def get_content(self, path, compress=False):
+        if path not in self.cache: # bypasses stream!
+            self._new_path(path)
+            self.__updateContent(path)
+        item = self.cache[path]
+        if compress:
+            if 'gzip' not in item:
+                item['gzip'] = self.compress(item['content'])
+            return item['gzip']
+        return item['content']
 
     def get_mtime(self, path, pretty=False):
         if path in self.cache and "mtime" in self.cache[path]:
@@ -92,8 +124,8 @@ class NaiveCache(BasicCache):
     def _is_current(self, path):
         return path in self.cache and self.cache[path]['mtime'] == os.path.getmtime(path)
 
-    def _new_path(self, path, url):
-        self.cache[path] = {'mtime':os.path.getmtime(path),'type':self._mimetype(url),'content':''}
+    def _new_path(self, path, url=None):
+        self.cache[path] = {'mtime':os.path.getmtime(path),'type':self._mimetype(url or path),'content':''}
 
 class INotifyCache(BasicCache):
     def __init__(self, streaming="auto", get_logger=default_get_logger):
@@ -103,6 +135,6 @@ class INotifyCache(BasicCache):
     def _is_current(self, path):
         return path in self.cache
 
-    def _new_path(self, path, url):
-        self.cache[path] = {'type':self._mimetype(url),'content':''}
+    def _new_path(self, path, url=None):
+        self.cache[path] = {'type':self._mimetype(url or path),'content':''}
         self.inotify.add_path(path)
