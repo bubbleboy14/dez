@@ -76,7 +76,7 @@ class BasicCache(object):
 
     def get_content(self, path, compress=False):
         if path not in self.cache: # bypasses stream!
-            self._new_path(path, path) # path==url?
+            self._new_path(path)
             self.__updateContent(path)
         item = self.cache[path]
         if compress:
@@ -124,8 +124,8 @@ class NaiveCache(BasicCache):
     def _is_current(self, path):
         return path in self.cache and self.cache[path]['mtime'] == os.path.getmtime(path)
 
-    def _new_path(self, path, url):
-        self.cache[path] = {'mtime':os.path.getmtime(path),'type':self._mimetype(url),'content':''}
+    def _new_path(self, path, url=None):
+        self.cache[path] = {'mtime':os.path.getmtime(path),'type':self._mimetype(url or path),'content':''}
 
 class INotifyCache(BasicCache):
     def __init__(self, streaming="auto", get_logger=default_get_logger):
@@ -135,6 +135,6 @@ class INotifyCache(BasicCache):
     def _is_current(self, path):
         return path in self.cache
 
-    def _new_path(self, path, url):
-        self.cache[path] = {'type':self._mimetype(url),'content':''}
+    def _new_path(self, path, url=None):
+        self.cache[path] = {'type':self._mimetype(url or path),'content':''}
         self.inotify.add_path(path)
