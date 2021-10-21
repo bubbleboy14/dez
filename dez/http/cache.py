@@ -46,17 +46,21 @@ class BasicCache(object):
             self.mimetypes[url] = mimetype
         return mimetype
 
+    def __updateContent(self, path):
+        item = self.cache[path]
+        f = open(path,'rb') # b for windowz ;)
+        item['content'] = f.read()
+        f.close()
+        if 'gzip' in item:
+            item["gzip"] = self.compress(item['content'])
+
     def __update(self, path):
         self.log.debug("__update", path)
         item = self.cache[path]
         if self._stream(path):
-            item['content'] = bool(self.cache[path]['size'])
+            item['content'] = bool(item['size'])
         else:
-            f = open(path,'rb') # b for windowz ;)
-            item['content'] = f.read()
-            f.close()
-            if 'gzip' in item:
-                item["gzip"] = self.compress(item['content'])
+            self.__updateContent(path)
 
     def _stream(self, path):
         p = self.cache[path]
@@ -71,6 +75,9 @@ class BasicCache(object):
         return self.cache[path]['type']
 
     def get_content(self, path, compress=False):
+        if path not in self.cache: # bypasses stream!
+            self._new_path(path, path) # path==url?
+            self.__updateContent(path)
         item = self.cache[path]
         if compress:
             if 'gzip' not in item:
