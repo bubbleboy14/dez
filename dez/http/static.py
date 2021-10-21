@@ -11,20 +11,44 @@ except:
 IDEVICES = ["iPad", "iPod", "iPhone"]
 TEXTEXTS = ["html", "css", "js"]
 
-class StaticHandler(object):
+class StaticStore(object):
     id = 0
-    def __init__(self, server_name, get_logger=default_get_logger, timestamp=False, dir_404=False):
-        StaticHandler.id += 1
-        self.id = StaticHandler.id
-        self.log = get_logger("StaticHandler(%s)"%(self.id,))
-        self.log.debug("__init__")
-        self.server_name = server_name
+    def __init__(self, server_name="dez", get_logger=default_get_logger, timestamp=False):
+        StaticStore.id += 1
+        self.id = StaticStore.id
         self.timestamp = timestamp
-        self.dir_404 = dir_404
+        self.server_name = server_name
+        self.log = get_logger("%s(%s)"%(self.__class__.__name__, self.id))
         try:
             self.cache = INotifyCache(get_logger=get_logger)
         except:
             self.cache = NaiveCache(get_logger=get_logger)
+
+    def headerize(self, path, headers={}, ctype=False):
+        headers['Server'] = self.server_name
+        headers["Accept-Range"] = "bytes"
+        if self.timestamp and path:
+            headers['Last-Modified'] = self.cache.get_mtime(path, True)
+        if ctype:
+            headers['Content-Type'] = self.cache.get_type(path)
+        return headers
+
+    def read(self, path, req=None):
+        gz = False
+        if path.split(".").pop() in TEXTEXTS:
+            if not req or "gzip" in req.headers['accept-encoding']:
+                gz = True
+        data = self.cache.get_content(path, compress=gz)
+        headers = {}
+        if gz:
+            headers["Content-Encoding"] = "gzip"
+        return data, headers
+
+class StaticHandler(StaticStore):
+    def __init__(self, server_name="dez", get_logger=default_get_logger, timestamp=False, dir_404=False):
+        StaticStore.__init__(self, server_name, get_logger, timestamp)
+        self.log.debug("__init__")
+        self.dir_404 = dir_404
 
     def __isi(self, req):
         ua = req.headers.get("user-agent")
@@ -40,12 +64,7 @@ class StaticHandler(object):
             response = HTTPVariableResponse(req)
         else:
             response = HTTPResponse(req)
-        response.headers['Server'] = self.server_name
-        response.headers["Accept-Range"] = "bytes"
-        if self.timestamp and path:
-            response.headers['Last-Modified'] = self.cache.get_mtime(path, True)
-        if ctype:
-            response.headers['Content-Type'] = self.cache.get_type(path)
+        self.headerize(path, response.headers, ctype)
         for header in headers:
             response.headers[header] = headers[header]
         if not path:
@@ -113,11 +132,7 @@ class StaticHandler(object):
         return int(rs), re and int(re) or None
 
     def __write(self, req, path):
-        gz = path.split(".").pop() in TEXTEXTS and "gzip" in req.headers['accept-encoding']
-        data = self.cache.get_content(path, compress=gz)
-        headers = {}
-        if gz:
-            headers["Content-Encoding"] = "gzip"
+        data, headers = self.read(path, req)
         if "range" in req.headers:
             rs, re = self.__range(req, headers, len(data))
             data = data[rs:re]
