@@ -1,6 +1,6 @@
 from dez.logging import default_get_logger
 from dez.http.server import HTTPResponse, HTTPVariableResponse
-from dez.http.cache import NaiveCache, INotifyCache
+from dez.http.cache import NaiveCache, INotifyCache, TEXTEXTS
 from dez import io
 import os, event
 try:
@@ -9,7 +9,6 @@ except:
     import urllib as parse # py2.7
 
 IDEVICES = ["iPad", "iPod", "iPhone"]
-TEXTEXTS = ["html", "css", "js"]
 
 class StaticStore(object):
     id = 0

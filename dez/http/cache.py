@@ -7,6 +7,7 @@ try: # py2 only (for py2 gzip)
 except:
     pass
 
+TEXTEXTS = ["html", "css", "js"]
 extra_mimes = {
     "wasm": "application/wasm"
 }
@@ -67,7 +68,7 @@ class BasicCache(object):
         p['size'] = os.stat(path).st_size
         stream = self.streaming
         if stream == "auto":
-            stream = p['size'] > io.BUFFER_SIZE * 5
+            stream = path.split(".").pop() not in TEXTEXTS and p['size'] > io.BUFFER_SIZE * 5
         self.log.debug("_stream", path, p['size'], stream)
         return stream
 
