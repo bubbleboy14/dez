@@ -68,7 +68,9 @@ class BasicCache(object):
         p['size'] = os.stat(path).st_size
         stream = self.streaming
         if stream == "auto":
-            stream = path.split(".").pop() not in TEXTEXTS and p['size'] > io.BUFFER_SIZE * 5
+            fmax = io.BUFFER_SIZE * 5000
+            stream = path.split(".").pop() not in TEXTEXTS and p['size'] > fmax
+            stream and self.log.info("streaming huge file: %s @ %s > %s"%(path, p['size'], fmax))
         self.log.debug("_stream", path, p['size'], stream)
         return stream
 
