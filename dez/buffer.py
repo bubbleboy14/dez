@@ -1,4 +1,5 @@
 from base64 import b64encode, b64decode
+from dez.io import BUFFER_SIZE
 
 class Buffer(object):
     ''' A Buffer object buffers text, and has two modes, 'index' and 'consume'
@@ -52,7 +53,7 @@ class Buffer(object):
         return self.get_value()
 
     def send(self, sock):
-        val = self.get_value()
+        val = self.get_value()[:BUFFER_SIZE]
         try:
             enced = val.encode()
         except: # img, etc
