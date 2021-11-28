@@ -24,7 +24,7 @@ setup(
     ],
     zip_safe = False,
     install_requires = [
-        "rel >= 0.4.2",
+        "rel >= 0.4.5",
         "demjson",
         "python-magic >= 0.4.11"
     ],
