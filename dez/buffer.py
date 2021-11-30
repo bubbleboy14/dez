@@ -53,12 +53,18 @@ class Buffer(object):
         return self.get_value()
 
     def send(self, sock):
-        val = self.get_value()[:BUFFER_SIZE]
+        val = self.get_value()[:BUFFER_SIZE * 8]
         try:
-            enced = val.encode()
+            val = val.encode()
         except: # img, etc
-            enced = val
-        self.move(sock.send(enced))
+            pass
+        i = 0 # some openssls can't handle it all at once
+        while i < len(val):
+            sent = sock.send(val[i:BUFFER_SIZE + i])
+            if not sent:
+                break
+            i += sent
+        self.move(i)
 
     def get_value(self):
         ''' Return the data in consume mode, or the remainder of the data in
