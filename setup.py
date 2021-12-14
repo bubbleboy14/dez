@@ -1,4 +1,4 @@
-from dez import __version__
+from dez.version import __version__
 from setuptools import setup
 
 setup(
@@ -25,7 +25,6 @@ setup(
     zip_safe = False,
     install_requires = [
         "rel >= 0.4.5",
-        "demjson",
         "python-magic >= 0.4.11"
     ],
     entry_points = '''
