@@ -32,16 +32,10 @@ class StaticStore(object):
             headers['Content-Type'] = self.cache.get_type(path)
         return headers
 
-    def read(self, path, req=None):
-        gz = False
-        if path.split(".").pop() in TEXTEXTS:
-            if not req or "gzip" in req.headers.get('accept-encoding', ''):
-                gz = True
-        data = self.cache.get_content(path, compress=gz)
-        headers = {}
-        if gz:
-            headers["Content-Encoding"] = "gzip"
-        return data, headers
+    def read(self, path, req=None): # returns data"", headers{}
+        ency = req and path.split(".").pop() in TEXTEXTS
+        return self.cache.get_content(path,
+            encodings=ency and req.headers.get('accept-encoding', '') or "")
 
 class StaticHandler(StaticStore):
     def __init__(self, server_name="dez", get_logger=default_get_logger, timestamp=False, dir_404=False):
