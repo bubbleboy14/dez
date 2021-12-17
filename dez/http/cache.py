@@ -1,9 +1,16 @@
-import os, magic, mimetypes, time, gzip
+import os, magic, mimetypes, time, gzip, zlib
 from dez.logging import default_get_logger
 from dez.http.inotify import INotify
 from dez import io
 try: # py2 only (for py2 gzip)
     from StringIO import StringIO
+except:
+    pass
+GZ3 = hasattr(gzip, "compress")
+ENCZ = ["gzip", "deflate"]
+try:
+    import brotli
+    ENCZ = ["br"] + ENCZ
 except:
     pass
 
@@ -13,16 +20,32 @@ extra_mimes = {
 }
 
 class Compressor(object):
-    def __init__(self):
-        self.native = hasattr(gzip, "compress")
+    def __call__(self, item, encodings):
+        for enc in ENCZ:
+            if enc in encodings:
+                if enc not in item:
+                    item[enc] = getattr(self, enc)(item['content'])
+                return item[enc], { "Content-Encoding": enc }
+        return item['content'], {}
 
-    def __call__(self, txt):
-        if self.native:
+    def br(self, txt):
+        return brotli.compress(txt)
+
+    def deflate(self, txt):
+        return zlib.compress(txt)
+
+    def gzip(self, txt):
+        if GZ3:
             return gzip.compress(txt)
         out = StringIO()
         with gzip.GzipFile(fileobj=out, mode="w") as f:
             f.write(txt)
         return out.getvalue()
+
+    def reset(self, item):
+        for enc in ENCZ:
+            if enc in item:
+                del item[enc]
 
 class BasicCache(object):
     id = 0
@@ -52,8 +75,7 @@ class BasicCache(object):
         f = open(path,'rb') # b for windowz ;)
         item['content'] = f.read()
         f.close()
-        if 'gzip' in item:
-            item["gzip"] = self.compress(item['content'])
+        self.compress.reset(item)
 
     def __update(self, path):
         self.log.debug("__update", path)
@@ -77,16 +99,11 @@ class BasicCache(object):
     def get_type(self, path):
         return self.cache[path]['type']
 
-    def get_content(self, path, compress=False):
+    def get_content(self, path, encodings=""):
         if path not in self.cache: # bypasses stream!
             self._new_path(path)
             self.__updateContent(path)
-        item = self.cache[path]
-        if compress:
-            if 'gzip' not in item:
-                item['gzip'] = self.compress(item['content'])
-            return item['gzip']
-        return item['content']
+        return self.compress(self.cache[path], encodings) # returns data"", headers{}
 
     def get_mtime(self, path, pretty=False):
         if path in self.cache and "mtime" in self.cache[path]:
