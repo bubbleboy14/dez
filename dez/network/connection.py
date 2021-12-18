@@ -409,7 +409,7 @@ class XMLReadMode(object):
 
     def ready(self, buffer):
         if not self.name:
-            buff = buffer.get_value()
+            buff = buffer.get_value().decode()
             if not buff:
                 return False
             if buff[0] != "<":
