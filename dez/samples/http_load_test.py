@@ -1,22 +1,66 @@
-import rel, time, socket
+import rel, time, socket, random
 from optparse import OptionParser
 from dez.http.client import HTTPClient
 from dez.http.errors import HTTPProtocolError
 
+SILENT_CLIENT = True
+
 class LoadTester(object):
     def __init__(self, host, port, path, number, concurrency):
-        self.url = "http://"+host+":"+str(port)+path
+        self.host = host
+        self.port = port
+        self.path = path
         self.number = number
         self.concurrency = concurrency
         self.responses = 0
+        self.initialize()
+
+    def initialize(self):
+        if not self.test():
+            return display("no server at %s:%s!\n\ngoodbye\n"%(self.host, self.port))
+        display("valid server")
+        self.set_url()
+        rel.signal(2, self.abort, "Test aborted by user")
+        rel.timeout(30, self.abort, "Test aborted after 30 seconds")
         print("\nInitializing Load Tester")
-        display(" server url: %s"%self.url)
+        display(" server url: %s"%(self.url,))
         display("     number: %s"%self.number)
         display("concurrency: %s"%self.concurrency)
         print("\nBuilding Connection Pool")
-        self.client = HTTPClient()
-        self.client.client.start_connections(host, port, self.concurrency, self.connections_open, max_conn=concurrency)
         self.t_start = time.time()
+        self.client = HTTPClient(SILENT_CLIENT)
+        self.client.client.start_connections(self.host, self.port, self.concurrency, self.connections_open, max_conn=self.concurrency)
+
+    def test(self):
+        addr = (self.host, self.port)
+        print("\nTesting Server @ %s:%s"%addr)
+        test_sock = socket.socket()
+        try:
+            test_sock.connect(addr)
+            test_sock.close()
+            return True
+        except:
+            return False
+
+    def abort(msg="goodbye"):
+        print("")
+        print(msg)
+        rel.abort()
+
+    def go(self):
+        try:
+            rel.dispatch()
+        except HTTPProtocolError:
+            print("\nerror communicating with server:")
+            print("http protocol violation")
+        finally:
+            self.abort()
+
+    def set_url(self):
+        self.url = "http://"+self.host+":"+str(self.port)+self.path
+
+    def get_url(self):
+        return self.url
 
     def connections_open(self):
         self.t_connection = self.t_request = time.time()
@@ -24,7 +68,7 @@ class LoadTester(object):
         display("%s connections opened in %s ms"%(self.concurrency, ms(self.t_connection, self.t_start)))
         display("-")
         for i in range(self.number):
-            self.client.get_url(self.url, cb=self.response_cb)
+            self.client.get_url(self.get_url(), cb=self.response_cb)
 
     def response_cb(self, response):
         self.responses += 1
@@ -35,11 +79,18 @@ class LoadTester(object):
             display("%s requests handled in %s ms"%(self.number, ms(now, self.t_connection)))
             display("%s requests per second (without connection time)"%int(self.number / (now - self.t_connection)))
             display("%s requests per second (with connection time)"%int(self.number / (now - self.t_start)))
-            rel.abort()
+            self.abort()
         elif not self.responses % 100:
             now = time.time()
             display("%s responses: %s ms"%(self.responses, ms(now, self.t_request)))
             self.t_request = now
+
+class MultiTester(LoadTester):
+    def set_url(self):
+        self.url = "http://"+self.host+":"+str(self.port)
+
+    def get_url(self):
+        return "%s%s"%(self.url, random.choice(self.path))
 
 def ms(bigger, smaller):
     return int(1000*(bigger - smaller))
@@ -70,26 +121,4 @@ def main():
     if e != ops.event:
         display("failed to load %s!"%ops.event)
     display("     loaded: %s"%e)
-    print("\nTesting Server")
-    test_sock = socket.socket()
-    try:
-        test_sock.connect((hostname, port))
-        test_sock.close()
-    except:
-        return display("no server at %s:%s!\n\ngoodbye\n"%(hostname, port))
-    display("valid server")
-    def abort(msg):
-        print("")
-        print(msg)
-        rel.abort()
-    rel.signal(2, abort, "Test aborted by user")
-    rel.timeout(30, abort, "Test aborted after 30 seconds")
-    LoadTester(hostname, port, ops.path, number, concurrency)
-    try:
-        rel.dispatch()
-    except HTTPProtocolError:
-        print("\nerror communicating with server:")
-        print("http protocol violation")
-    finally:
-        print("\ngoodbye\n")
-        rel.abort()
+    LoadTester(hostname, port, ops.path, number, concurrency).start()
