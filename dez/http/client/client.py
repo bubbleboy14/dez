@@ -5,12 +5,16 @@ from dez.logging import get_logger_getter
 import event
 
 class HTTPClient(object):
-    def __init__(self):
+    def __init__(self, silent=False):
         self.client = SocketClient()
+        self.silent = silent
         self.id = 0
         self.requests = {}
-        self.log = get_logger_getter("dez")("HTTPClient").simple
+        self.logger = get_logger_getter("dez")("HTTPClient").simple
         self.log("initialized client")
+
+    def log(self, msg):
+        self.silent or self.logger(msg)
 
     def get_url(self, url, method='GET', headers={}, cb=None, cbargs=(), eb=None, ebargs=(), body="", timeout=None):
         self.log("get_url: %s"%(url,))
