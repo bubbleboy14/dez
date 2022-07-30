@@ -42,19 +42,16 @@ class LoadTester(object):
         except:
             return False
 
-    def abort(msg="goodbye"):
+    def abort(self, msg="goodbye"):
         print("")
         print(msg)
         rel.abort()
 
-    def go(self):
+    def start(self):
         try:
             rel.dispatch()
         except HTTPProtocolError:
-            print("\nerror communicating with server:")
-            print("http protocol violation")
-        finally:
-            self.abort()
+            self.abort("error communicating with server:\nhttp protocol violation")
 
     def set_url(self):
         self.url = "http://"+self.host+":"+str(self.port)+self.path
