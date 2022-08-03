@@ -1,5 +1,5 @@
 from .request import HTTPClientRequest, HTTPClientWriter
-from .response import HTTPClientResponse, HTTPClientReader
+from .response import HTTPClientReader
 from dez.network import SocketClient
 from dez.logging import get_logger_getter
 import event
@@ -102,6 +102,7 @@ class URLRequest(object):
                 args = []
                 if self.cbargs:
                     args = self.cbargs
+                response.request = self
                 self.cb(response, *args)
         
     def failure(self, *args, **kwargs):
