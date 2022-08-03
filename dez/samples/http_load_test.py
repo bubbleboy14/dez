@@ -6,12 +6,13 @@ from dez.http.errors import HTTPProtocolError
 SILENT_CLIENT = True
 
 class LoadTester(object):
-    def __init__(self, host, port, path, number, concurrency):
+    def __init__(self, host, port, path, number, concurrency, validator=None):
         self.host = host
         self.port = port
         self.path = path
         self.number = number
         self.concurrency = concurrency
+        self.validator = validator
         self.responses = 0
         self.initialize()
 
@@ -69,6 +70,7 @@ class LoadTester(object):
 
     def response_cb(self, response):
         self.responses += 1
+        self.validator and self.validator(response.request.path, response.body.get_value())
         if self.responses == self.number:
             now = time.time()
             display("%s responses: %s ms"%(self.responses, ms(now, self.t_request)))
