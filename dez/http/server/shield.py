@@ -1,0 +1,61 @@
+import event
+from dez.logging import default_get_logger
+
+BANNED_PRE = ["/", "~"]
+
+LIMIT = 50
+INTERVAL = 2
+
+class Shield(object):
+	def __init__(self, get_logger=default_get_logger, limit=LIMIT, interval=INTERVAL):
+		self.log = get_logger("Shield")
+		self.ips = {}
+		self.limit = limit
+		self.interval = interval
+		self.checkers = set()
+		event.timeout(interval, self.check)
+
+	def ip(self, ip):
+		if ip not in self.ips:
+			self.log.access("first request: %s"%(ip,))
+			self.ips[ip] = {
+				"count": 0,
+				"suss": False
+			}
+		return self.ips[i]
+
+	def suss(self, ip, reason="you know why"):
+		self.ips[ip]["suss"] = True
+		self.ips[ip]["message"] = reason
+		self.log.access("suss %s : %s"%(ip, reason))
+
+	def check(self):
+		for ip in self.checkers:
+			ipdata = self.ip()
+			rdiff = ipdata["count"] - ipdata["lastCount"]
+			if rdiff > self.limit:
+				self.suss(ip, "%s requests in %s seconds"%(rdiff, self.interval))
+		self.checkers.clear()
+		return True
+
+	def count(self, ip):
+		ipdata = self.ip(ip)
+		if ip not in self.checkers:
+			ipdata["lastCount"] = ipdata["count"]
+			self.checkers.add(ip)
+		ipdata["count"] += 1
+
+	def path(self, path, fspath=False):
+		if fspath:
+			c1 = path[0]
+			if c1 in BANNED_PRE:
+				return True
+		return ".." in path
+
+	def __call__(self, path, ip, fspath=False):
+		ipdata = self.ip(ip)
+		if ipdata["suss"]:
+			return True
+		self.count(ip)
+		self.path(path, fspath) and self.suss(ip, path)
+		return ipdata["suss"]
