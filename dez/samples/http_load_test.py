@@ -70,7 +70,8 @@ class LoadTester(object):
 
     def response_cb(self, response):
         self.responses += 1
-        self.validator and self.validator(response.request.path, response.body.get_value())
+        self.validator and self.validator(response.request.path,
+            response.body.get_value(), response.headers)
         if self.responses == self.number:
             now = time.time()
             display("%s responses: %s ms"%(self.responses, ms(now, self.t_request)))
