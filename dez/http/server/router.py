@@ -22,7 +22,9 @@ class Router(object):
         self.blacklist = set(blacklist)
         self.prefixes = []
         self.regexs = []
-        self.shield = shield and Shield(get_logger)
+        self.shield = shield
+        if shield and type(shield) == bool:
+            self.shield = Shield(get_logger)
 
     def register_cb(self, signature, cb, args):
         if "*" in signature: # write better regex detection...
