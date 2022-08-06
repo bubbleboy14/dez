@@ -52,10 +52,10 @@ class Shield(object):
 				return True
 		return ".." in path
 
-	def __call__(self, path, ip, fspath=False):
+	def __call__(self, path, ip, fspath=False, count=True):
 		ipdata = self.ip(ip)
 		if ipdata["suss"]:
 			return True
-		self.count(ip)
+		count and self.count(ip)
 		self.path(path, fspath) and self.suss(ip, path)
 		return ipdata["suss"]
