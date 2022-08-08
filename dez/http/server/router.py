@@ -19,7 +19,9 @@ class Router(object):
         self.roll_cb = roll_cb
         self.rollz = rollz
         self.whitelist = whitelist
-        self.blacklist = set(blacklist)
+        if type(blacklist) is not set:
+            blacklist = set(blacklist)
+        self.blacklist = blacklist
         self.prefixes = []
         self.regexs = []
         self.shield = shield
