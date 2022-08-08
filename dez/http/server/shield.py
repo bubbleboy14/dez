@@ -7,12 +7,14 @@ LIMIT = 50
 INTERVAL = 2
 
 class Shield(object):
-	def __init__(self, get_logger=default_get_logger, limit=LIMIT, interval=INTERVAL):
+	def __init__(self, get_logger=default_get_logger, on_suss=None, limit=LIMIT, interval=INTERVAL):
 		self.log = get_logger("Shield")
 		self.ips = {}
 		self.limit = limit
 		self.interval = interval
+		self.on_suss = on_suss
 		self.checkers = set()
+		self.has_suss = False
 		event.timeout(interval, self.check)
 
 	def ip(self, ip):
@@ -25,6 +27,7 @@ class Shield(object):
 		return self.ips[i]
 
 	def suss(self, ip, reason="you know why"):
+		self.has_suss = True
 		self.ips[ip]["suss"] = True
 		self.ips[ip]["message"] = reason
 		self.log.access("suss %s : %s"%(ip, reason))
@@ -36,6 +39,8 @@ class Shield(object):
 			if rdiff > self.limit:
 				self.suss(ip, "%s requests in %s seconds"%(rdiff, self.interval))
 		self.checkers.clear()
+		self.has_suss and self.on_suss and self.on_suss()
+		self.has_suss = False
 		return True
 
 	def count(self, ip):
