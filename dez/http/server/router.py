@@ -26,7 +26,7 @@ class Router(object):
         self.regexs = []
         self.shield = shield
         if shield and type(shield) == bool:
-            self.shield = Shield(get_logger)
+            self.shield = Shield(blacklist, get_logger)
 
     def register_cb(self, signature, cb, args):
         if "*" in signature: # write better regex detection...
@@ -48,7 +48,7 @@ class Router(object):
         if req and (self.shield or self.whitelist or self.blacklist or self.rollz):
             ip = req.real_ip
             ref = req.headers.get("referer", "")
-            self.shield and self.shield(url, ip) and self.blacklist.add(ip)
+            self.shield and self.shield(url, ip)
             self.log.access("roll check!\nurl: %s\nreferer: %s\nip: %s"%(url, ref, ip))
             if self.whitelist and ip not in self.whitelist:
                 return self.roll_cb, []
