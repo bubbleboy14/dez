@@ -24,7 +24,7 @@ class Shield(object):
 				"count": 0,
 				"suss": False
 			}
-		return self.ips[i]
+		return self.ips[ip]
 
 	def suss(self, ip, reason="you know why"):
 		self.has_suss = True
@@ -34,7 +34,7 @@ class Shield(object):
 
 	def check(self):
 		for ip in self.checkers:
-			ipdata = self.ip()
+			ipdata = self.ip(ip)
 			rdiff = ipdata["count"] - ipdata["lastCount"]
 			if rdiff > self.limit:
 				self.suss(ip, "%s requests in %s seconds"%(rdiff, self.interval))
