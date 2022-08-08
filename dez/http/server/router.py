@@ -9,17 +9,24 @@ if sys.version_info > (3, 0):
             return 0
         elif (v1 > v2):
             return 1
+from dez.http.server.shield import Shield
 
 class Router(object):
-    def __init__(self, default_cb, default_args=[], roll_cb=None, rollz={}, get_logger=default_get_logger, whitelist=[]):
+    def __init__(self, default_cb, default_args=[], roll_cb=None, rollz={}, get_logger=default_get_logger, whitelist=[], blacklist=[], shield=False):
         self.log = get_logger("Router")
         self.default_cb = default_cb
         self.default_args = default_args
         self.roll_cb = roll_cb
         self.rollz = rollz
         self.whitelist = whitelist
+        if type(blacklist) is not set:
+            blacklist = set(blacklist)
+        self.blacklist = blacklist
         self.prefixes = []
         self.regexs = []
+        self.shield = shield
+        if shield and type(shield) == bool:
+            self.shield = Shield(blacklist, get_logger)
 
     def register_cb(self, signature, cb, args):
         if "*" in signature: # write better regex detection...
@@ -38,11 +45,14 @@ class Router(object):
         return cmp(len(a[0]),len(b[0]))
 
     def _check(self, url, req=None):
-        if req and (self.whitelist or self.rollz):
+        if req and (self.shield or self.whitelist or self.blacklist or self.rollz):
             ip = req.real_ip
             ref = req.headers.get("referer", "")
+            self.shield and self.shield(url, ip)
             self.log.access("roll check!\nurl: %s\nreferer: %s\nip: %s"%(url, ref, ip))
             if self.whitelist and ip not in self.whitelist:
+                return self.roll_cb, []
+            if self.blacklist and ip in self.blacklist:
                 return self.roll_cb, []
             for flag, domain in list(self.rollz.items()):
                 if url.startswith(flag):
