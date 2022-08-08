@@ -3,7 +3,7 @@ from dez.logging import default_get_logger
 
 BANNED_PRE = ["/", "~"]
 
-LIMIT = 50
+LIMIT = 200
 INTERVAL = 2
 
 class Shield(object):
@@ -16,10 +16,11 @@ class Shield(object):
 		self.checkers = set()
 		self.has_suss = False
 		event.timeout(interval, self.check)
+		self.log.info("initialized")
 
 	def ip(self, ip):
 		if ip not in self.ips:
-			self.log.access("first request: %s"%(ip,))
+			self.log.info("first request: %s"%(ip,))
 			self.ips[ip] = {
 				"count": 0,
 				"suss": False
@@ -30,7 +31,7 @@ class Shield(object):
 		self.has_suss = True
 		self.ips[ip]["suss"] = True
 		self.ips[ip]["message"] = reason
-		self.log.access("suss %s : %s"%(ip, reason))
+		self.log.info("suss %s : %s"%(ip, reason))
 
 	def check(self):
 		for ip in self.checkers:
