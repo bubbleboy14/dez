@@ -80,6 +80,7 @@ class BasicCache(object):
     def __update(self, path):
         self.log.debug("__update", path)
         item = self.cache[path]
+        item['size'] = os.stat(path).st_size
         if self._stream(path):
             item['content'] = bool(item['size'])
         else:
@@ -87,7 +88,6 @@ class BasicCache(object):
 
     def _stream(self, path):
         p = self.cache[path]
-        p['size'] = os.stat(path).st_size
         stream = self.streaming
         if stream == "auto":
             fmax = io.BUFFER_SIZE * 5000
@@ -140,12 +140,19 @@ class BasicCache(object):
             self.log.debug("get", path, "404!")
             err_back(req)
 
+    def _new_path(self, path, url=None):
+        self.cache[path] = {
+            'content':'',
+            'type':self._mimetype(url or path)
+        }
+
 class NaiveCache(BasicCache):
     def _is_current(self, path):
         return path in self.cache and self.cache[path]['mtime'] == os.path.getmtime(path)
 
     def _new_path(self, path, url=None):
-        self.cache[path] = {'mtime':os.path.getmtime(path),'type':self._mimetype(url or path),'content':''}
+        BasicCache._new_path(self, path, url)
+        self.cache[path]['mtime'] = os.path.getmtime(path)
 
 class INotifyCache(BasicCache):
     def __init__(self, streaming="auto", get_logger=default_get_logger):
@@ -156,5 +163,5 @@ class INotifyCache(BasicCache):
         return path in self.cache
 
     def _new_path(self, path, url=None):
-        self.cache[path] = {'type':self._mimetype(url or path),'content':''}
+        BasicCache._new_path(self, path, url)
         self.inotify.add_path(path)
