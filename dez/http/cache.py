@@ -143,8 +143,8 @@ class BasicCache(object):
 
     def _new_path(self, path):
         self.cache[path] = {
-            'content':'',
-            'type':self._mimetype(path)
+            'content': '',
+            'type': self._mimetype(path)
         }
 
 class NaiveCache(BasicCache):
