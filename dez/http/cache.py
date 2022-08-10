@@ -59,15 +59,15 @@ class BasicCache(object):
         self.log = get_logger("%s(%s)"%(self.__class__.__name__, self.id))
         self.log.debug("__init__")
 
-    def _mimetype(self, url):
-        mimetype = self.mimetypes.get(url)
+    def _mimetype(self, path):
+        mimetype = self.mimetypes.get(path)
         if not mimetype:
-            mimetype = mimetypes.guess_type(url)[0]
-            if not mimetype and "." in url:
-                mimetype = extra_mimes.get(url.split(".")[1])
+            mimetype = mimetypes.guess_type(path)[0]
+            if not mimetype and "." in path:
+                mimetype = extra_mimes.get(path.split(".")[1])
             if not mimetype:
-                mimetype = magic.from_file(url.strip("/"), True) or "application/octet-stream"
-            self.mimetypes[url] = mimetype
+                mimetype = magic.from_file(path.strip("/"), True) or "application/octet-stream"
+            self.mimetypes[path] = mimetype
         return mimetype
 
     def __updateContent(self, path):
@@ -115,8 +115,8 @@ class BasicCache(object):
     def add_content(self, path, data):
         self.cache[path]['content'] += data
 
-    def init_path(self, path, url=None):
-        self._new_path(path, url)
+    def init_path(self, path):
+        self._new_path(path)
         self.__update(path)
 
     def _empty(self, path):
@@ -135,24 +135,24 @@ class BasicCache(object):
             self._return(req, path, write_back, stream_back, err_back)
         elif os.path.isfile(path):
             self.log.debug("get", path, "INITIALIZING FILE!")
-            self.init_path(path, req.url)
+            self.init_path(path)
             self._return(req, path, write_back, stream_back, err_back)
         else:
             self.log.debug("get", path, "404!")
             err_back(req)
 
-    def _new_path(self, path, url=None):
+    def _new_path(self, path):
         self.cache[path] = {
             'content':'',
-            'type':self._mimetype(url or path)
+            'type':self._mimetype(path)
         }
 
 class NaiveCache(BasicCache):
     def _is_current(self, path):
         return path in self.cache and self.cache[path]['mtime'] == os.path.getmtime(path)
 
-    def _new_path(self, path, url=None):
-        BasicCache._new_path(self, path, url)
+    def _new_path(self, path):
+        BasicCache._new_path(self, path)
         self.cache[path]['mtime'] = os.path.getmtime(path)
 
 class INotifyCache(BasicCache):
@@ -163,6 +163,6 @@ class INotifyCache(BasicCache):
     def _is_current(self, path):
         return path in self.cache
 
-    def _new_path(self, path, url=None):
-        BasicCache._new_path(self, path, url)
+    def _new_path(self, path):
+        BasicCache._new_path(self, path)
         self.inotify.add_path(path)
