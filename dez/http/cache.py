@@ -100,9 +100,7 @@ class BasicCache(object):
         return self.cache[path]['type']
 
     def get_content(self, path, encodings=""):
-        if path not in self.cache: # bypasses stream!
-            self._new_path(path)
-            self.__updateContent(path)
+        path in self.cache or self.init_path(path)
         return self.compress(self.cache[path], encodings) # returns data"", headers{}
 
     def get_mtime(self, path, pretty=False):
@@ -116,6 +114,10 @@ class BasicCache(object):
 
     def add_content(self, path, data):
         self.cache[path]['content'] += data
+
+    def init_path(self, path, url=None):
+        self._new_path(path, url)
+        self.__update(path)
 
     def _empty(self, path):
         return not self.cache[path]['size']
@@ -133,8 +135,7 @@ class BasicCache(object):
             self._return(req, path, write_back, stream_back, err_back)
         elif os.path.isfile(path):
             self.log.debug("get", path, "INITIALIZING FILE!")
-            self._new_path(path, req.url)
-            self.__update(path)
+            self.init_path(path, req.url)
             self._return(req, path, write_back, stream_back, err_back)
         else:
             self.log.debug("get", path, "404!")
