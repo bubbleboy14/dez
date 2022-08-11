@@ -1,17 +1,47 @@
 import rel, time, socket, random
+from http import client # for _independent_ pipeline test
 from optparse import OptionParser
 from dez.http.client import HTTPClient
 from dez.http.errors import HTTPProtocolError
 
 SILENT_CLIENT = True
 
+# derived from https://github.com/urllib3/urllib3/issues/52#issuecomment-109756116
+class Piper(object):
+    def __init__(self, num, get_path, url):
+        display(" pipeliners: %s"%(num,))
+        self.num = num
+        self.count = 0
+        self.pipers = []
+        for p in range(num):
+            self.pipers.append(('GET', get_path()))
+        self.conn = client.HTTPConnection(url)
+        rel.timeout(0, self.pipe)
+        self.start = time.time()
+        print("\nInitialized %s Pipeliners"%(num,))
+
+    def pipe(self): # "unbiased" (non-dez) test ;)
+        piper = self.pipers.pop(0)
+        self.conn.request(*piper)
+        resp = self.conn.response_class(self.conn.sock, method=self.conn._method)
+        self.conn._HTTPConnection__state = 'Idle'
+        resp.begin()
+        assert resp.status == client.OK and resp.read()
+        self.count += 1
+        if not self.count % 10:
+            print("\nPipelined %s of %s requests"%(self.count, self.num))
+        if self.pipers:
+            return True
+        print("\nPipelined %s requests in %s seconds"%(self.num, time.time() - self.start))
+
 class LoadTester(object):
-    def __init__(self, host, port, path, number, concurrency, validator=None):
+    def __init__(self, host, port, path, number, concurrency, pipeliners, validator=None):
         self.host = host
         self.port = port
         self.path = path
         self.number = number
         self.concurrency = concurrency
+        self.pipeliners = pipeliners
         self.validator = validator
         self.responses = 0
         self.initialize()
@@ -25,8 +55,9 @@ class LoadTester(object):
         rel.timeout(30, self.abort, "Test aborted after 30 seconds")
         print("\nInitializing Load Tester")
         display(" server url: %s"%(self.url,))
-        display("     number: %s"%self.number)
-        display("concurrency: %s"%self.concurrency)
+        display("     number: %s"%(self.number,))
+        display("concurrency: %s"%(self.concurrency,))
+        self.pipeliners and Piper(self.pipeliners, self.get_path, "%s:%s"%(self.host, self.port))
         print("\nBuilding Connection Pool")
         self.t_start = time.time()
         self.client = HTTPClient(SILENT_CLIENT)
@@ -60,6 +91,9 @@ class LoadTester(object):
     def get_url(self):
         return self.url
 
+    def get_path(self):
+        return self.path
+
     def connections_open(self):
         self.t_connection = self.t_request = time.time()
         display("pool ready\n\nRunning Test Load")
@@ -90,7 +124,10 @@ class MultiTester(LoadTester):
         self.url = "http://"+self.host+":"+str(self.port)
 
     def get_url(self):
-        return "%s%s"%(self.url, random.choice(self.path))
+        return "%s%s"%(self.url, self.get_path())
+
+    def get_path(self):
+        return random.choice(self.path)
 
 def ms(bigger, smaller):
     return int(1000*(bigger - smaller))
@@ -99,10 +136,10 @@ def display(msg):
     print("   ",msg)
 
 def error(m1, m2):
-    print('\n%s\n%s\n\ntry this: "dbench HOSTNAME PORT NUMBER CONCURRENCY"\nor "dbench -h" for help\n'%(m1,m2))
+    print('\n%s\n%s\n\ntry this: "dbench HOSTNAME PORT NUMBER CONCURRENCY [PIPELINERS]"\nor "dbench -h" for help\n'%(m1,m2))
 
 def main():
-    parser = OptionParser("dbench HOSTNAME PORT NUMBER CONCURRENCY")
+    parser = OptionParser("dbench HOSTNAME PORT NUMBER CONCURRENCY [PIPELINERS]")
     parser.add_option("-p", "--path", dest="path", default="/", help="path -> http://[DOMAIN]:[PORT][PATH]")
     parser.add_option("-e", "--event", dest="event", default="epoll", help="change event delivery system (options: pyevent, epoll, poll, select) default: epoll")
     ops, args = parser.parse_args()
@@ -113,12 +150,13 @@ def main():
         port = int(args[1])
         number = int(args[2])
         concurrency = int(args[3])
+        pipeliners = len(args) > 3 and int(args[4]) or 0
     except:
-        return error("invalid argument","PORT, NUMBER, and CONCURRENCY must all be integers")
+        return error("invalid argument","PORT, NUMBER, and CONCURRENCY (and optional PIPELINERS) must all be integers")
     print("\nLoading Event Listener")
     display(" requesting: %s"%ops.event)
     e = rel.initialize([ops.event])
     if e != ops.event:
         display("failed to load %s!"%ops.event)
     display("     loaded: %s"%e)
-    LoadTester(hostname, port, ops.path, number, concurrency).start()
+    LoadTester(hostname, port, ops.path, number, concurrency, pipeliners).start()
