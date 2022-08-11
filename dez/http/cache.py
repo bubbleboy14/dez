@@ -69,14 +69,13 @@ class Tosser(object):
     def __call__(self, path):
         required = self.cache[path]['size'] + 60000 # bytes padding.....
         files = self.cache.keys()
+        files.remove(path)
         files.sort(key=self.sorter)
         free = psutil.virtual_memory().available
         while required > free:
             if not files:
                 return self.log.error("nothing left to pop!!!!!")
             tosser = files.pop(0)
-            if tosser == path:
-                return self.log.error("can't toss path to make room for itself: %s"%(path,))
             size = self.cache[tosser]['size']
             free += size
             self.log.info("tossing %s to free up %s"%(tosser, size))
