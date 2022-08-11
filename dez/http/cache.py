@@ -20,7 +20,7 @@ TEXTEXTS = ["html", "css", "js"]
 extra_mimes = {
     "wasm": "application/wasm"
 }
-MEMPAD = 100000000 # bytes padding.....
+MEMPAD = 500000000 # bytes padding.....
 
 class Compressor(object):
     def __call__(self, item, encodings):
@@ -77,7 +77,7 @@ class Tosser(object):
         files.remove(path)
         files.sort(key=self.sorter)
         free = psutil.virtual_memory().available
-        self.log.info("memory: %s free; %s required"%(free, required)) # TODO: use debug()
+        self.log.debug("memory: %s free; %s required"%(free, required))
         while required > free:
             if not files:
                 return self.log.error("nothing left to pop!!!!!")
