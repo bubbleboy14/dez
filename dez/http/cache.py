@@ -20,6 +20,7 @@ TEXTEXTS = ["html", "css", "js"]
 extra_mimes = {
     "wasm": "application/wasm"
 }
+MEMPAD = 60000 # bytes padding.....
 
 class Compressor(object):
     def __call__(self, item, encodings):
@@ -50,8 +51,9 @@ class Compressor(object):
                 del item[enc]
 
 class Tosser(object):
-    def __init__(self, cache, get_logger=default_get_logger):
+    def __init__(self, cache, get_logger=default_get_logger, mempad=MEMPAD):
         self.cache = cache
+        self.mempad = mempad
         self.sorter = cmp_to_key(self._sort)
         self.log = get_logger("Tosser(%s)"%(self.id,))
         self.log.debug("__init__")
@@ -67,7 +69,7 @@ class Tosser(object):
             return 1
 
     def __call__(self, path):
-        required = self.cache[path]['size'] + 60000 # bytes padding.....
+        required = self.cache[path]['size'] + self.mempad
         files = self.cache.keys()
         files.remove(path)
         files.sort(key=self.sorter)
