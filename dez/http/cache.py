@@ -77,6 +77,7 @@ class Tosser(object):
         files.remove(path)
         files.sort(key=self.sorter)
         free = psutil.virtual_memory().available
+        self.log.info("memory: %s free; %s required"%(free, required)) # TODO: use debug()
         while required > free:
             if not files:
                 return self.log.error("nothing left to pop!!!!!")
