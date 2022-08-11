@@ -56,7 +56,7 @@ class Tosser(object):
         Tosser.id += 1
         self.id = Tosser.id
         self.cache = cache
-        self.mempad = mempad
+        self.mempad = mempad or MEMPAD # 0 = default
         self.sorter = cmp_to_key(self._sort)
         self.log = get_logger("Tosser(%s)"%(self.id,))
         self.log.debug("__init__")
@@ -88,14 +88,14 @@ class Tosser(object):
 
 class BasicCache(object):
     id = 0
-    def __init__(self, streaming="auto", get_logger=default_get_logger):
+    def __init__(self, streaming="auto", get_logger=default_get_logger, mempad=MEMPAD):
         BasicCache.id += 1
         self.id = BasicCache.id
         self.cache = {}
         self.mimetypes = {}
         self.streaming = streaming # True|False|"auto"
         self.compress = Compressor()
-        self.tosser = Tosser(self.cache, get_logger)
+        self.tosser = Tosser(self.cache, get_logger, mempad)
         self.log = get_logger("%s(%s)"%(self.__class__.__name__, self.id))
         self.log.debug("__init__")
 
