@@ -1,6 +1,6 @@
 from dez.logging import default_get_logger
 from dez.http.server import HTTPResponse, HTTPVariableResponse
-from dez.http.cache import NaiveCache, INotifyCache, TEXTEXTS
+from dez.http.cache import NaiveCache, INotifyCache, TEXTEXTS, MEMPAD
 from dez import io
 import os, event
 try:
@@ -12,16 +12,16 @@ IDEVICES = ["iPad", "iPod", "iPhone"]
 
 class StaticStore(object):
     id = 0
-    def __init__(self, server_name="dez", get_logger=default_get_logger, timestamp=False):
+    def __init__(self, server_name="dez", get_logger=default_get_logger, timestamp=False, mempad=MEMPAD):
         StaticStore.id += 1
         self.id = StaticStore.id
         self.timestamp = timestamp
         self.server_name = server_name
         self.log = get_logger("%s(%s)"%(self.__class__.__name__, self.id))
         try:
-            self.cache = INotifyCache(get_logger=get_logger)
+            self.cache = INotifyCache(get_logger=get_logger, mempad=mempad)
         except:
-            self.cache = NaiveCache(get_logger=get_logger)
+            self.cache = NaiveCache(get_logger=get_logger, mempad=mempad)
 
     def headerize(self, path, headers={}, ctype=False):
         headers['Server'] = self.server_name
@@ -38,8 +38,8 @@ class StaticStore(object):
             encodings=ency and req.headers.get('accept-encoding', '') or "")
 
 class StaticHandler(StaticStore):
-    def __init__(self, server_name="dez", get_logger=default_get_logger, timestamp=False, dir_404=False):
-        StaticStore.__init__(self, server_name, get_logger, timestamp)
+    def __init__(self, server_name="dez", get_logger=default_get_logger, timestamp=False, mempad=MEMPAD, dir_404=False):
+        StaticStore.__init__(self, server_name, get_logger, timestamp, mempad)
         self.log.debug("__init__")
         self.dir_404 = dir_404
 
