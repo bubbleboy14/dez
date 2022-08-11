@@ -263,6 +263,9 @@ class HTTPConnection(object):
             # call conn.write("", cb) to signify request complete
             if not data:
                 self.log.debug("write_ready", "no data")
+                if self.response_queue:
+                    self.log.error("write_ready", "then why is there a response_queue???")
+                    self.logger.debug(self.response_queue)
                 self.wevent.pending() and self.wevent.delete()
                 self.current_cb(*self.current_args)
                 self.current_cb = None
