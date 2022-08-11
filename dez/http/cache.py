@@ -73,8 +73,7 @@ class Tosser(object):
 
     def __call__(self, path):
         required = self.cache[path]['size'] + self.mempad
-        files = list(self.cache.keys())
-        files.remove(path)
+        files = list(filter(lambda k : 'accessed' in self.cache[k], self.cache.keys()))
         files.sort(key=self.sorter)
         free = psutil.virtual_memory().available
         self.log.debug("memory: %s free; %s required"%(free, required))
