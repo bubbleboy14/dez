@@ -51,7 +51,10 @@ class Compressor(object):
                 del item[enc]
 
 class Tosser(object):
+    id = 0
     def __init__(self, cache, get_logger=default_get_logger, mempad=MEMPAD):
+        Tosser.id += 1
+        self.id = Tosser.id
         self.cache = cache
         self.mempad = mempad
         self.sorter = cmp_to_key(self._sort)
