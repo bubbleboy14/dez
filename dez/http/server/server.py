@@ -231,9 +231,13 @@ class HTTPConnection(object):
         if not self.log:
             print("connection closed - can't write", len(data))
             return self.wevent.pending() and self.wevent.delete()
-        self.log.debug("write", len(data))
+        self.log.debug("write", len(data), cb, args, eb, ebargs, self.wevent.pending(), self.revent.pending())
         self.response_queue.append((data, cb, args, eb, ebargs))
-        self.wevent.pending() or self.wevent.add()
+#        self.wevent.pending() or self.wevent.add()
+        if self.wevent.pending():
+            self.write_ready() # ?????
+        else:
+            self.wevent.add()
 
     def write_ready(self):
         self.log.debug("write_ready")
@@ -243,8 +247,8 @@ class HTTPConnection(object):
                 self.current_cb(*self.current_args)
                 self.current_cb = None
             if not self.response_queue:
-                self.log.debug("write_ready", "buffer present")
                 if len(self.buffer):
+                    self.log.debug("write_ready", "buffer present")
                     if self.revent.pending():
                         self.log.debug("write_ready", "revent pending - doing nothing")
                     else:

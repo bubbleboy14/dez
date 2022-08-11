@@ -164,14 +164,14 @@ class HTTPRequest(object):
                     self.close(cb, args)
 
     def write(self, data, cb=None, args=[], eb=None, ebargs=[], override=False):
-        self.log.debug("write", self.state, len(data))
+        self.log.debug("write", self.state, len(data), cb, args, eb, ebargs, override)
         if self.write_ended and not override:
             self.log.debug("WRITE", "tried to write:", data)
             return self.log.error("WRITE", "end already called")
         if self.state != 'write':
             self.log.error("write - state is not 'write'", self.state)
             if self.state == "closed":
-                return self.log.error("WRITE", "state is closed - can't write %s bytes"%(len(data),));
+                return self.log.error("WRITE", "state is closed - can't write %s bytes"%(len(data),))
             self.pending_actions.append(("write", data, cb, args, eb, ebargs))
             if self.state == 'waiting':
                 self.log.error("write - changing state to body")
@@ -183,11 +183,14 @@ class HTTPRequest(object):
         self.conn.write(data, self.write_cb, (cb, args), eb, ebargs)
 
     def write_cb(self, cb=None, args=[]):
-        self.log.debug("write_cb", self.write_ended, cb)
+        self.log.debug("write_cb", self.write_ended, cb, args)
         if cb:
             cb(*args)
-        if self.write_ended and not self.conn.wevent.pending():
-            self._close()
+        if self.write_ended:
+            if not self.conn:
+                self.log.error("write_cb - conn already deallocated!")
+            elif not self.conn.wevent.pending():
+                self._close()
 
     def _close(self, reason=None):
         self.conn.counter.dec("requests")
