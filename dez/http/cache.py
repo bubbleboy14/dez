@@ -59,7 +59,7 @@ class Tosser(object):
         self.mempad = mempad or MEMPAD # 0 = default
         self.sorter = cmp_to_key(self._sort)
         self.log = get_logger("Tosser(%s)"%(self.id,))
-        self.log.debug("__init__")
+        self.log.info("initialized with mempad: %s"%(self.mempad,))
 
     def _sort(self, ap, bp): # earliest last seen
         a = self.cache[ap]['accessed']
