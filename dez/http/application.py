@@ -1,7 +1,7 @@
 import re
 
 from dez.http.server import HTTPDaemon, HTTPResponse, HTTPVariableResponse, WSGIResponse
-from dez.http.static import StaticHandler
+from dez.http.static import StaticHandler, MEMPAD
 from dez.http.wsgithreadpool import WSGIThreadPool
 from dez.http.proxy.proxy import proxy
 from dez.http.errors import HTTPProtocolError
@@ -21,13 +21,13 @@ class HTTPApplication(object):
         construct the appropriate RawHTTPResponse or HTTPResponse as required.
     """
 
-    def __init__(self, bind_address, port, get_logger=None, server_name="Dez", certfile=None, keyfile=None, cacerts=None, static_timestamp=False, rollz={}, static_dir_404=False, whitelist=[], blacklist=[], shield=False):
+    def __init__(self, bind_address, port, get_logger=None, server_name="Dez", certfile=None, keyfile=None, cacerts=None, static_timestamp=False, rollz={}, static_dir_404=False, whitelist=[], blacklist=[], shield=False, mempad=MEMPAD):
         """start listening on the given port (this doesn't include a call to
            event.dispatch)"""
         self.daemon = HTTPDaemon(bind_address, port, get_logger, certfile, keyfile, cacerts, rollz, whitelist, blacklist, shield)
         self.host = bind_address
         self.port = port
-        self.static_request = StaticHandler(server_name, get_logger, static_timestamp, static_dir_404)
+        self.static_request = StaticHandler(server_name, get_logger, static_timestamp, mempad, static_dir_404)
         self.wsgi_pool = None
         self.shield = self.daemon.router.shield
 
