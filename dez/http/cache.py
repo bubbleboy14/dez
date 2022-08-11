@@ -73,7 +73,7 @@ class Tosser(object):
 
     def __call__(self, path):
         required = self.cache[path]['size'] + self.mempad
-        files = self.cache.keys()
+        files = list(self.cache.keys())
         files.remove(path)
         files.sort(key=self.sorter)
         free = psutil.virtual_memory().available
@@ -143,8 +143,9 @@ class BasicCache(object):
 
     def get_content(self, path, encodings=""):
         path in self.cache or self.init_path(path)
+        item = self.cache[path]
         item['accessed'] = datetime.now()
-        return self.compress(self.cache[path], encodings) # returns data"", headers{}
+        return self.compress(item, encodings) # returns data"", headers{}
 
     def get_mtime(self, path, pretty=False):
         if path in self.cache and "mtime" in self.cache[path]:
