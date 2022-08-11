@@ -117,10 +117,11 @@ class BasicCache(object):
         f.close()
         self.compress.reset(item)
 
-    def __update(self, path):
+    def __update(self, path, resize=True):
         self.log.debug("__update", path)
         item = self.cache[path]
-        item['size'] = os.stat(path).st_size
+        if resize:
+            item['size'] = os.stat(path).st_size
         item['mtime'] = os.path.getmtime(path)
         if self._stream(path):
             item['content'] = bool(item['size'])
@@ -160,7 +161,7 @@ class BasicCache(object):
     def init_path(self, path):
         self._new_path(path)
         self.tosser(path)
-        self.__update(path)
+        self.__update(path, False)
 
     def _empty(self, path):
         return not self.cache[path]['size']
@@ -187,7 +188,8 @@ class BasicCache(object):
     def _new_path(self, path):
         self.cache[path] = {
             'content': '',
-            'type': self._mimetype(path)
+            'type': self._mimetype(path),
+            'size': os.stat(path).st_size
         }
 
 class NaiveCache(BasicCache):
