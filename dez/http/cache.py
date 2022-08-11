@@ -20,7 +20,7 @@ TEXTEXTS = ["html", "css", "js"]
 extra_mimes = {
     "wasm": "application/wasm"
 }
-MEMPAD = 500000000 # bytes padding.....
+MEMPAD = 200000000 # bytes padding.....
 
 class Compressor(object):
     def __call__(self, item, encodings):
