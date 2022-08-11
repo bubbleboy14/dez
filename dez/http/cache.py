@@ -1,4 +1,6 @@
-import os, magic, mimetypes, time, gzip, zlib
+import os, magic, mimetypes, time, gzip, zlib, psutil
+from functools import cmp_to_key
+from datetime import datetime
 from dez.logging import default_get_logger
 from dez.http.inotify import INotify
 from dez import io
@@ -47,6 +49,39 @@ class Compressor(object):
             if enc in item:
                 del item[enc]
 
+class Tosser(object):
+    def __init__(self, cache, get_logger=default_get_logger):
+        self.cache = cache
+        self.sorter = cmp_to_key(self._sort)
+        self.log = get_logger("Tosser(%s)"%(self.id,))
+        self.log.debug("__init__")
+
+    def _sort(self, ap, bp): # earliest last seen
+        a = self.cache[ap]['accessed']
+        b = self.cache[bp]['accessed']
+        if (a < b):
+            return -1
+        elif (a == b):
+            return 0
+        elif (a > b):
+            return 1
+
+    def __call__(self, path):
+        required = self.cache[path]['size'] + 60000 # bytes padding.....
+        files = self.cache.keys()
+        files.sort(key=self.sorter)
+        free = psutil.virtual_memory().available
+        while required > free:
+            if not files:
+                return self.log.error("nothing left to pop!!!!!")
+            tosser = files.pop(0)
+            if tosser == path:
+                return self.log.error("can't toss path to make room for itself: %s"%(path,))
+            size = self.cache[tosser]['size']
+            free += size
+            self.log.info("tossing %s to free up %s"%(tosser, size))
+            del self.cache[tosser]
+
 class BasicCache(object):
     id = 0
     def __init__(self, streaming="auto", get_logger=default_get_logger):
@@ -56,6 +91,7 @@ class BasicCache(object):
         self.mimetypes = {}
         self.streaming = streaming # True|False|"auto"
         self.compress = Compressor()
+        self.tosser = Tosser(self.cache, get_logger)
         self.log = get_logger("%s(%s)"%(self.__class__.__name__, self.id))
         self.log.debug("__init__")
 
@@ -81,6 +117,7 @@ class BasicCache(object):
         self.log.debug("__update", path)
         item = self.cache[path]
         item['size'] = os.stat(path).st_size
+        item['mtime'] = os.path.getmtime(path)
         if self._stream(path):
             item['content'] = bool(item['size'])
         else:
@@ -101,12 +138,13 @@ class BasicCache(object):
 
     def get_content(self, path, encodings=""):
         path in self.cache or self.init_path(path)
+        item['accessed'] = datetime.now()
         return self.compress(self.cache[path], encodings) # returns data"", headers{}
 
     def get_mtime(self, path, pretty=False):
         if path in self.cache and "mtime" in self.cache[path]:
             mt = self.cache[path]["mtime"]
-        else: # not in inotify!!
+        else:
             mt = os.path.getmtime(path)
         if pretty:
             return time.strftime('%a, %d %b %Y %H:%M:%S GMT', time.gmtime(mt))
@@ -117,6 +155,7 @@ class BasicCache(object):
 
     def init_path(self, path):
         self._new_path(path)
+        self.tosser(path)
         self.__update(path)
 
     def _empty(self, path):
@@ -150,10 +189,6 @@ class BasicCache(object):
 class NaiveCache(BasicCache):
     def _is_current(self, path):
         return path in self.cache and self.cache[path]['mtime'] == os.path.getmtime(path)
-
-    def _new_path(self, path):
-        BasicCache._new_path(self, path)
-        self.cache[path]['mtime'] = os.path.getmtime(path)
 
 class INotifyCache(BasicCache):
     def __init__(self, streaming="auto", get_logger=default_get_logger):
