@@ -55,17 +55,17 @@ class HTTPResponse(object):
     def end_or_close(self, cb=None):
         if self.keep_alive and self.timeout:
             if self.timeout.pending():
-                self.log.debug("end_or_close", "timeout pending - ending")
+                self.log.debug("end_or_close", "timeout pending - ending", cb)
                 return self.end(cb)
         if self.request:
-            self.log.debug("end_or_close", "buffer", len(self.request.conn.buffer))
+            self.log.debug("end_or_close", "buffer", len(self.request.conn.buffer), cb)
             if len(self.request.conn.buffer):
                 return self.end(cb)
-            self.log.debug("end_or_close", "closing")
+            self.log.debug("end_or_close", "closing", cb)
             self.request.close(cb)
             self.request = None
         else:
-            self.log.debug("end_or_close", "double close called!")
+            self.log.debug("end_or_close", "double close called!", cb)
 
     def render(self):
         response = renderResponse(self.buffer, self.version_major,
