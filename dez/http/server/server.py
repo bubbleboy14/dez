@@ -114,7 +114,7 @@ class HTTPConnection(object):
         self.request and self.request.dereference()
         self.request = HTTPRequest(self)
         if len(self.buffer):
-            self.request.process()
+            self.request.process() #### ????? maybe ...
         else:
             self._timeout.add(KEEPALIVE)
 
@@ -184,7 +184,9 @@ class HTTPConnection(object):
         self.__close_cb = None
 
     def read_ready(self):
-        self.log.debug("read_ready")
+        self.log.debug("read_ready", self.request.state, len(self.buffer))
+        if len(self.buffer):
+            return self.reqpro()
         try:
             data = self.sock.recv(io.BUFFER_SIZE)
             if not data:
@@ -217,6 +219,12 @@ class HTTPConnection(object):
         self.revent.pending() and self.revent.delete()
         self.wevent.pending() or self.wevent.add()
 
+    def reqpro(self):
+        self.log.debug("reqpro pre", self.request.state)
+        self.request.process()
+        self.log.debug("reqpro post", self.request.state)
+        return self.request and self.request.state != "waiting"
+
     def read(self, data):
         self.cancelTimeout()
         self.log.debug("read", self.request.state, len(data))
@@ -224,8 +232,7 @@ class HTTPConnection(object):
             self.log.error("Invalid additional data: %s" % data)
             return self.request.close(hard=True)
         self.buffer += data
-        self.request.process()
-        return self.request and self.request.state != "waiting"
+        return self.reqpro()
 
     def write(self, data, cb, args=[], eb=None, ebargs=[]):
         if not self.log:
@@ -235,12 +242,15 @@ class HTTPConnection(object):
         self.response_queue.append((data, cb, args, eb, ebargs))
 #        self.wevent.pending() or self.wevent.add()
         if self.wevent.pending():
-            self.write_ready() # ?????
+            self.write_ready(True) # ?????
         else:
             self.wevent.add()
 
-    def write_ready(self):
-        self.log.debug("write_ready")
+    def write_ready(self, reschedule=False):
+        if not self.log:
+            print("connection closed - can't write", reschedule)
+            return self.wevent.pending() and self.wevent.delete()
+        self.log.debug("write_ready", reschedule)
         if self.write_buffer.empty():
             if self.current_cb:
                 self.log.debug("write_ready", "invoking current_cb", self.current_cb)
@@ -274,9 +284,13 @@ class HTTPConnection(object):
                 self.current_ebargs = None
                 return None
         try:
-            self.log.debug("buffer", len(self.write_buffer.get_value()),
+            self.log.debug("buffer", len(self.write_buffer),
                 "queue", len(self.response_queue))
             self.write_buffer.send(self.sock)
+            self.log.debug("BUFFER SENT!", reschedule, len(self.write_buffer))
+            reschedule and event.timeout(0.01, self.write_ready)
+#            reschedule and self.wevent.add(0.01)
+#            return bool(self.write_buffer)
             return True
         except io.socket.error as msg:
             self.fry('io.socket.error: %s' % msg)
