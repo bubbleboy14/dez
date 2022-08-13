@@ -8,31 +8,34 @@ SILENT_CLIENT = True
 
 # derived from https://github.com/urllib3/urllib3/issues/52#issuecomment-109756116
 class Piper(object):
-    def __init__(self, num, get_path, url):
-        display(" pipeliners: %s"%(num,))
+    def __init__(self, num, get_path, url, validator=None):
+        print(" non-dez requests: %s"%(num,))
         self.num = num
         self.count = 0
         self.pipers = []
+        self.validator = validator
         for p in range(num):
             self.pipers.append(('GET', get_path()))
         self.conn = client.HTTPConnection(url)
         rel.timeout(0, self.pipe)
         self.start = time.time()
-        print("\nInitialized %s Pipeliners"%(num,))
+        print("\nInitialized %s (non-dez, standard http) Pipeliners"%(num,))
 
     def pipe(self): # "unbiased" (non-dez) test ;)
-        piper = self.pipers.pop(0)
-        self.conn.request(*piper)
+        action, path = self.pipers.pop(0)
+        self.conn.request(action, path)
         resp = self.conn.response_class(self.conn.sock, method=self.conn._method)
         self.conn._HTTPConnection__state = 'Idle'
         resp.begin()
-        assert resp.status == client.OK and resp.read()
+        rdata = resp.read()
+        self.validator and self.validator(path, rdata, resp.headers)
+        assert resp.status == client.OK and rdata
         self.count += 1
         if not self.count % 10:
-            print("\nPipelined %s of %s requests"%(self.count, self.num))
+            print("\nPipelined %s of %s non-dez / standard requests"%(self.count, self.num))
         if self.pipers:
             return True
-        print("\nPipelined %s requests in %s seconds"%(self.num, time.time() - self.start))
+        print("\nPipelined %s non-dez (standard http lib) requests in %s seconds"%(self.num, time.time() - self.start))
 
 class LoadTester(object):
     def __init__(self, host, port, path, number, concurrency, pipeliners, validator=None):
@@ -55,10 +58,10 @@ class LoadTester(object):
         rel.signal(2, self.abort, "Test aborted by user")
         rel.timeout(30, self.abort, "Test aborted after 30 seconds")
         print("\nInitializing Load Tester")
-        display(" server url: %s"%(self.url,))
-        display("     number: %s"%(self.number,))
-        display("concurrency: %s"%(self.concurrency,))
-        self.pipeliners and Piper(self.pipeliners, self.get_path, "%s:%s"%(self.host, self.port))
+        display("   server url: %s"%(self.url,))
+        display("       number: %s"%(self.number,))
+        display("  concurrency: %s"%(self.concurrency,))
+        self.pipeliners and Piper(self.pipeliners, self.get_path, "%s:%s"%(self.host, self.port), self.validator)
         print("\nBuilding Connection Pool")
         self.t_start = time.time()
         self.client = HTTPClient(SILENT_CLIENT)
