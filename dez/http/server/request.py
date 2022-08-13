@@ -6,7 +6,7 @@ class HTTPRequest(object):
     def __init__(self, conn):
         HTTPRequest.id += 1
         self.id = HTTPRequest.id
-        self.log = conn.get_logger("HTTPRequest(%s)"%(self.id,))
+        self.log = conn.get_logger("HTTPRequest(%s)[C%s]"%(self.id, conn.id))
         self.log.debug("__init__")
         self.conn = conn
         self.ip = conn.ip

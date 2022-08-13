@@ -19,7 +19,7 @@ class HTTPResponse(object):
         HTTPResponse.id += 1
 
         self.id = HTTPResponse.id
-        self.log = request.conn.get_logger("HTTPResponse(%s)"%(self.id,))
+        self.log = request.conn.get_logger("HTTPResponse(%s)[R%s]"%(self.id, request.id))
         self.log.debug("__init__", keep_alive)
         self.request = request
         self.headers = {
