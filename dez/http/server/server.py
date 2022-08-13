@@ -234,6 +234,14 @@ class HTTPConnection(object):
         self.buffer += data
         return self.reqpro()
 
+    def read_on(self):
+        self.wevent.pending() and self.wevent.delete()
+        if self.revent.pending():
+            self.log.debug("read_on", "revent already pending")
+        else:
+            self.log.debug("read_on", "add()ing revent")
+            self.revent.add()
+
     def write(self, data, cb, args=[], eb=None, ebargs=[]):
         if not self.log:
             print("connection closed - can't write", len(data))
@@ -266,7 +274,7 @@ class HTTPConnection(object):
                         self.start_request()
                 else:
                     self.log.debug("no response_queue or buffer -- cutting out!")
-                    self.wevent.pending() and self.wevent.delete()
+                    self.read_on()
                 return None
             data, self.current_cb, self.current_args, self.current_eb, self.current_ebargs = self.response_queue.pop(0)
             self.write_buffer.reset(data)
@@ -276,8 +284,8 @@ class HTTPConnection(object):
                 if self.response_queue:
                     self.log.error("write_ready", "then why is there a response_queue???")
                     self.logger.debug(self.response_queue)
-                self.wevent.pending() and self.wevent.delete()
                 self.current_cb(*self.current_args)
+                self.read_on()
                 self.current_cb = None
                 self.current_args = None
                 self.current_eb = None
