@@ -44,6 +44,7 @@ class LoadTester(object):
         self.pipeliners = pipeliners
         self.validator = validator
         self.responses = 0
+        self.logeach = number < 100
         self.initialize()
 
     def initialize(self):
@@ -114,7 +115,7 @@ class LoadTester(object):
             display("%s requests per second (without connection time)"%int(self.number / (now - self.t_connection)))
             display("%s requests per second (with connection time)"%int(self.number / (now - self.t_start)))
             self.abort()
-        elif not self.responses % 100:
+        elif self.logeach or not self.responses % 100:
             now = time.time()
             display("%s responses: %s ms"%(self.responses, ms(now, self.t_request)))
             self.t_request = now
