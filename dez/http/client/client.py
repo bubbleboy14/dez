@@ -5,12 +5,15 @@ from dez.logging import get_logger_getter
 import event
 
 class HTTPClient(object):
+    id = 0
     def __init__(self, silent=False):
+        HTTPClient.id += 1
+        self.id = HTTPClient.id
+        self.logger = get_logger_getter("dez")("%s(%s)"%(self.__class__.__name__, self.id)).simple
+        self.rcount = 0
         self.client = SocketClient()
         self.silent = silent
-        self.id = 0
         self.requests = {}
-        self.logger = get_logger_getter("dez")("HTTPClient").simple
         self.log("initialized client")
 
     def log(self, msg):
@@ -18,10 +21,10 @@ class HTTPClient(object):
 
     def get_url(self, url, method='GET', headers={}, cb=None, cbargs=(), eb=None, ebargs=(), body="", timeout=None):
         self.log("get_url: %s"%(url,))
-        self.id += 1
+        self.rcount += 1
         path, host, port = self.__parse_url(url)
-        self.requests[self.id] = URLRequest(self.id, path, host, port, method, headers, cb, cbargs, eb, ebargs, body, timeout=timeout)
-        self.client.get_connection(host, port, self.__conn_cb, [self.id], url.startswith("https://"), self.__conn_timeout_cb, [self.id])
+        self.requests[self.rcount] = URLRequest(self.rcount, path, host, port, method, headers, cb, cbargs, eb, ebargs, body, timeout=timeout)
+        self.client.get_connection(host, port, self.__conn_cb, [self.rcount], url.startswith("https://"), self.__conn_timeout_cb, [self.rcount])
 
     def __conn_timeout_cb(self, id):
         self.log("__conn_timeout_cb: %s"%(id,))
@@ -77,7 +80,7 @@ class HTTPClient(object):
         hostname = parts[0]
         
         return path, hostname, port
-        
+
 class URLRequest(object):
     def __init__(self, id, path, host, port, method, headers, cb, cbargs, eb, ebargs, body, timeout=None):
         self.id = id
