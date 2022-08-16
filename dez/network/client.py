@@ -98,10 +98,6 @@ class ConnectionPool(object):
 
     def __start_connection(self):
         sock = io.client_socket(self.hostname, self.port, self.secure)
-#        if self.secure:
-#            io.ssl_handshake(sock, self.__reg_sock, sock)
-#        else:
-#            self.__reg_sock(sock)
         self.__reg_sock(sock)
 
     def connection_available(self, conn):

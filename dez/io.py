@@ -10,7 +10,7 @@ SSL_HANDSHAKE_TIMEOUT = 1
 #   - but TLSv1 sux :(
 PY27_OLD_CIPHERS = "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:ECDH+HIGH:DH+HIGH:RSA+HIGH:!aNULL:!eNULL:!MD5:!DSS"
 
-def ssl_handshake(sock, cb):
+def ssl_handshake(sock, cb, *args):
     deadline = time.time() + SSL_HANDSHAKE_TIMEOUT
     def shaker():
         try:
@@ -23,7 +23,7 @@ def ssl_handshake(sock, cb):
             else:
                 return True
         else:
-            cb()
+            cb(*args)
     event.timeout(SSL_HANDSHAKE_TICK, shaker)
 
 def server_socket(port, certfile=None, keyfile=None, cacerts=None):
@@ -35,10 +35,8 @@ def server_socket(port, certfile=None, keyfile=None, cacerts=None):
     sock.listen(LQUEUE_SIZE)
     if certfile:
         if hasattr(ssl, "SSLContext"):
-            ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             ctx.load_cert_chain(certfile, keyfile)
-            ctx.options |= ssl.OP_NO_SSLv2
-            ctx.options |= ssl.OP_NO_SSLv3
             ctx.load_default_certs()
             if cacerts:
                 ctx.verify_mode = ssl.CERT_OPTIONAL
@@ -48,18 +46,18 @@ def server_socket(port, certfile=None, keyfile=None, cacerts=None):
             ciphers=PY27_OLD_CIPHERS, server_side=True, do_handshake_on_connect=False)
     return sock
 
-def client_socket(addr, port, certfile=None, keyfile=None):
-    sock = socket.socket()
+def client_socket(addr, port, secure=False):
+    sock = socket.create_connection((addr, port))
+    if secure:
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ctx.load_default_certs()
+        if addr == "localhost":
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            sock = ctx.wrap_socket(sock)
+        else:
+            sock = ctx.wrap_socket(sock, server_hostname=addr)
     sock.setblocking(False)
-    try:
-        sock.connect_ex((addr, port))
-    except socket.error:
-        # this seems to happen when there are
-        # > 1016 connections, for some reason.
-        # we need to get to the bottom of this
-        raise SocketError("the python socket cannot open another connection")
-    if certfile:
-        return ssl.wrap_socket(sock, certfile=certfile, keyfile=keyfile)
     return sock
 
 class SocketError(Exception):
