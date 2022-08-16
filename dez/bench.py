@@ -48,6 +48,7 @@ class LoadTester(object):
         self.port = port
         self.path = path
         self.number = number
+        self.encrypted = encrypted
         self.protocol = encrypted and "https" or "http"
         self.concurrency = concurrency
         self.pipeliners = pipeliners
@@ -71,7 +72,8 @@ class LoadTester(object):
         print("\nBuilding Connection Pool")
         self.t_start = time.time()
         self.client = HTTPClient(SILENT_CLIENT)
-        self.client.client.start_connections(self.host, self.port, self.concurrency, self.connections_open, max_conn=self.concurrency)
+        self.client.client.start_connections(self.host, self.port, self.concurrency,
+        	self.connections_open, secure=self.encrypted, max_conn=self.concurrency)
 
     def test(self):
         addr = (self.host, self.port)
