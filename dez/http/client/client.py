@@ -21,12 +21,12 @@ class HTTPClient(object):
         self.id += 1
         path, host, port = self.__parse_url(url)
         self.requests[self.id] = URLRequest(self.id, path, host, port, method, headers, cb, cbargs, eb, ebargs, body, timeout=timeout)
-        self.client.get_connection(host, port, self.__conn_cb, [self.id], self.__conn_timeout_cb, [self.id])
-    
+        self.client.get_connection(host, port, self.__conn_cb, [self.id], url.startswith("https://"), self.__conn_timeout_cb, [self.id])
+
     def __conn_timeout_cb(self, id):
         self.log("__conn_timeout_cb: %s"%(id,))
         self.requests[id].timeout()
-    
+
     def __conn_cb(self, conn, id):
         self.log("__conn_cb: %s"%(id,))
         writer = HTTPClientWriter(conn)
@@ -61,6 +61,8 @@ class HTTPClient(object):
         """
         if url.startswith('http://'):
             url = url[7:]
+        elif url.startswith('https://'):
+            url = url[8:]
         parts = url.split("/", 1)
         if len(parts) == 1:
             path = "/"
