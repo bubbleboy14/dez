@@ -1,28 +1,26 @@
 from dez.json import decode
-from dez.logging import get_logger_getter
 from dez.http.client import HTTPClient
 
 F = None
 
 class Fetcher(HTTPClient):
-	def __init__(self):
-		HTTPClient.__init__(self)
-		self.log = get_logger_getter("dez")("Fetcher").simple
+	def jayornay(self, txt, json=False):
+		if json:
+			return decode(txt)
+		return txt
 
-	def fetch(self, host, path="/", port=80, cb=None, timeout=1):
-		url = "http://%s:%s%s"%(host, port, path)
+	def fetch(self, host, path="/", port=80, secure=False, headers={}, cb=None, timeout=1, json=False):
+		url = "%s://%s:%s%s"%(secure and "https" or "http", host, port, path)
 		self.log("fetching: %s"%(url,))
-		HTTPClient().get_url(url,
-			cb=lambda resp : (cb and cb or self.log)(resp.body),
+		self.get_url(url, headers=headers,
+			cb=lambda resp : (cb or self.log)(self.jayornay(resp.body.get_value(), json)),
 			timeout=timeout)
 
-def fetch(host, path="/", port=80, cb=None, timeout=1, json=False, dispatch=False):
+def fetch(host, path="/", port=80, secure=False, headers={}, cb=None, timeout=1, json=False, dispatch=False):
 	global F
 	if not F:
 		F = Fetcher()
-	if json:
-		cb = lambda data : cb(decode(data))
-	F.fetch(host, path, port, cb, timeout)
+	F.fetch(host, path, port, secure, headers, cb, timeout, json)
 	if dispatch:
 		import event
 		event.signal(2, event.abort)
