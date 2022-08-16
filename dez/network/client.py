@@ -18,16 +18,16 @@ class SocketClient(object):
     def __init__(self):
         self.pools = {}
 
-    def get_connection(self, host, port, cb, args=[], eb=None, ebargs=None, timeout=60, max_conn=5, b64=False):
+    def get_connection(self, host, port, cb, args=[], secure=False, eb=None, ebargs=None, timeout=60, max_conn=5, b64=False):
         addr = host, port
         if addr not in self.pools:
-            self.pools[addr] = ConnectionPool(host, port, max_conn, b64)
+            self.pools[addr] = ConnectionPool(host, port, secure, max_conn, b64)
         self.pools[addr].get_connection(cb, args, timeout)
 
-    def start_connections(self, host, port, num, cb, args=[], timeout=None, max_conn=5):
+    def start_connections(self, host, port, num, cb, args=[], secure=False, timeout=None, max_conn=5):
         addr = host, port
         if addr not in self.pools:
-            self.pools[addr] = ConnectionPool(host, port, max_conn)
+            self.pools[addr] = ConnectionPool(host, port, secure, max_conn)
         self.pools[addr].start_connections(num, cb, args, timeout)
 
 #    def free_connection(self, conn):
@@ -42,8 +42,11 @@ class SocketClient(object):
 
 
 class ConnectionPool(object):
-    def __init__(self, hostname, port, max_connections=5, b64=False):
+    def __init__(self, hostname, port, secure=False, max_connections=5, b64=False):
         self.addr = hostname, port
+        self.hostname = hostname
+        self.port = port
+        self.secure = secure
         self.connection_count = 0
         self.max_connections = max_connections
         self.b64 = b64
@@ -89,11 +92,17 @@ class ConnectionPool(object):
 
         self.__service_queue()
 
+    def __reg_sock(self, sock):
+        Connection(self.addr, sock, self, self.b64).connect()
+        self.connection_count += 1
+
     def __start_connection(self):
-            sock = io.client_socket(*self.addr)
-            conn = Connection(self.addr, sock, self, self.b64)
-            conn.connect()
-            self.connection_count += 1
+        sock = io.client_socket(self.hostname, self.port, self.secure)
+#        if self.secure:
+#            io.ssl_handshake(sock, self.__reg_sock, sock)
+#        else:
+#            self.__reg_sock(sock)
+        self.__reg_sock(sock)
 
     def connection_available(self, conn):
         self.pool.append(conn)
@@ -106,7 +115,7 @@ class ConnectionPool(object):
                 self.__start_timer = None
             self.__start_count = None
             cb(*args)
-        self.__service_queue()        
+        self.__service_queue()
 
     def connection_closed(self, conn):
         if conn in self.pool:
