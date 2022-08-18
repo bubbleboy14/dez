@@ -10,6 +10,7 @@ if sys.version_info > (3, 0):
         elif (v1 > v2):
             return 1
 from dez.http.server.shield import Shield
+from dez.io import locz
 
 class Router(object):
     def __init__(self, default_cb, default_args=[], roll_cb=None, rollz={}, get_logger=default_get_logger, whitelist=[], blacklist=[], shield=False):
@@ -48,7 +49,12 @@ class Router(object):
         if req and (self.shield or self.whitelist or self.blacklist or self.rollz):
             ip = req.real_ip
             ref = req.headers.get("referer", "")
-            self.shield and self.shield(url, ip)
+            if shield:
+                if ip in locz:
+                    self.log.access("skipping shield for local IP (1st proxied request)")
+                else:
+                    self.log.access("checking shield: %s"%(ip,))
+                    self.shield(url, ip)
             self.log.access("roll check!\nurl: %s\nreferer: %s\nip: %s"%(url, ref, ip))
             if self.whitelist and ip not in self.whitelist:
                 return self.roll_cb, []
