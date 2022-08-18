@@ -100,8 +100,6 @@ class HTTPClient(object):
             url = url[8:]
         elif url.startswith('http://'):
             url = url[7:]
-        elif url.startswith('https://'):
-            url = url[8:]
         parts = url.split("/", 1)
         if len(parts) == 1:
             path = "/"
