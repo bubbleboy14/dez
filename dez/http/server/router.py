@@ -49,7 +49,7 @@ class Router(object):
         if req and (self.shield or self.whitelist or self.blacklist or self.rollz):
             ip = req.real_ip
             ref = req.headers.get("referer", "")
-            if shield:
+            if self.shield:
                 if ip in locz:
                     self.log.access("skipping shield for local IP (1st proxied request)")
                 else:
