@@ -9,7 +9,7 @@ SSL_HANDSHAKE_TIMEOUT = 1
 #   - would avoid (broken) SSLv2 and SSLv3
 #   - but TLSv1 sux :(
 PY27_OLD_CIPHERS = "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:ECDH+HIGH:DH+HIGH:RSA+HIGH:!aNULL:!eNULL:!MD5:!DSS"
-locz = ["localhost", "0.0.0.0"]
+locz = ["localhost", "0.0.0.0", "127.0.0.1"]
 
 def ssl_handshake(sock, cb, *args):
     deadline = time.time() + SSL_HANDSHAKE_TIMEOUT
