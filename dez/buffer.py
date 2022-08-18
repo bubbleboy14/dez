@@ -39,7 +39,7 @@ class Buffer(object):
             self.pos = None
 
     def find(self, marker, i=0):
-        if hasattr(marker, "encode") and not hasattr(self.data, "encode"):
+        if hasattr(marker, "encode"):# and not hasattr(self.data, "encode"):
             marker = marker.encode()
         if self.mode == 'consume':
             return self.data.find(marker, i)
@@ -87,7 +87,7 @@ class Buffer(object):
         if self.mode == 'index':
             self.pos = 0
 
-    def reset(self, content = ''):
+    def reset(self, content = b''):
         ''' Resets data to empty, or an opional 'content' string, and position
             to 0.
         '''
@@ -119,7 +119,7 @@ class Buffer(object):
             return d
 
     def __contains__(self, data):
-        if hasattr(data, "encode") and not hasattr(self.data, "encode"):
+        if hasattr(data, "encode"):# and not hasattr(self.data, "encode"):
             data = data.encode()
         if self.mode == 'consume':
             return data in self.data
@@ -127,7 +127,7 @@ class Buffer(object):
             return self.data.find(data, self.pos) != -1
 
     def __eq__(self, data):
-        if hasattr(data, "encode") and not hasattr(self.data, "encode"):
+        if hasattr(data, "encode"):# and not hasattr(self.data, "encode"):
             data = data.encode()
         if self.mode == 'consume':
             return self.data == data
@@ -148,12 +148,13 @@ class Buffer(object):
 
     def __add__(self, add_data):
         ''' Add the passed-in string to the buffer '''
-        if hasattr(add_data, "encode") and not hasattr(self.data, "encode"):
+        if hasattr(add_data, "encode"):# and not hasattr(self.data, "encode"):
             add_data = add_data.encode()
-        if self.data:
-            self.data += add_data
-        else: # shouldn't be necessary ... py3 string/bytes stuff...
-            self.data = add_data
+        self.data += add_data
+#        if self.data:
+#            self.data += add_data
+#        else: # shouldn't be necessary ... py3 string/bytes stuff...
+#            self.data = add_data
         return self
 
 class B64ReadBuffer(Buffer):

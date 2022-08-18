@@ -43,11 +43,13 @@ class Piper(object):
         print("\nPipelined %s non-dez (standard http lib) requests in %s seconds"%(self.num, time.time() - self.start))
 
 class LoadTester(object):
-    def __init__(self, host, port, path, number, concurrency, pipeliners, validator=None):
+    def __init__(self, host, port, path, number, concurrency, pipeliners, encrypted=False, validator=None):
         self.host = host
         self.port = port
         self.path = path
         self.number = number
+        self.encrypted = encrypted
+        self.protocol = encrypted and "https" or "http"
         self.concurrency = concurrency
         self.pipeliners = pipeliners
         self.validator = validator
@@ -70,7 +72,8 @@ class LoadTester(object):
         print("\nBuilding Connection Pool")
         self.t_start = time.time()
         self.client = HTTPClient(SILENT_CLIENT)
-        self.client.client.start_connections(self.host, self.port, self.concurrency, self.connections_open, max_conn=self.concurrency)
+        self.client.client.start_connections(self.host, self.port, self.concurrency,
+        	self.connections_open, secure=self.encrypted, max_conn=self.concurrency)
 
     def test(self):
         addr = (self.host, self.port)
@@ -95,7 +98,8 @@ class LoadTester(object):
             self.abort("error communicating with server:\nhttp protocol violation")
 
     def set_url(self):
-        self.url = "http://"+self.host+":"+str(self.port)+self.path
+    	self.url = "%s://%s:%s%s"%(self.protocol, self.host, self.port, self.path)
+    	print("\nset url to %s"%(self.url,))
 
     def get_url(self):
         return self.url
@@ -130,7 +134,8 @@ class LoadTester(object):
 
 class MultiTester(LoadTester):
     def set_url(self):
-        self.url = "http://"+self.host+":"+str(self.port)
+    	self.url = "%s://%s:%s"%(self.protocol, self.host, self.port)
+    	print("\nset url to %s"%(self.url,))
 
     def get_url(self):
         return "%s%s"%(self.url, self.get_path())
