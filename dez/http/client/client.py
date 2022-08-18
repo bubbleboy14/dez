@@ -2,7 +2,7 @@ from .request import HTTPClientRequest, HTTPClientWriter
 from .response import HTTPClientReader
 from dez.network import SocketClient
 from dez.logging import get_logger_getter
-from dez.json import decode
+from dez.json import decode, encode
 import event
 
 MPBOUND = "53^3n733n"
@@ -36,20 +36,20 @@ class HTTPClient(object):
         bod = []
         for k, v in data.items():
             bod.append('Content-Disposition: form-data; name="%s"\r\n\r\n%s'%(k, v))
-        return "%s\r\n%s\r\n%s--"%(MPSTART, MPMID.join(bod), MPSTART)
+        return "%s\r\n%s\r\n%s--\r\n"%(MPSTART, MPMID.join(bod), MPSTART)
 
     def fetch(self, host, path="/", port=80, secure=False, headers={}, cb=None, timeout=1, json=False):
         url = "%s://%s:%s%s"%(secure and "https" or "http", host, port, path)
         self.log("fetch(%s)"%(url,))
         self.get_url(url, headers=headers, cb=lambda resp : self.proc_resp(resp, cb, json), timeout=timeout)
 
-    def post(self, host, path="/", port=80, secure=False, headers={}, data=None, text=None, cb=None, timeout=1, json=False):
+    def post(self, host, path="/", port=80, secure=False, headers={}, data=None, text=None, cb=None, timeout=1, json=False, multipart=False):
         url = "%s://%s:%s%s"%(secure and "https" or "http", host, port, path)
         self.log("post(%s)"%(url,))
         if data:
             headers['Content-Type'] = 'multipart/form-data; boundary=%s'%(MPBOUND,)
-            headers['Connection'] = 'Keep-Alive'
-            text = self.multipart(data)
+            headers['Connection'] = 'keep-alive'
+            text = multipart and self.multipart(data) or encode(data)
         self.get_url(url, "POST", headers, lambda resp : self.proc_resp(resp, cb, json), body=text, timeout=timeout)
 
     def get_url(self, url, method='GET', headers={}, cb=None, cbargs=(), eb=None, ebargs=(), body="", timeout=None):
