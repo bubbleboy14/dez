@@ -35,7 +35,7 @@ class HTTPRequest(object):
         self.conn.set_close_cb(cb, args)
 
     def state_action(self):
-        print(self.conn.buffer.get_value())
+#        print(self.conn.buffer.get_value())
         if '\r\n' not in self.conn.buffer:
             return False
         i = self.conn.buffer.find('\r\n')
