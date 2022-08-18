@@ -95,7 +95,10 @@ class HTTPClient(object):
         """ >>> __hostname_from_url("www.google.com/hello/world?q=yo")
             /, "www.google.com", 80
         """
-        if url.startswith('http://'):
+        ishttps = url.startswith('https://')
+        if ishttps:
+            url = url[8:]
+        elif url.startswith('http://'):
             url = url[7:]
         elif url.startswith('https://'):
             url = url[8:]
@@ -107,7 +110,7 @@ class HTTPClient(object):
 
         parts = parts[0].split(":", 1)
         if len(parts) == 1:
-            port = 80
+            port = ishttps and 443 or 80
         else:
             port = int(parts[1])
         hostname = parts[0]
