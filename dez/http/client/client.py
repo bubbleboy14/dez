@@ -9,9 +9,15 @@ MPBOUND = "53^3n733n"
 MPSTART = "--%s"%(MPBOUND,)
 MPMID = "\r\n%s\r\n"%(MPSTART,)
 
+SILENT = True
+
+def setSilent(si):
+    global SILENT
+    SILENT = si
+
 class HTTPClient(object):
     id = 0
-    def __init__(self, silent=False):
+    def __init__(self, silent=SILENT):
         HTTPClient.id += 1
         self.id = HTTPClient.id
         self.logger = get_logger_getter("dez")("%s(%s)"%(self.__class__.__name__, self.id)).simple
@@ -47,9 +53,12 @@ class HTTPClient(object):
         url = "%s://%s:%s%s"%(secure and "https" or "http", host, port, path)
         self.log("post(%s)"%(url,))
         if data:
-            headers['Content-Type'] = 'multipart/form-data; boundary=%s'%(MPBOUND,)
-            headers['Connection'] = 'keep-alive'
-            text = multipart and self.multipart(data) or encode(data)
+            if multipart:
+                headers['Content-Type'] = 'multipart/form-data; boundary=%s'%(MPBOUND,)
+                headers['Connection'] = 'keep-alive'
+                text = self.multipart(data)
+            else:
+                text = encode(data)
         self.get_url(url, "POST", headers, lambda resp : self.proc_resp(resp, cb, json), body=text, timeout=timeout)
 
     def get_url(self, url, method='GET', headers={}, cb=None, cbargs=(), eb=None, ebargs=(), body="", timeout=None):
