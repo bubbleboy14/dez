@@ -29,13 +29,7 @@ class HTTPDaemon(object):
 
     def respond(self, request, data=None, status="200 OK", headers={}):
         self.log.access("response (%s): '%s', '%s'"%(request.url, status, data))
-        r = HTTPResponse(request)
-        r.status = status
-        for k, v in list(headers.items()):
-            r.headers[k] = v
-        if data:
-            r.write(data)
-        r.dispatch()
+        HTTPResponse(request).write(data, status, headers, True)
 
     def roll_cb(self, request):
         self.log.info("302 (rolled!): %s"%(request.url,))
