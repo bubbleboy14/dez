@@ -43,9 +43,7 @@ class HTTPResponse(object):
         return self.headers[key]
 
     def redirect(self, url):
-        self.write(status="302 Found", headers = {
-            "Location": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-        }, dispatch=True)
+        self.write(status="302 Found", headers = { "Location": url }, dispatch=True)
 
     def write(self, data=None, status=None, headers=None, dispatch=False):
         if status:
