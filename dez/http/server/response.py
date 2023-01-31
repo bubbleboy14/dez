@@ -42,8 +42,19 @@ class HTTPResponse(object):
     def __getitem__(self, key):
         return self.headers[key]
 
-    def write(self, data):
-        self.buffer.append(data)
+    def redirect(self, url):
+        self.write(status="302 Found", headers = {
+            "Location": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        }, dispatch=True)
+
+    def write(self, data=None, status=None, headers=None, dispatch=False):
+        if status:
+            self.status = status
+        if headers:
+            for k, v in list(headers.items()):
+                self.headers[k] = v
+        data and self.buffer.append(data)
+        dispatch and self.dispatch()
 
     def end(self, cb=None):
         self.log.debug("end")
