@@ -38,7 +38,7 @@ setup(
         wsgi_server = dez.http.application:serve_wsgi_application
     ''',
     classifiers = [
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
