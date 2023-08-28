@@ -150,6 +150,7 @@ class ReverseProxy(object):
             self.register_domain(domain, host, port)
 
     def start(self):
+        print("Starting reverse proxy router on port %s"%(self.port,))
         self.daemon.start()
 
 def error(msg):
@@ -238,5 +239,4 @@ def startreverseproxy(options=None, start=True):
                         error('could not parse config. expected "incoming_hostname -> forwarding_address_hostname:forwarding_address_port". failed on line: "%s"'%line)
                     controller.loud_register(domain, host, port)
     if start:
-        print("Starting reverse proxy router on port %s"%(options.port))
         controller.start()
