@@ -131,7 +131,7 @@ class ParsedHTTPRequest(object):
         try:
             return object.__getattr__(self, key)
         except AttributeError:
-          return getattr(self.req, key)
+            return getattr(self.req, key)
 
     def recv_body(self, body):
         self.body = body
