@@ -12,7 +12,7 @@ class Shield(object):
 		self.ips = {}
 		self.limit = limit
 		self.interval = interval
-		self.blacklist = blacklist
+		self.blacklist = set(blacklist)
 		self.on_suss = on_suss
 		self.checkers = set()
 		self.has_suss = False
