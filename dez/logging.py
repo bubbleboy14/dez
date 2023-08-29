@@ -22,6 +22,8 @@ class BasicLogger(object):
 	def _log(self, log_type, msg, *args, **kwargs):
 		if self.allowed and log_type not in self.allowed:
 			return
+		kwargs["logname"] = self.name
+		kwargs["subname"] = self.subname
 		self.func("[%s] %s | %s :: %s"%(log_type, self.name,
 			self.subname, msg), *args, **kwargs)
 
