@@ -51,7 +51,7 @@ class ReverseProxyConnection(object):
 
 BIG_302 = True
 BIG_FILES = ["mp3", "png", "jpg", "jpeg", "gif", "pdf", "csv", "mov",
-    "zip", "doc", "docx", "jar", "data", "db", "xlsx", "geojson"] # more?
+    "zip", "doc", "docx", "jar", "data", "db", "xlsx", "geojson", "mp4"] # more?
 
 class ReverseProxy(object):
     def __init__(self, port, verbose, redirect=False, protocol="http", certfile=None, keyfile=None, monitor=None):
