@@ -45,8 +45,8 @@ class BasicLogger(object):
 	def error(self, *args, **kwargs):
 		self._log("error", " ".join([str(a) for a in args]), **kwargs)
 
-def _log_write(s):
-	print(s)
+def _log_write(s, *args, **kwargs):
+	print(s, args, kwargs)
 
 def get_logger_getter(name, func=_log_write, allowed=[]):
 	return lambda subname : BasicLogger(name, subname, func, allowed)
