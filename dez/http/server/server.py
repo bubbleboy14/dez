@@ -230,7 +230,7 @@ class HTTPConnection(object):
         self.wevent.pending() or self.wevent.add()
 
     def write_ready(self):
-        self.log.debug("write_ready")
+#        self.log.debug("write_ready")
         if self.write_buffer.empty():
             if self.current_cb:
                 self.log.debug("write_ready", "invoking current_cb", self.current_cb)
@@ -261,8 +261,8 @@ class HTTPConnection(object):
                 self.current_ebargs = None
                 return None
         try:
-            self.log.debug("buffer", len(self.write_buffer.get_value()),
-                "queue", len(self.response_queue))
+            self.log.detail("write_ready", "buffer",
+                len(self.write_buffer), "queue", len(self.response_queue))
             self.write_buffer.send(self.sock)
             return True
         except io.socket.error as msg:
