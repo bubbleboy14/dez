@@ -113,7 +113,7 @@ class HTTPConnection(object):
             self._timeout.add(KEEPALIVE)
 
     def cancelTimeout(self, hard=False):
-        self.log.debug("cancelTimeout (request %s)"%(self.request.id,))
+        self.log.debug("cancelTimeout (request %s)"%(self.request and self.request.id or "[dereferenced]",))
         self._timeout.pending() and self._timeout.delete(hard)
 
     def timeout(self):
