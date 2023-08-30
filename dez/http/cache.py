@@ -186,6 +186,9 @@ class BasicCache(object):
             self.log.debug("get", path, "404!")
             err_back(req)
 
+    def _is_current(self, path):
+        return path in self.cache
+
     def _new_path(self, path):
         self.cache[path] = {
             'content': '',
@@ -201,9 +204,6 @@ class INotifyCache(BasicCache):
     def __init__(self, streaming="auto", get_logger=default_get_logger):
         BasicCache.__init__(self, streaming, get_logger)
         self.inotify = INotify(self.__update)
-
-    def _is_current(self, path):
-        return path in self.cache
 
     def _new_path(self, path):
         BasicCache._new_path(self, path)
