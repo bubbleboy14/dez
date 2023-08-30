@@ -331,8 +331,9 @@ class CloseChunkedReadMode(object):
 
     def close(self, buffer):
         if len(buffer) > 0:
-            self.cb(buffer.get_value(), *self.args)
+            data = buffer.get_value()
             buffer.reset()
+            self.cb(data, *self.args)
 
 class DelimeterReadMode(object):
     def __init__(self, delimiter, cb, args):
