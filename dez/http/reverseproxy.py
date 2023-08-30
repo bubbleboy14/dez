@@ -32,14 +32,14 @@ class ReverseProxyConnection(object):
     def onConnect(self, conn, start_data):
         self.log("Connection established")
         self.back_conn = conn
-        self.front_conn.set_close_cb(self.onClose, [self.back_conn])
-        self.back_conn.set_close_cb(self.onClose, [self.front_conn])
+        self.front_conn.set_close_cb(self.onClose, [self.back_conn, "front"])
+        self.back_conn.set_close_cb(self.onClose, [self.front_conn, "back"])
         self.front_conn.set_rmode_close_chunked(self.relay)
         self.back_conn.set_rmode_close_chunked(self.front_conn.write)
         self.back_conn.write(start_data)
 
-    def onClose(self, conn):
-        self.log("Connection closed")
+    def onClose(self, conn, closer):
+        self.log("Connection closed by %s side"%(closer,))
         self.counter.dec("connections")
         self.front_conn.set_close_cb(None)
         self.back_conn.set_close_cb(None)
