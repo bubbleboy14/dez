@@ -5,6 +5,7 @@ class FakeLogger(object):
     access = debug
     warn = debug
     error = debug
+    detail = debug
     simple = debug
 
 logger = FakeLogger()
@@ -41,6 +42,9 @@ class BasicLogger(object):
 
 	def warn(self, msg, *args, **kwargs):
 		self._log("warn", msg, *args, **kwargs)
+
+	def detail(self, msg, *args, **kwargs):
+		self._log("detail", " ".join([str(a) for a in args]), **kwargs)
 
 	def error(self, *args, **kwargs):
 		self._log("error", " ".join([str(a) for a in args]), **kwargs)
