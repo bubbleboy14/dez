@@ -40,6 +40,7 @@ class HTTPRequest(object):
             return False
         i = self.conn.buffer.find('\r\n')
         self.action = self.conn.buffer.part(0, i)
+        self.log.debug("state_action", self.action)
         try:
             self.method, self.url, self.protocol = self.action.split(' ', 2)
             p, qs = self.url, ""
