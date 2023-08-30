@@ -36,6 +36,9 @@ class HTTPResponse(object):
             self.headers['Keep-Alive'] = str(KEEPALIVE)
             self.timeout = event.timeout(KEEPALIVE, self.end_or_close)
 
+    def __repr__(self):
+        return "<HTTPResponse(%s)>"%(self.id,)
+
     def __setitem__(self, key, val):
         self.headers[key] = val
 

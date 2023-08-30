@@ -24,6 +24,9 @@ class HTTPRequest(object):
         self.pending_actions = []
         self.set_close_cb(self._onclose, [])
 
+    def __repr__(self):
+        return "<HTTPRequest(%s)>"%(self.id,)
+
     def process(self):
         self.log.debug("process", self.state)
         return getattr(self, 'state_%s' % (self.state,), lambda : None)()
