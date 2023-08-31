@@ -24,6 +24,9 @@ class HTTPRequest(object):
         self.pending_actions = []
         self.set_close_cb(self._onclose, [])
 
+    def __repr__(self):
+        return "<HTTPRequest(%s)>"%(self.id,)
+
     def process(self):
         self.log.debug("process", self.state)
         return getattr(self, 'state_%s' % (self.state,), lambda : None)()
@@ -40,6 +43,7 @@ class HTTPRequest(object):
             return False
         i = self.conn.buffer.find('\r\n')
         self.action = self.conn.buffer.part(0, i)
+        self.log.debug("state_action", self.action)
         try:
             self.method, self.url, self.protocol = self.action.split(' ', 2)
             p, qs = self.url, ""

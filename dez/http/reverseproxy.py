@@ -27,19 +27,24 @@ class ReverseProxyConnection(object):
 
     def relay(self, data):
         data = data.replace(b"\r\nHost: ", b"\r\ndrp_ip: %s\r\nHost: "%(self.front_conn.ip.encode(),))
+#        data = data.replace("\r\nHost: ", "\r\ndrp_ip: %s\r\nHost: "%(self.front_conn.ip,))
         self.back_conn.write(data)
 
     def onConnect(self, conn, start_data):
         self.log("Connection established")
         self.back_conn = conn
-        self.front_conn.set_close_cb(self.onClose, [self.back_conn])
-        self.back_conn.set_close_cb(self.onClose, [self.front_conn])
+        self.front_conn.set_close_cb(self.onClose, [self.back_conn, "front"], withReason=True)
+        self.back_conn.set_close_cb(self.onClose, [self.front_conn, "back"], withReason=True)
         self.front_conn.set_rmode_close_chunked(self.relay)
         self.back_conn.set_rmode_close_chunked(self.front_conn.write)
         self.back_conn.write(start_data)
+#        self.relay(start_data) # make this work...
 
-    def onClose(self, conn):
-        self.log("Connection closed")
+    def onClose(self, conn, closer, reason=None):
+        lmsg = "Connection closed by %s side"%(closer,)
+        if reason:
+            lmsg = '%s because "%s"'%(lmsg, reason)
+        self.log(lmsg)
         self.counter.dec("connections")
         self.front_conn.set_close_cb(None)
         self.back_conn.set_close_cb(None)
@@ -51,7 +56,7 @@ class ReverseProxyConnection(object):
 
 BIG_302 = True
 BIG_FILES = ["mp3", "png", "jpg", "jpeg", "gif", "pdf", "csv", "mov",
-    "zip", "doc", "docx", "jar", "data", "db", "xlsx", "geojson"] # more?
+    "zip", "doc", "docx", "jar", "data", "db", "xlsx", "geojson", "mp4"] # more?
 
 class ReverseProxy(object):
     def __init__(self, port, verbose, redirect=False, protocol="http", certfile=None, keyfile=None, monitor=None):

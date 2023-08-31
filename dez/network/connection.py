@@ -45,8 +45,9 @@ class Connection(object):
         self.connect_timer = event.timeout(timeout, self.__connect_timeout_cb)
         self.connect_event = event.write(self.sock, self.__connected_cb)
 
-    def set_close_cb(self, cb, args=[]):
+    def set_close_cb(self, cb, args=[], withReason=False):
         self.__close_cb = (cb, args)
+        self.__close_reason = withReason
 
     def __start(self):
         self.wevent = event.write(self.sock, self.__write_ready)
@@ -64,7 +65,7 @@ class Connection(object):
     def __connect_timeout_cb(self):
         self.connect_timer.delete()
         self.connect_timer = None
-        self.close()
+        self.close("connect timed out")
 
     def soft_close(self, reason=""):
         if self.__write_chunk or self.__write_queue:
@@ -93,7 +94,10 @@ class Connection(object):
             cb, args = self.__close_cb
             self.__close_cb = None
             if cb:
-                cb(*args)
+                kwargs = {}
+                if self.__close_reason:
+                    kwargs["reason"] = reason
+                cb(*args, **kwargs)
 
     def __clear_writes(self, reason=""):
         if self.__write_chunk:
@@ -199,6 +203,9 @@ class Connection(object):
         try:
             self.__write_buffer.send(self.sock)
             return True
+        except dez.io.ssl.SSLWantWriteError as msg:
+            print("SSLWantWriteError", "(waiting)", msg)
+            return True
         except dez.io.socket.error as msg:
             self.close(reason=str(msg))
             return None
@@ -223,13 +230,14 @@ class Connection(object):
     def __read_ready(self):
         try:
             data = self.sock.recv(dez.io.BUFFER_SIZE)
-        except dez.io.ssl.SSLError as e: # not SSLWantReadError for python 2.7.6
+        except dez.io.ssl.SSLWantReadError as e:
+            print("SSLWantReadError", "(waiting)", e)
             return True # wait a tick
-        except dez.io.socket.error:
-            self.close()
+        except dez.io.socket.error as e:
+            self.close("socket read error: %s"%(str(e),))
             return None
         if not data:
-            self.close()
+            self.close("no data to read")
             return None
         self.__read(data)
         return True
@@ -331,8 +339,9 @@ class CloseChunkedReadMode(object):
 
     def close(self, buffer):
         if len(buffer) > 0:
-            self.cb(buffer.get_value(), *self.args)
+            data = buffer.get_value()
             buffer.reset()
+            self.cb(data, *self.args)
 
 class DelimeterReadMode(object):
     def __init__(self, delimiter, cb, args):

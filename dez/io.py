@@ -1,8 +1,9 @@
 import socket, ssl, time, event
 LQUEUE_SIZE = 4096
 BUFFER_SIZE = 65536 # higher values (previously 131072) break ssl sometimes
-SSL_HANDSHAKE_TICK = 0.001
-SSL_HANDSHAKE_TIMEOUT = 1
+SSL_HANDSHAKE_TICK = 0.002
+SSL_HANDSHAKE_TIMEOUT = 0.5
+SSL_HANDSHAKE_DEADLINE = 5
 # pre-2.7.9 ssl
 # - cipher list adapted from https://bugs.python.org/issue20995
 # - don't force (old) TLSv1 
@@ -12,14 +13,15 @@ PY27_OLD_CIPHERS = "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+A
 locz = ["localhost", "0.0.0.0", "127.0.0.1"]
 
 def ssl_handshake(sock, cb, *args):
-    deadline = time.time() + SSL_HANDSHAKE_TIMEOUT
+    deadline = time.time() + SSL_HANDSHAKE_DEADLINE
     def shaker():
         try:
-            sock.settimeout(SSL_HANDSHAKE_TICK)
+            sock.settimeout(SSL_HANDSHAKE_TIMEOUT)
             sock.do_handshake()
             sock.settimeout(0)
         except Exception as e:
             if time.time() > deadline:
+                print("HANDSHAKE FAILED!", str(e))
                 sock.close()
             else:
                 return True
