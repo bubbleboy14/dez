@@ -203,6 +203,9 @@ class Connection(object):
         try:
             self.__write_buffer.send(self.sock)
             return True
+        except dez.io.ssl.SSLWantWriteError as msg:
+            print("SSLWantWriteError", "(waiting)", msg)
+            return True
         except dez.io.socket.error as msg:
             self.close(reason=str(msg))
             return None
