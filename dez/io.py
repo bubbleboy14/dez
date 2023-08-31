@@ -1,9 +1,9 @@
 import socket, ssl, time, event
 LQUEUE_SIZE = 4096
 BUFFER_SIZE = 65536 # higher values (previously 131072) break ssl sometimes
-SSL_HANDSHAKE_TICK = 0.001
-SSL_HANDSHAKE_TIMEOUT = 0.2
-SSL_HANDSHAKE_DEADLINE = 2
+SSL_HANDSHAKE_TICK = 0.002
+SSL_HANDSHAKE_TIMEOUT = 0.5
+SSL_HANDSHAKE_DEADLINE = 5
 # pre-2.7.9 ssl
 # - cipher list adapted from https://bugs.python.org/issue20995
 # - don't force (old) TLSv1 
