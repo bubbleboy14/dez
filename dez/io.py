@@ -20,6 +20,7 @@ def ssl_handshake(sock, cb, *args):
             sock.settimeout(0)
         except Exception as e:
             if time.time() > deadline:
+                print("HANDSHAKE FAILED!")
                 sock.close()
             else:
                 return True
