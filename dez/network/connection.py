@@ -230,7 +230,8 @@ class Connection(object):
     def __read_ready(self):
         try:
             data = self.sock.recv(dez.io.BUFFER_SIZE)
-        except dez.io.ssl.SSLError as e: # not SSLWantReadError for python 2.7.6
+        except dez.io.ssl.SSLWantReadError as e:
+            print("SSLWantReadError", "(waiting)", e)
             return True # wait a tick
         except dez.io.socket.error as e:
             self.close("socket read error: %s"%(str(e),))
