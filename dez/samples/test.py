@@ -1,6 +1,6 @@
 import rel, optparse, socket
 
-MODULES = "app_proxy, django_hello_world, echo_server, get_url, hello_client, http_client, http_client2, httpd_hello_world, http_proxy, new_conn, op_callback_server, op_callback_test, op_test, stomp_test, websocket_test, websocket_proxy_test, wsgi_test"
+MODULES = "app_proxy, django_hello_world, echo_server, get_url, hello_client, http_client, http_client2, httpd_hello_world, http_proxy, new_conn, op_callback_server, op_callback_test, op_test, stomp_test, websocket_test, websocket_proxy_test, wsc, wsecho, wsgi_test"
 
 def parse_input():
     parser = optparse.OptionParser('dez_test [MODULE]\nmodules: %s'%(MODULES))
