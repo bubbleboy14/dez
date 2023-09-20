@@ -39,7 +39,7 @@ class Buffer(object):
             self.pos = None
 
     def find(self, marker, i=0):
-        if hasattr(marker, "encode"):# and not hasattr(self.data, "encode"):
+        if hasattr(marker, "encode"):
             marker = marker.encode()
         if self.mode == 'consume':
             return self.data.find(marker, i)
@@ -51,14 +51,6 @@ class Buffer(object):
 
     def __str__(self):
         return self.get_value()
-
-    def send(self, sock):
-        val = self.get_value()[:BUFFER_SIZE]
-        try:
-            enced = val.encode()
-        except: # img, etc
-            enced = val
-        self.move(sock.send(enced))
 
     def get_value(self):
         ''' Return the data in consume mode, or the remainder of the data in
@@ -91,9 +83,10 @@ class Buffer(object):
         ''' Resets data to empty, or an opional 'content' string, and position
             to 0.
         '''
+        if hasattr(content, "encode"):
+            content = content.encode()
         self.data = content
-        if self.mode == 'index':
-            self.pos = 0
+        self.reset_position()
 
     def empty(self):
         ''' Boolean; is true if the the buffer is empty '''
@@ -110,16 +103,12 @@ class Buffer(object):
 
     def part(self, start, end):
         if self.mode == 'consume':
-            d = self.data[start:end]
+            return self.data[start:end]
         elif self.mode == 'index':
-            d = self.data[self.pos + start: self.pos + end]
-        try:
-            return d.decode()
-        except:
-            return d
+            return self.data[self.pos + start: self.pos + end]
 
     def __contains__(self, data):
-        if hasattr(data, "encode"):# and not hasattr(self.data, "encode"):
+        if hasattr(data, "encode"):
             data = data.encode()
         if self.mode == 'consume':
             return data in self.data
@@ -127,7 +116,7 @@ class Buffer(object):
             return self.data.find(data, self.pos) != -1
 
     def __eq__(self, data):
-        if hasattr(data, "encode"):# and not hasattr(self.data, "encode"):
+        if hasattr(data, "encode"):
             data = data.encode()
         if self.mode == 'consume':
             return self.data == data
@@ -148,22 +137,43 @@ class Buffer(object):
 
     def __add__(self, add_data):
         ''' Add the passed-in string to the buffer '''
-        if hasattr(add_data, "encode"):# and not hasattr(self.data, "encode"):
+        if hasattr(add_data, "encode"):
             add_data = add_data.encode()
         self.data += add_data
-#        if self.data:
-#            self.data += add_data
-#        else: # shouldn't be necessary ... py3 string/bytes stuff...
-#            self.data = add_data
         return self
 
-class B64ReadBuffer(Buffer):
+class ReadBuffer(Buffer):
     ''' This works exactly like the Buffer class, except it
+        decode()s incoming bytes before passing them off
+    '''
+    def part(self, start, end):
+        d = Buffer.part(self, start, end)
+        try:
+            return d.decode()
+        except:
+            return d
+
+    def get_value(self):
+        d = Buffer.get_value(self)
+        try:
+            return d.decode()
+        except:
+            return d
+
+class WriteBuffer(Buffer):
+    ''' This works exactly like the Buffer class, with the
+        addition of send()
+    '''
+    def send(self, sock):
+        self.move(sock.send(self.get_value()[:BUFFER_SIZE]))
+
+class B64ReadBuffer(ReadBuffer):
+    ''' This works exactly like the ReadBuffer class, except it
         reads base64-encoded strings separated by whitespace.
     '''
     def __init__(self, initial_data=b'', mode='consume'):
         self.raw_data = b''
-        Buffer.__init__(self, initial_data, mode)
+        ReadBuffer.__init__(self, initial_data, mode)
 
     def __add__(self, add_data):
         ''' Add the passed-in base64-encoded string to the pre-buffer '''
@@ -175,15 +185,12 @@ class B64ReadBuffer(Buffer):
         self.raw_data += add_data
         return self
 
-class B64WriteBuffer(Buffer):
-    ''' This works exactly like the Buffer class, except
+class B64WriteBuffer(WriteBuffer):
+    ''' This works exactly like the WriteBuffer class, except
         get_value() returns a base64-encoded string
     '''
     def get_value(self):
         ''' Return the base64-encoded data in consume mode, or the base64-encoded remainder of the data in
             index mode.
         '''
-        if self.mode == 'consume':
-            return b64encode(self.data)+' '
-        elif self.mode == 'index':
-            return b64encode(self.data[self.pos:])+' '
+        return b64encode(WriteBuffer.get_value(self)) + b' '
