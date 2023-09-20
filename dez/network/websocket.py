@@ -2,7 +2,7 @@ import optparse, struct
 from base64 import b64encode, b64decode
 from hashlib import sha1
 from datetime import datetime
-from dez.buffer import Buffer
+from dez.buffer import ReadBuffer
 from dez.json import encode, decode
 from dez.network.server import SocketDaemon
 from dez.network.client import SimpleClient
@@ -193,7 +193,7 @@ class WebSocketHandshake(object):
 
 class WebSocketConnection(object):
     def __init__(self, conn, report_cb=lambda x:None, isJSON=False, b64=False):
-        self.buff = Buffer()
+        self.buff = ReadBuffer()
         self.isJSON = isJSON
         self.b64 = b64
         self.conn = conn

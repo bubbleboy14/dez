@@ -1,11 +1,11 @@
 import event
 import dez.io
-from dez.buffer import Buffer, B64ReadBuffer, B64WriteBuffer
+from dez.buffer import ReadBuffer, WriteBuffer, B64ReadBuffer, B64WriteBuffer
 from dez.json import decode
 from dez.xml_tools import extract_xml, XMLNode
 
-RBUFF = {True:B64ReadBuffer, False:Buffer}
-WBUFF = {True:B64WriteBuffer, False:Buffer}
+RBUFF = { True: B64ReadBuffer, False: ReadBuffer }
+WBUFF = { True: B64WriteBuffer, False: WriteBuffer }
 
 class Connection(object):
     id = 0

@@ -1,4 +1,4 @@
-from dez.buffer import Buffer
+from dez.buffer import WriteBuffer
 
 class HTTPClientWriter(object):
     def __init__(self, conn):
@@ -17,7 +17,7 @@ class HTTPClientRequest(object):
         self.method = "GET"
         self.path = "/"
         self.headers = {}
-        self.body = Buffer()
+        self.body = WriteBuffer()
 
     def write(self, data):
         self.body += data

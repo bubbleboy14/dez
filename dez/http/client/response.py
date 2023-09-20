@@ -1,4 +1,4 @@
-from dez.buffer import Buffer
+from dez.buffer import ReadBuffer
 from dez.http.errors import *
 
 class HTTPClientReader(object):
@@ -54,7 +54,7 @@ class HTTPClientResponse(object):
         self.headers = {}
         self.case_match_headers = {}
         self.content_length = None
-        self.body = Buffer()
+        self.body = ReadBuffer()
         self.completed = False
 
 class HTTPProtocolReader(object):
