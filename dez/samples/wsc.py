@@ -6,7 +6,7 @@ try:
 except:
     print("this demo requires websocket-client")
 
-mult = 100000
+mult = 20000
 
 class Bouncer(object):
     def __init__(self, domain, port):
