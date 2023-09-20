@@ -1,6 +1,6 @@
 import event
 from dez import io
-from dez.buffer import Buffer
+from dez.buffer import ReadBuffer, WriteBuffer
 from dez.logging import default_get_logger
 from dez.http.counter import Counter
 from dez.http.server.router import Router
@@ -91,8 +91,8 @@ class HTTPConnection(object):
         self._timeout = event.timeout(None, self.timeout)
         self.wevent = event.write(self.sock, self.write_ready)
         self.revent = event.read(self.sock, self.read_ready)
-        self.buffer = Buffer()
-        self.write_buffer = Buffer()
+        self.buffer = ReadBuffer()
+        self.write_buffer = WriteBuffer()
         self.start_request()
 
     def set_close_cb(self, cb, args):
