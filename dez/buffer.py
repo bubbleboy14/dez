@@ -39,7 +39,7 @@ class Buffer(object):
             self.pos = None
 
     def find(self, marker, i=0):
-        if hasattr(marker, "encode"):
+        if isinstance(marker, str):
             marker = marker.encode()
         if self.mode == 'consume':
             return self.data.find(marker, i)
@@ -83,7 +83,7 @@ class Buffer(object):
         ''' Resets data to empty, or an opional 'content' string, and position
             to 0.
         '''
-        if hasattr(content, "encode"):
+        if isinstance(content, str):
             content = content.encode()
         self.data = content
         self.reset_position()
@@ -108,7 +108,7 @@ class Buffer(object):
             return self.data[self.pos + start: self.pos + end]
 
     def __contains__(self, data):
-        if hasattr(data, "encode"):
+        if isinstance(data, str):
             data = data.encode()
         if self.mode == 'consume':
             return data in self.data
@@ -116,7 +116,7 @@ class Buffer(object):
             return self.data.find(data, self.pos) != -1
 
     def __eq__(self, data):
-        if hasattr(data, "encode"):
+        if isinstance(data, str):
             data = data.encode()
         if self.mode == 'consume':
             return self.data == data
@@ -137,7 +137,7 @@ class Buffer(object):
 
     def __add__(self, add_data):
         ''' Add the passed-in string to the buffer '''
-        if hasattr(add_data, "encode"):
+        if isinstance(add_data, str):
             add_data = add_data.encode()
         self.data += add_data
         return self
@@ -146,6 +146,13 @@ class ReadBuffer(Buffer):
     ''' This works exactly like the Buffer class, except it
         decode()s incoming bytes before passing them off
     '''
+    def stringy(self):
+        try:
+            self.data.decode()
+            return True
+        except:
+            return False
+
     def part(self, start, end):
         d = Buffer.part(self, start, end)
         try:
