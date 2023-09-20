@@ -46,8 +46,8 @@ def parse_frame(buf):
         length, = struct.unpack(">H", buf[2:4])
         payload_start += 2
     elif length == 127:
-        length, = struct.unpack(">I", buf[2:6])
-        payload_start += 4
+        length = struct.unpack(">I", buf[2:6])[0] + struct.unpack(">I", buf[6:10])[0]
+        payload_start += 8
 
     if mask:
         mask_bytes = [py23ord(b) for b in buf[payload_start:payload_start + 4]]
