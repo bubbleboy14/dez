@@ -37,10 +37,14 @@ class Router(object):
 
     def register_regex(self, restr, cb, args):
         self.regexs.append((re.compile(restr), cb, args))
+        self.regexs.sort(key=cmp_to_key(self.regex_order))
 
     def register_prefix(self, prefix, cb, args):
         self.prefixes.append((prefix, cb, args))
         self.prefixes.sort(key=cmp_to_key(self.pref_order))
+
+    def regex_order(self, b, a):
+        return cmp(len(a[0].pattern),len(b[0].pattern))
 
     def pref_order(self, b, a):
         return cmp(len(a[0]),len(b[0]))
