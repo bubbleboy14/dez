@@ -26,8 +26,10 @@ class ReverseProxyConnection(object):
         self.logger("%s:%s -> %s:%s > %s"%(self.front_host, self.front_port, self.back_host, self.back_port, msg))
 
     def relay(self, data):
-        data = data.replace(b"\r\nHost: ", b"\r\ndrp_ip: %s\r\nHost: "%(self.front_conn.ip.encode(),))
-#        data = data.replace("\r\nHost: ", "\r\ndrp_ip: %s\r\nHost: "%(self.front_conn.ip,))
+        if isinstance(data, str): # seems a little silly...
+            data = data.replace("\r\nHost: ", "\r\ndrp_ip: %s\r\nHost: "%(self.front_conn.ip,))
+        else:
+            data = data.replace(b"\r\nHost: ", b"\r\ndrp_ip: %s\r\nHost: "%(self.front_conn.ip.encode(),))
         self.back_conn.write(data)
 
     def onConnect(self, conn, start_data):
