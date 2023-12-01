@@ -20,10 +20,18 @@ class ReverseProxyConnection(object):
         except:
             self.front_conn = None
             return self.log("Transport endpoint is not connected - aborting ReverseProxyConnection")
-        SimpleClient().connect(h2, p2, self.onConnect, [start_data])
+        try:
+            SimpleClient().connect(h2, p2, self.onConnect, [start_data])
+        except:
+            self.retry()
 
     def log(self, msg):
         self.logger("%s:%s -> %s:%s > %s"%(self.front_host, self.front_port, self.back_host, self.back_port, msg))
+
+    def retry(self):
+        self.log("server not ready (try again)")
+        self.front_conn.write("<html><head><script>setTimeout(function(){location.reload();},2000);</script></head><body>wait for it...</body></html>")
+        self.front_conn.soft_close()
 
     def relay(self, data):
         if isinstance(data, str): # seems a little silly...
