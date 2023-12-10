@@ -137,9 +137,10 @@ class Buffer(object):
 
     def __add__(self, add_data):
         ''' Add the passed-in string to the buffer '''
-        if isinstance(add_data, str):
-            add_data = add_data.encode()
-        self.data += add_data
+        if add_data:
+            if isinstance(add_data, str):
+                add_data = add_data.encode()
+            self.data += add_data
         return self
 
 class ReadBuffer(Buffer):
