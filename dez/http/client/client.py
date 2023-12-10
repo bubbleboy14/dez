@@ -46,12 +46,12 @@ class HTTPClient(object):
 
     def fetch(self, host, path="/", port=80, secure=False, headers={}, cb=None, timeout=1, json=False):
         url = "%s://%s:%s%s"%(secure and "https" or "http", host, port, path)
-        self.log("fetch(%s)"%(url,))
+        self.log("fetch(%s) with headers: %s"%(url, headers))
         self.get_url(url, headers=headers, cb=lambda resp : self.proc_resp(resp, cb, json), timeout=timeout)
 
     def post(self, host, path="/", port=80, secure=False, headers={}, data=None, text=None, cb=None, timeout=1, json=False, multipart=False):
         url = "%s://%s:%s%s"%(secure and "https" or "http", host, port, path)
-        self.log("post(%s)"%(url,))
+        self.log("post(%s) with headers: %s"%(url, headers))
         if data:
             if multipart:
                 headers['Content-Type'] = 'multipart/form-data; boundary=%s'%(MPBOUND,)
