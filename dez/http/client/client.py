@@ -1,6 +1,6 @@
 from .request import HTTPClientRequest, HTTPClientWriter
 from .response import HTTPClientReader
-from dez.network import SocketClient, SILENT
+from dez.network.client import SocketClient, SILENT
 from dez.logging import get_logger_getter
 from dez.json import decode, encode
 import event
