@@ -2,6 +2,8 @@ import event
 from dez import io
 from dez.network.connection import Connection
 
+MAX_CONN = 1000
+
 class SimpleClient(object):
     def __init__(self, b64=False):
         '''If b64=True, the client reads and writes base64-encoded strings'''
@@ -18,13 +20,13 @@ class SocketClient(object):
     def __init__(self):
         self.pools = {}
 
-    def get_connection(self, host, port, cb, args=[], secure=False, eb=None, ebargs=None, timeout=60, max_conn=1000, b64=False):
+    def get_connection(self, host, port, cb, args=[], secure=False, eb=None, ebargs=None, timeout=60, max_conn=MAX_CONN, b64=False):
         addr = host, port
         if addr not in self.pools:
             self.pools[addr] = ConnectionPool(host, port, secure, max_conn, b64)
         self.pools[addr].get_connection(cb, args, timeout)
 
-    def start_connections(self, host, port, num, cb, args=[], secure=False, timeout=None, max_conn=1000):
+    def start_connections(self, host, port, num, cb, args=[], secure=False, timeout=None, max_conn=MAX_CONN):
         addr = host, port
         if addr not in self.pools:
             self.pools[addr] = ConnectionPool(host, port, secure, max_conn)
@@ -42,7 +44,7 @@ class SocketClient(object):
 
 
 class ConnectionPool(object):
-    def __init__(self, hostname, port, secure=False, max_connections=1000, b64=False):
+    def __init__(self, hostname, port, secure=False, max_connections=MAX_CONN, b64=False):
         self.addr = hostname, port
         self.hostname = hostname
         self.port = port
