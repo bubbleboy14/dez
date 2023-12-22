@@ -18,13 +18,13 @@ class SocketClient(object):
     def __init__(self):
         self.pools = {}
 
-    def get_connection(self, host, port, cb, args=[], secure=False, eb=None, ebargs=None, timeout=60, max_conn=5, b64=False):
+    def get_connection(self, host, port, cb, args=[], secure=False, eb=None, ebargs=None, timeout=60, max_conn=1000, b64=False):
         addr = host, port
         if addr not in self.pools:
             self.pools[addr] = ConnectionPool(host, port, secure, max_conn, b64)
         self.pools[addr].get_connection(cb, args, timeout)
 
-    def start_connections(self, host, port, num, cb, args=[], secure=False, timeout=None, max_conn=5):
+    def start_connections(self, host, port, num, cb, args=[], secure=False, timeout=None, max_conn=1000):
         addr = host, port
         if addr not in self.pools:
             self.pools[addr] = ConnectionPool(host, port, secure, max_conn)
@@ -42,7 +42,7 @@ class SocketClient(object):
 
 
 class ConnectionPool(object):
-    def __init__(self, hostname, port, secure=False, max_connections=5, b64=False):
+    def __init__(self, hostname, port, secure=False, max_connections=1000, b64=False):
         self.addr = hostname, port
         self.hostname = hostname
         self.port = port
@@ -120,9 +120,8 @@ class ConnectionPool(object):
         self.connection_count -= 1
 
     def __service_queue(self):
-        if self.pool and self.wait_queue:
+        while self.pool and self.wait_queue:
             i = self.wait_queue.pop(0)
             cb, args, timer = self.wait_timers.pop(i)
             timer.delete()
             cb(self.pool.pop(0), *args)
-            
