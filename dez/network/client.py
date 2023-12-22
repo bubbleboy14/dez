@@ -53,7 +53,6 @@ class ConnectionPool(object):
 
         # real connections
         self.pool = []
-#        self.in_use = []
 
         # requests for connections
         self.wait_index = 0
@@ -72,25 +71,20 @@ class ConnectionPool(object):
         self.__start_count = num
         for i in range(num):
             self.__start_connection()
-        
+
     def get_connection(self, cb, args, timeout):
-        if self.pool:
-            c = self.pool.pop()
-#            self.in_use.append(c)
-            return cb(c,*args)
-
-        if self.connection_count < self.max_connections:
-            # make a new connection
-#            print 'open a new connection'
-            self.__start_connection()
-
         i = self.wait_index
         timer = event.timeout(timeout, self.__timed_out, i)
         self.wait_timers[i] = cb, args, timer
         self.wait_queue.append(i)
         self.wait_index += 1
+        self._churn()
 
-        self.__service_queue()
+    def _churn(self):
+        if self.pool:
+            self.__service_queue()
+        elif self.connection_count < self.max_connections:
+            self.__start_connection()
 
     def __reg_sock(self, sock):
         Connection(self.addr, sock, self, self.b64).connect()
@@ -102,7 +96,6 @@ class ConnectionPool(object):
 
     def connection_available(self, conn):
         self.pool.append(conn)
-#        print 'conn available', len(self.pool)
         if self.__start_count and len(self.pool) == self.__start_count:          
             cb, args = self.__start_cb_info
             self.__start_cb_info = None
@@ -117,9 +110,7 @@ class ConnectionPool(object):
         if conn in self.pool:
             self.pool.remove(conn)
         self.connection_count -= 1
-        if self.wait_queue:
-            self.__start_connection()
-        self.__service_queue()
+        self.wait_queue and self._churn()
 
     def __timed_out(self, i):
         cb, args, timer = self.wait_timers[i]
@@ -130,11 +121,8 @@ class ConnectionPool(object):
 
     def __service_queue(self):
         if self.pool and self.wait_queue:
-            i = self.wait_queue.pop()
+            i = self.wait_queue.pop(0)
             cb, args, timer = self.wait_timers.pop(i)
             timer.delete()
-            
-            c = self.pool.pop()
-#            self.in_use.append(c)
-            cb(c, *args)
+            cb(self.pool.pop(0), *args)
             
