@@ -11,10 +11,6 @@ MPMID = "\r\n%s\r\n"%(MPSTART,)
 
 SILENT = True
 
-def setSilent(si):
-    global SILENT
-    SILENT = si
-
 class HTTPClient(object):
     id = 0
     def __init__(self, silent=SILENT):
@@ -44,12 +40,12 @@ class HTTPClient(object):
             bod.append('Content-Disposition: form-data; name="%s"\r\n\r\n%s'%(k, v))
         return "%s\r\n%s\r\n%s--\r\n"%(MPSTART, MPMID.join(bod), MPSTART)
 
-    def fetch(self, host, path="/", port=80, secure=False, headers={}, cb=None, timeout=1, json=False):
+    def fetch(self, host, path="/", port=80, secure=False, headers={}, cb=None, timeout=5, json=False, eb=None):
         url = "%s://%s:%s%s"%(secure and "https" or "http", host, port, path)
         self.log("fetch(%s) with headers: %s"%(url, headers))
-        self.get_url(url, headers=headers, cb=lambda resp : self.proc_resp(resp, cb, json), timeout=timeout)
+        self.get_url(url, headers=headers, cb=lambda resp : self.proc_resp(resp, cb, json), eb=eb, timeout=timeout)
 
-    def post(self, host, path="/", port=80, secure=False, headers={}, data=None, text=None, cb=None, timeout=1, json=False, multipart=False):
+    def post(self, host, path="/", port=80, secure=False, headers={}, data=None, text=None, cb=None, timeout=5, json=False, multipart=False, eb=None):
         url = "%s://%s:%s%s"%(secure and "https" or "http", host, port, path)
         self.log("post(%s) with headers: %s"%(url, headers))
         if data:
@@ -59,7 +55,7 @@ class HTTPClient(object):
                 text = self.multipart(data)
             else:
                 text = encode(data)
-        self.get_url(url, "POST", headers, lambda resp : self.proc_resp(resp, cb, json), body=text, timeout=timeout)
+        self.get_url(url, "POST", headers, lambda resp : self.proc_resp(resp, cb, json), eb=eb, body=text, timeout=timeout)
 
     def get_url(self, url, method='GET', headers={}, cb=None, cbargs=(), eb=None, ebargs=(), body="", timeout=None):
         self.log("get_url: %s"%(url,))
@@ -92,10 +88,11 @@ class HTTPClient(object):
 #        print "asking for response"
 
     def __end_body_cb(self, response, id):
-#        print "getting response"
-#        print response.status_line
-#        print response.headers
-#        print response.body
+#        print("====getting response====")
+#        print(response.status_line)
+#        print(response.headers)
+#        print(response.body)
+#        print("========================")
         self.log("__end_body_cb: %s"%(id,))
         self.requests[id].success(response)
 
@@ -142,18 +139,20 @@ class URLRequest(object):
         if timeout:
             self.timeout.add(timeout)
         self.failed = False
-        
+
     def success(self, response):
-        if not self.failed:
-            self.timeout.delete()
-            if self.cb:
-                args = []
-                if self.cbargs:
-                    args = self.cbargs
-                response.request = self
-                self.cb(response, *args)
-        
+        if self.failed:
+            SILENT or print("BUT I FAILED!")
+        self.timeout.delete()
+        if self.cb:
+            args = []
+            if self.cbargs:
+                args = self.cbargs
+            response.request = self
+            self.cb(response, *args)
+
     def failure(self, *args, **kwargs):
+        SILENT or print("failed!", args, kwargs)
         self.failed = True
         if self.eb:
             self.eb(*self.ebargs)
