@@ -33,7 +33,7 @@ class HTTPClient(object):
 
     def proc_resp(self, resp, cb=None, json=False):
         val = resp.body.get_value()
-        self.log("proc_resp(%s)"%(val,))
+#        self.log("proc_resp(%s)"%(val,))
         return (cb or self.log)(self.jayornay(val, json))
 
     def multipart(self, data):
