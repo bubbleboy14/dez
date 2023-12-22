@@ -1,6 +1,6 @@
 from .request import HTTPClientRequest, HTTPClientWriter
 from .response import HTTPClientReader
-from dez.network import SocketClient
+from dez.network import SocketClient, SILENT
 from dez.logging import get_logger_getter
 from dez.json import decode, encode
 import event
@@ -8,8 +8,6 @@ import event
 MPBOUND = "53^3n733n"
 MPSTART = "--%s"%(MPBOUND,)
 MPMID = "\r\n%s\r\n"%(MPSTART,)
-
-SILENT = True
 
 class HTTPClient(object):
     id = 0

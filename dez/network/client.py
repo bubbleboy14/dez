@@ -3,6 +3,7 @@ from dez import io
 from dez.network.connection import Connection
 
 MAX_CONN = 1000
+SILENT = True
 
 class SimpleClient(object):
     def __init__(self, b64=False):
@@ -64,6 +65,13 @@ class ConnectionPool(object):
         self.__start_timer = None
         self.__start_count = None
         
+    def log(self, *msg):
+        SILENT or print(*msg)
+
+    def stats(self, msg):
+        self.log(msg, len(self.wait_queue), "queue;",
+            len(self.pool), "pool", self.connection_count, "conns")
+
     def start_connections(self, num, cb, args, timeout=None):
         if self.__start_cb_info:
             raise Exception("StartInProgress")("Only issue one start_connections call in parallel")
@@ -75,6 +83,7 @@ class ConnectionPool(object):
             self.__start_connection()
 
     def get_connection(self, cb, args, timeout):
+        self.stats("GET CONN")
         i = self.wait_index
         timer = event.timeout(timeout, self.__timed_out, i)
         self.wait_timers[i] = cb, args, timer
@@ -83,21 +92,20 @@ class ConnectionPool(object):
         self._churn()
 
     def _churn(self):
+        self.stats("CHURN")
         if self.pool:
             self.__service_queue()
         elif self.connection_count < self.max_connections:
             self.__start_connection()
 
-    def __reg_sock(self, sock):
+    def __start_connection(self):
+        sock = io.client_socket(self.hostname, self.port, self.secure)
         Connection(self.addr, sock, self, self.b64).connect()
         self.connection_count += 1
 
-    def __start_connection(self):
-        sock = io.client_socket(self.hostname, self.port, self.secure)
-        self.__reg_sock(sock)
-
     def connection_available(self, conn):
         self.pool.append(conn)
+        self.stats("CONN AVAILABLE")
         if self.__start_count and len(self.pool) == self.__start_count:          
             cb, args = self.__start_cb_info
             self.__start_cb_info = None
@@ -112,6 +120,7 @@ class ConnectionPool(object):
         if conn in self.pool:
             self.pool.remove(conn)
         self.connection_count -= 1
+        self.stats("CONN CLOSED")
         self.wait_queue and self._churn()
 
     def __timed_out(self, i):
@@ -120,8 +129,10 @@ class ConnectionPool(object):
         del self.wait_timers[i]
         self.wait_queue.remove(i)
         self.connection_count -= 1
+        self.stats("TIMEOUT")
 
     def __service_queue(self):
+        self.stats("SERVICE")
         while self.pool and self.wait_queue:
             i = self.wait_queue.pop(0)
             cb, args, timer = self.wait_timers.pop(i)
