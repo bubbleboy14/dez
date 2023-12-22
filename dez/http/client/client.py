@@ -32,7 +32,9 @@ class HTTPClient(object):
         return txt
 
     def proc_resp(self, resp, cb=None, json=False):
-        return (cb or self.log)(self.jayornay(resp.body.get_value(), json))
+        val = resp.body.get_value()
+        self.log("proc_resp(%s)"%(val,))
+        return (cb or self.log)(self.jayornay(val, json))
 
     def multipart(self, data):
         bod = []
@@ -94,7 +96,10 @@ class HTTPClient(object):
 #        print(response.body)
 #        print("========================")
         self.log("__end_body_cb: %s"%(id,))
-        self.requests[id].success(response)
+        if "504 Gateway Time-out" in response.body.get_value():
+            self.requests[id].failure("timeout")
+        else:
+            self.requests[id].success(response)
 
     def __parse_url(self, url):
         self.log("__parse_url: %s"%(url,))
@@ -135,7 +140,7 @@ class URLRequest(object):
         self.eb = eb
         self.ebargs = ebargs
         self.body = body
-        self.timeout = event.event(self.failure)
+        self.timeout = event.event(lambda *a, **k : self.failure("timeout", *a, **k))
         if timeout:
             self.timeout.add(timeout)
         self.failed = False
@@ -151,8 +156,9 @@ class URLRequest(object):
             response.request = self
             self.cb(response, *args)
 
-    def failure(self, *args, **kwargs):
-        SILENT or print("failed!", args, kwargs)
+    def failure(self, reason, *args, **kwargs):
+        SILENT or print("failed!", reason, args, kwargs)
+        self.timeout.delete()
         self.failed = True
         if self.eb:
-            self.eb(*self.ebargs)
+            self.eb(reason, *self.ebargs)
