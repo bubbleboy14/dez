@@ -69,8 +69,8 @@ class ConnectionPool(object):
         SILENT or print(*msg)
 
     def stats(self, msg):
-        self.log(msg, len(self.wait_queue), "queue;",
-            len(self.pool), "pool", self.connection_count, "conns")
+        self.log(msg, len(self.wait_queue), "queue;", len(self.pool),
+            "pool", self.connection_count, "conns", self.wait_index, "reqs")
 
     def start_connections(self, num, cb, args, timeout=None):
         if self.__start_cb_info:
@@ -79,8 +79,7 @@ class ConnectionPool(object):
             self.__start_timer = event.timeout(timeout, __start_timeout_cb)
         self.__start_cb_info = (cb, args)
         self.__start_count = num
-        for i in range(num):
-            self.__start_connection()
+        self.__start_connections(num)
 
     def get_connection(self, cb, args, timeout):
         self.stats("GET CONN")
@@ -96,6 +95,11 @@ class ConnectionPool(object):
         if self.pool:
             self.__service_queue()
         elif self.connection_count < self.max_connections:
+            self.__start_connection()
+
+    def __start_connections(self, num):
+        self.stats("STARTING %s CONNS"%(num,))
+        for i in range(num):
             self.__start_connection()
 
     def __start_connection(self):
@@ -138,3 +142,6 @@ class ConnectionPool(object):
             cb, args, timer = self.wait_timers.pop(i)
             timer.delete()
             cb(self.pool.pop(0), *args)
+        if self.wait_queue and self.connection_count < self.max_connections:
+            self.__start_connections(min(len(self.wait_queue),
+                self.max_connections - self.connection_count))
