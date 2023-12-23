@@ -2,8 +2,9 @@ import event
 from dez import io
 from dez.network.connection import Connection
 
-MAX_CONN = 1000
 SILENT = True
+MIN_CONN = 10
+MAX_CONN = 1000
 
 class SimpleClient(object):
     def __init__(self, b64=False):
@@ -25,6 +26,7 @@ class SocketClient(object):
         addr = host, port
         if addr not in self.pools:
             self.pools[addr] = ConnectionPool(host, port, secure, max_conn, b64)
+            MIN_CONN and self.pools[addr].spawn(MIN_CONN)
         self.pools[addr].get_connection(cb, args, timeout)
 
     def start_connections(self, host, port, num, cb, args=[], secure=False, timeout=None, max_conn=MAX_CONN):
@@ -79,7 +81,7 @@ class ConnectionPool(object):
             self.__start_timer = event.timeout(timeout, __start_timeout_cb)
         self.__start_cb_info = (cb, args)
         self.__start_count = num
-        self.__start_connections(num)
+        self.spawn(num)
 
     def get_connection(self, cb, args, timeout):
         self.stats("GET CONN")
@@ -97,7 +99,7 @@ class ConnectionPool(object):
         elif self.connection_count < self.max_connections:
             self.__start_connection()
 
-    def __start_connections(self, num):
+    def spawn(self, num):
         self.stats("STARTING %s CONNS"%(num,))
         for i in range(num):
             self.__start_connection()
@@ -143,5 +145,5 @@ class ConnectionPool(object):
             timer.delete()
             cb(self.pool.pop(0), *args)
         if self.wait_queue and self.connection_count < self.max_connections:
-            self.__start_connections(min(len(self.wait_queue),
+            self.spawn(min(len(self.wait_queue),
                 self.max_connections - self.connection_count))
