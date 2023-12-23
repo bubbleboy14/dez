@@ -144,8 +144,10 @@ class URLRequest(object):
         self.failed = False
 
     def success(self, response):
-        if self.failed:
-            SILENT or print("BUT I FAILED!")
+        if self.failed and not SILENT:
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            print("BUT I FAILED!")
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         self.timeout.delete()
         if self.cb:
             args = []
@@ -155,7 +157,10 @@ class URLRequest(object):
             self.cb(response, *args)
 
     def failure(self, reason, *args, **kwargs):
-        SILENT or print("failed!", reason, args, kwargs)
+        if not SILENT:
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            print("failed!", reason, args, kwargs)
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         self.timeout.delete()
         self.failed = True
         if self.eb:
