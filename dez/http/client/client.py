@@ -94,8 +94,9 @@ class HTTPClient(object):
 #        print(response.body)
 #        print("========================")
         self.log("__end_body_cb: %s"%(id,))
-        if "504 Gateway Time-out" in response.body.get_value():
-            self.requests[id].failure("timeout")
+        val = response.body.get_value()
+        if "504 Gateway Time-out" in val:
+            self.requests[id].timedout(val)
         else:
             self.requests[id].success(response)
 
@@ -138,10 +139,13 @@ class URLRequest(object):
         self.eb = eb
         self.ebargs = ebargs
         self.body = body
-        self.timeout = event.event(lambda *a, **k : self.failure("timeout", *a, **k))
+        self.timeout = event.event(self.timedout)
         if timeout:
             self.timeout.add(timeout)
         self.failed = False
+
+    def timedout(self, *args, **kwargs):
+        self.failure("timeout", *args, **kwargs)
 
     def success(self, response):
         if self.failed and not SILENT:
