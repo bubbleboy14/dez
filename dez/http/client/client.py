@@ -1,6 +1,6 @@
 from .request import HTTPClientRequest, HTTPClientWriter
 from .response import HTTPClientReader
-from dez.network import SocketClient
+from dez.network.client import SocketClient, SILENT
 from dez.logging import get_logger_getter
 from dez.json import decode, encode
 import event
@@ -8,12 +8,6 @@ import event
 MPBOUND = "53^3n733n"
 MPSTART = "--%s"%(MPBOUND,)
 MPMID = "\r\n%s\r\n"%(MPSTART,)
-
-SILENT = True
-
-def setSilent(si):
-    global SILENT
-    SILENT = si
 
 class HTTPClient(object):
     id = 0
@@ -36,7 +30,9 @@ class HTTPClient(object):
         return txt
 
     def proc_resp(self, resp, cb=None, json=False):
-        return (cb or self.log)(self.jayornay(resp.body.get_value(), json))
+        val = resp.body.get_value()
+#        self.log("proc_resp(%s)"%(val,))
+        return (cb or self.log)(self.jayornay(val, json))
 
     def multipart(self, data):
         bod = []
@@ -44,12 +40,12 @@ class HTTPClient(object):
             bod.append('Content-Disposition: form-data; name="%s"\r\n\r\n%s'%(k, v))
         return "%s\r\n%s\r\n%s--\r\n"%(MPSTART, MPMID.join(bod), MPSTART)
 
-    def fetch(self, host, path="/", port=80, secure=False, headers={}, cb=None, timeout=1, json=False):
+    def fetch(self, host, path="/", port=80, secure=False, headers={}, cb=None, timeout=5, json=False, eb=None):
         url = "%s://%s:%s%s"%(secure and "https" or "http", host, port, path)
         self.log("fetch(%s) with headers: %s"%(url, headers))
-        self.get_url(url, headers=headers, cb=lambda resp : self.proc_resp(resp, cb, json), timeout=timeout)
+        self.get_url(url, headers=headers, cb=lambda resp : self.proc_resp(resp, cb, json), eb=eb, timeout=timeout)
 
-    def post(self, host, path="/", port=80, secure=False, headers={}, data=None, text=None, cb=None, timeout=1, json=False, multipart=False):
+    def post(self, host, path="/", port=80, secure=False, headers={}, data=None, text=None, cb=None, timeout=5, json=False, multipart=False, eb=None):
         url = "%s://%s:%s%s"%(secure and "https" or "http", host, port, path)
         self.log("post(%s) with headers: %s"%(url, headers))
         if data:
@@ -59,7 +55,7 @@ class HTTPClient(object):
                 text = self.multipart(data)
             else:
                 text = encode(data)
-        self.get_url(url, "POST", headers, lambda resp : self.proc_resp(resp, cb, json), body=text, timeout=timeout)
+        self.get_url(url, "POST", headers, lambda resp : self.proc_resp(resp, cb, json), eb=eb, body=text, timeout=timeout)
 
     def get_url(self, url, method='GET', headers={}, cb=None, cbargs=(), eb=None, ebargs=(), body="", timeout=None):
         self.log("get_url: %s"%(url,))
@@ -92,12 +88,17 @@ class HTTPClient(object):
 #        print "asking for response"
 
     def __end_body_cb(self, response, id):
-#        print "getting response"
-#        print response.status_line
-#        print response.headers
-#        print response.body
+#        print("====getting response====")
+#        print(response.status_line)
+#        print(response.headers)
+#        print(response.body)
+#        print("========================")
         self.log("__end_body_cb: %s"%(id,))
-        self.requests[id].success(response)
+        val = response.body.get_value()
+        if "504 Gateway Time-out" in val:
+            self.requests[id].timedout(val)
+        else:
+            self.requests[id].success(response)
 
     def __parse_url(self, url):
         self.log("__parse_url: %s"%(url,))
@@ -138,22 +139,33 @@ class URLRequest(object):
         self.eb = eb
         self.ebargs = ebargs
         self.body = body
-        self.timeout = event.event(self.failure)
+        self.timeout = event.event(self.timedout)
         if timeout:
             self.timeout.add(timeout)
         self.failed = False
-        
+
+    def timedout(self, *args, **kwargs):
+        self.failure("timeout", *args, **kwargs)
+
     def success(self, response):
-        if not self.failed:
-            self.timeout.delete()
-            if self.cb:
-                args = []
-                if self.cbargs:
-                    args = self.cbargs
-                response.request = self
-                self.cb(response, *args)
-        
-    def failure(self, *args, **kwargs):
+        if self.failed and not SILENT:
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            print("BUT I FAILED!")
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        self.timeout.delete()
+        if self.cb:
+            args = []
+            if self.cbargs:
+                args = self.cbargs
+            response.request = self
+            self.cb(response, *args)
+
+    def failure(self, reason, *args, **kwargs):
+        if not SILENT:
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            print("failed!", reason, args, kwargs)
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        self.timeout.delete()
         self.failed = True
         if self.eb:
-            self.eb(*self.ebargs)
+            self.eb(reason, *self.ebargs)

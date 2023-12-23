@@ -2,6 +2,10 @@ import event
 from dez import io
 from dez.network.connection import Connection
 
+SILENT = True
+MIN_CONN = 10
+MAX_CONN = 1000
+
 class SimpleClient(object):
     def __init__(self, b64=False):
         '''If b64=True, the client reads and writes base64-encoded strings'''
@@ -18,13 +22,14 @@ class SocketClient(object):
     def __init__(self):
         self.pools = {}
 
-    def get_connection(self, host, port, cb, args=[], secure=False, eb=None, ebargs=None, timeout=60, max_conn=5, b64=False):
+    def get_connection(self, host, port, cb, args=[], secure=False, eb=None, ebargs=None, timeout=60, max_conn=MAX_CONN, b64=False):
         addr = host, port
         if addr not in self.pools:
             self.pools[addr] = ConnectionPool(host, port, secure, max_conn, b64)
+            MIN_CONN and self.pools[addr].spawn(MIN_CONN)
         self.pools[addr].get_connection(cb, args, timeout)
 
-    def start_connections(self, host, port, num, cb, args=[], secure=False, timeout=None, max_conn=5):
+    def start_connections(self, host, port, num, cb, args=[], secure=False, timeout=None, max_conn=MAX_CONN):
         addr = host, port
         if addr not in self.pools:
             self.pools[addr] = ConnectionPool(host, port, secure, max_conn)
@@ -42,7 +47,7 @@ class SocketClient(object):
 
 
 class ConnectionPool(object):
-    def __init__(self, hostname, port, secure=False, max_connections=5, b64=False):
+    def __init__(self, hostname, port, secure=False, max_connections=MAX_CONN, b64=False):
         self.addr = hostname, port
         self.hostname = hostname
         self.port = port
@@ -53,7 +58,6 @@ class ConnectionPool(object):
 
         # real connections
         self.pool = []
-#        self.in_use = []
 
         # requests for connections
         self.wait_index = 0
@@ -63,6 +67,13 @@ class ConnectionPool(object):
         self.__start_timer = None
         self.__start_count = None
         
+    def log(self, *msg):
+        SILENT or print(*msg)
+
+    def stats(self, msg):
+        self.log(msg, len(self.wait_queue), "queue;", len(self.pool),
+            "pool", self.connection_count, "conns", self.wait_index, "reqs")
+
     def start_connections(self, num, cb, args, timeout=None):
         if self.__start_cb_info:
             raise Exception("StartInProgress")("Only issue one start_connections call in parallel")
@@ -70,39 +81,37 @@ class ConnectionPool(object):
             self.__start_timer = event.timeout(timeout, __start_timeout_cb)
         self.__start_cb_info = (cb, args)
         self.__start_count = num
-        for i in range(num):
-            self.__start_connection()
-        
+        self.spawn(num)
+
     def get_connection(self, cb, args, timeout):
-        if self.pool:
-            c = self.pool.pop()
-#            self.in_use.append(c)
-            return cb(c,*args)
-
-        if self.connection_count < self.max_connections:
-            # make a new connection
-#            print 'open a new connection'
-            self.__start_connection()
-
+        self.stats("GET CONN")
         i = self.wait_index
         timer = event.timeout(timeout, self.__timed_out, i)
         self.wait_timers[i] = cb, args, timer
         self.wait_queue.append(i)
         self.wait_index += 1
+        self._churn()
 
-        self.__service_queue()
+    def _churn(self):
+        self.stats("CHURN")
+        if self.pool:
+            self.__service_queue()
+        elif self.connection_count < self.max_connections:
+            self.__start_connection()
 
-    def __reg_sock(self, sock):
-        Connection(self.addr, sock, self, self.b64).connect()
-        self.connection_count += 1
+    def spawn(self, num):
+        self.stats("STARTING %s CONNS"%(num,))
+        for i in range(num):
+            self.__start_connection()
 
     def __start_connection(self):
         sock = io.client_socket(self.hostname, self.port, self.secure)
-        self.__reg_sock(sock)
+        Connection(self.addr, sock, self, self.b64).connect()
+        self.connection_count += 1
 
     def connection_available(self, conn):
         self.pool.append(conn)
-#        print 'conn available', len(self.pool)
+        self.stats("CONN AVAILABLE")
         if self.__start_count and len(self.pool) == self.__start_count:          
             cb, args = self.__start_cb_info
             self.__start_cb_info = None
@@ -117,9 +126,8 @@ class ConnectionPool(object):
         if conn in self.pool:
             self.pool.remove(conn)
         self.connection_count -= 1
-        if self.wait_queue:
-            self.__start_connection()
-        self.__service_queue()
+        self.stats("CONN CLOSED")
+        self.wait_queue and self._churn()
 
     def __timed_out(self, i):
         cb, args, timer = self.wait_timers[i]
@@ -127,14 +135,15 @@ class ConnectionPool(object):
         del self.wait_timers[i]
         self.wait_queue.remove(i)
         self.connection_count -= 1
+        self.stats("TIMEOUT")
 
     def __service_queue(self):
-        if self.pool and self.wait_queue:
-            i = self.wait_queue.pop()
+        self.stats("SERVICE")
+        while self.pool and self.wait_queue:
+            i = self.wait_queue.pop(0)
             cb, args, timer = self.wait_timers.pop(i)
             timer.delete()
-            
-            c = self.pool.pop()
-#            self.in_use.append(c)
-            cb(c, *args)
-            
+            cb(self.pool.pop(0), *args)
+        if self.wait_queue and self.connection_count < self.max_connections:
+            self.spawn(min(len(self.wait_queue),
+                self.max_connections - self.connection_count))
