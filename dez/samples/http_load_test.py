@@ -19,7 +19,7 @@ def main():
         port = int(args[1])
         number = int(args[2])
         concurrency = int(args[3])
-        pipeliners = len(args) > 3 and int(args[4]) or 0
+        pipeliners = len(args) > 4 and int(args[4]) or 0
     except:
         return error("invalid argument","PORT, NUMBER, and CONCURRENCY (and optional PIPELINERS) must all be integers")
     print("\nLoading Event Listener")
