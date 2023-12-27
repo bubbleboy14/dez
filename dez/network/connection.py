@@ -1,7 +1,6 @@
-import event
+import event, json
 import dez.io
 from dez.buffer import ReadBuffer, WriteBuffer, B64ReadBuffer, B64WriteBuffer
-from dez.json import decode
 from dez.xml_tools import extract_xml, XMLNode
 
 RBUFF = { True: B64ReadBuffer, False: ReadBuffer }
@@ -388,7 +387,7 @@ class JSONReadMode(object):
         i = buffer.find(c, self.checked_index)
         while i != -1:
             try:
-                self.frame = decode(buffer.part(0, i+1))
+                self.frame = json.loads(buffer.part(0, i+1))
                 buffer.move(i+1)
                 self.checked_index = 0
                 return True

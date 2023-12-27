@@ -2,7 +2,7 @@ from .request import HTTPClientRequest, HTTPClientWriter
 from .response import HTTPClientReader
 from dez.network.client import SocketClient, SILENT
 from dez.logging import get_logger_getter
-from dez.json import decode, encode
+from json import loads, dumps
 import event
 
 MPBOUND = "53^3n733n"
@@ -26,7 +26,7 @@ class HTTPClient(object):
 
     def jayornay(self, txt, json=False):
         if json:
-            return decode(txt)
+            return loads(txt)
         return txt
 
     def proc_resp(self, resp, cb=None, json=False):
@@ -54,7 +54,7 @@ class HTTPClient(object):
                 headers['Connection'] = 'keep-alive'
                 text = self.multipart(data)
             else:
-                text = encode(data)
+                text = dumps(data)
         self.get_url(url, "POST", headers, lambda resp : self.proc_resp(resp, cb, json), eb=eb, body=text, timeout=timeout)
 
     def get_url(self, url, method='GET', headers={}, cb=None, cbargs=(), eb=None, ebargs=(), body="", timeout=None):

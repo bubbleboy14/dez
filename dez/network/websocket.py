@@ -1,9 +1,8 @@
-import optparse, struct
+import optparse, struct, json
 from base64 import b64encode, b64decode
 from hashlib import sha1
 from datetime import datetime
 from dez.buffer import ReadBuffer
-from dez.json import encode, decode
 from dez.network.server import SocketDaemon
 from dez.network.client import SimpleClient
 from dez.http.server.response import renderResponse
@@ -220,7 +219,7 @@ class WebSocketConnection(object):
                 self.report('B64 decoded: %s'%(payload,))
             if self.isJSON:
                 try:
-                    payload = decode(payload)
+                    payload = json.loads(payload)
                 except ValueError as e: # connection closed
                     self.report('Closing connection: %s'%(e,))
                     return self.close()
@@ -237,7 +236,7 @@ class WebSocketConnection(object):
 
     def write(self, data, noEncode=False):
         if self.isJSON and not noEncode:
-            data = encode(data)
+            data = json.dumps(data)
         self.report('Sending data: "%s"'%(data,))
         if self.b64:
             data = b64encode(data)
