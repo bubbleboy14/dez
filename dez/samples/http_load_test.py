@@ -10,7 +10,7 @@ def main():
     parser.add_option("-p", "--path", dest="path", default="/", help="path -> http://[DOMAIN]:[PORT][PATH]")
     parser.add_option("-e", "--encrypted", action="store_true", dest="encrypted",
         default=False, help="use encrypted (https) connection")
-    parser.add_option("-r", "--rel", dest="rel", default="epoll", help="change event delivery system (options: pyevent, epoll, poll, select) default: epoll")
+    parser.add_option("-r", "--rel", dest="rel", default="poll", help="change event delivery system (options: poll, kqueue, select, epoll, pyevent) default: poll")
     ops, args = parser.parse_args()
     if len(args) < 4:
         return error("insufficient arguments specified", "dbench requires 4 arguments")
