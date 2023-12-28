@@ -43,7 +43,7 @@ class Piper(object):
         print("\nPipelined %s non-dez (standard http lib) requests in %s seconds"%(self.num, time.time() - self.start))
 
 class LoadTester(object):
-    def __init__(self, host, port, path, number, concurrency, pipeliners, encrypted=False, validator=None):
+    def __init__(self, host, port, path, number, concurrency, pipeliners, encrypted=False, validator=None, chunk=100):
         self.host = host
         self.port = port
         self.path = path
@@ -53,6 +53,7 @@ class LoadTester(object):
         self.concurrency = concurrency
         self.pipeliners = pipeliners
         self.validator = validator
+        self.chunk = chunk
         self.responses = 0
         self.logeach = number < 100
         self.initialize()
@@ -127,7 +128,7 @@ class LoadTester(object):
             display("%s requests per second (without connection time)"%int(self.number / (now - self.t_connection)))
             display("%s requests per second (with connection time)"%int(self.number / (now - self.t_start)))
             self.abort()
-        elif self.logeach or not self.responses % 100:
+        elif self.logeach or not self.responses % self.chunk:
             now = time.time()
             display("%s responses: %s ms"%(self.responses, ms(now, self.t_request)))
             self.t_request = now
