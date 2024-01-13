@@ -13,21 +13,22 @@ from dez.http.server.shield import Shield
 from dez.io import locz
 
 class Router(object):
-    def __init__(self, default_cb, default_args=[], roll_cb=None, rollz={}, get_logger=default_get_logger, whitelist=[], blacklist=[], shield=False):
+    def __init__(self, default_cb, default_args=[], roll_cb=None, rollz={}, get_logger=default_get_logger, whitelist=[], blacklist={}, shield=False):
         self.log = get_logger("Router")
         self.default_cb = default_cb
         self.default_args = default_args
         self.roll_cb = roll_cb
         self.rollz = rollz
         self.whitelist = whitelist
-        if type(blacklist) is not set:
-            blacklist = set(blacklist)
         self.blacklist = blacklist
         self.prefixes = []
         self.regexs = []
         self.shield = shield
-        if shield and type(shield) == bool:
-            self.shield = Shield(blacklist, get_logger)
+        if shield:
+            if type(shield) == bool:
+                self.shield = Shield(blacklist, get_logger)
+            else:
+                self.blacklist = self.shield.blacklist
 
     def register_cb(self, signature, cb, args):
         if "*" in signature: # write better regex detection...
