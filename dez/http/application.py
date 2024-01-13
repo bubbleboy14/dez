@@ -21,7 +21,7 @@ class HTTPApplication(object):
         construct the appropriate RawHTTPResponse or HTTPResponse as required.
     """
 
-    def __init__(self, bind_address, port, get_logger=None, server_name="Dez", certfile=None, keyfile=None, cacerts=None, static_timestamp=False, rollz={}, static_dir_404=False, whitelist=[], blacklist=[], shield=False, mempad=MEMPAD):
+    def __init__(self, bind_address, port, get_logger=None, server_name="Dez", certfile=None, keyfile=None, cacerts=None, static_timestamp=False, rollz={}, static_dir_404=False, whitelist=[], blacklist={}, shield=False, mempad=MEMPAD):
         """start listening on the given port (this doesn't include a call to
            event.dispatch)"""
         self.daemon = HTTPDaemon(bind_address, port, get_logger, certfile, keyfile, cacerts, rollz, whitelist, blacklist, shield)
