@@ -2,22 +2,23 @@ import event
 from dez.logging import default_get_logger
 
 BANNED_PRE = ["/", "~"]
+SKETCH_BITS = ["..", "/.", "/aws", "php"]
 
 LIMIT = 200
 INTERVAL = 2
 
 class Shield(object):
-	def __init__(self, blacklist=set(), get_logger=default_get_logger, on_suss=None, limit=LIMIT, interval=INTERVAL):
+	def __init__(self, blacklist={}, get_logger=default_get_logger, on_suss=None, limit=LIMIT, interval=INTERVAL):
 		self.log = get_logger("Shield")
 		self.ips = {}
 		self.limit = limit
 		self.interval = interval
-		self.blacklist = set(blacklist)
+		self.blacklist = blacklist
 		self.on_suss = on_suss
 		self.checkers = set()
 		self.has_suss = False
 		event.timeout(interval, self.check)
-		self.log.info("initialized with %s blacklisted IPs"%(len(blacklist),))
+		self.log.info("initialized with %s blacklisted IPs"%(len(blacklist.keys()),))
 
 	def ip(self, ip):
 		if ip not in self.ips:
@@ -30,10 +31,9 @@ class Shield(object):
 
 	def suss(self, ip, reason="you know why"):
 		self.has_suss = True
-		self.blacklist.add(ip)
 		self.ips[ip]["suss"] = True
-		self.ips[ip]["message"] = reason
-		self.log.info("suss %s : %s"%(ip, reason))
+		self.blacklist[ip] = self.ips[ip]["message"] = reason
+		self.log.warn("suss %s : %s"%(ip, reason))
 
 	def check(self):
 		for ip in self.checkers:
@@ -58,11 +58,15 @@ class Shield(object):
 			c1 = path[0]
 			if c1 in BANNED_PRE:
 				return True
-		return ".." in path
+		for sb in SKETCH_BITS:
+			if sb in path:
+				return True
+		return False
 
 	def __call__(self, path, ip, fspath=False, count=True):
 		ipdata = self.ip(ip)
 		if ipdata["suss"]:
+			self.log.warn("suss IP %s requested %s"%(ip, path))
 			return True
 		count and self.count(ip)
 		self.path(path, fspath) and self.suss(ip, path)
