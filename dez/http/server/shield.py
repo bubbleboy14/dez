@@ -2,7 +2,7 @@ import event
 from dez.logging import default_get_logger
 
 BANNED_PRE = ["/", "~"]
-SKETCH_BITS = ["..", "/.", "/aws", "php", "boaform", "cf_scripts"]
+SKETCH_BITS = ["..", "/.", "/aws", "php", "boaform", ".cfc"]
 
 LIMIT = 200
 INTERVAL = 2
