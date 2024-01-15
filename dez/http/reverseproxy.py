@@ -20,6 +20,7 @@ class ReverseProxyConnection(object):
         except:
             self.front_conn = None
             return self.log("Transport endpoint is not connected - aborting ReverseProxyConnection")
+        start_data = self.headerize(start_data)
         try:
             SimpleClient().connect(h2, p2, self.onConnect, [start_data])
         except:
@@ -28,17 +29,19 @@ class ReverseProxyConnection(object):
     def log(self, msg):
         self.logger("%s:%s -> %s:%s > %s"%(self.front_host, self.front_port, self.back_host, self.back_port, msg))
 
+    def headerize(self, data):
+        if isinstance(data, str): # seems a little silly...
+            return data.replace("\r\nHost: ", "\r\ndrp_ip: %s\r\nHost: "%(self.front_conn.ip,))
+        else:
+            return data.replace(b"\r\nHost: ", b"\r\ndrp_ip: %s\r\nHost: "%(self.front_conn.ip.encode(),))
+
     def retry(self):
         self.log("server not ready (try again)")
         self.front_conn.write("<html><head><script>setTimeout(function(){location.reload();},2000);</script></head><body>wait for it...</body></html>")
         self.front_conn.soft_close()
 
     def relay(self, data):
-        if isinstance(data, str): # seems a little silly...
-            data = data.replace("\r\nHost: ", "\r\ndrp_ip: %s\r\nHost: "%(self.front_conn.ip,))
-        else:
-            data = data.replace(b"\r\nHost: ", b"\r\ndrp_ip: %s\r\nHost: "%(self.front_conn.ip.encode(),))
-        self.back_conn.write(data)
+        self.back_conn.write(self.headerize(data))
 
     def onConnect(self, conn, start_data):
         self.log("Connection established")
