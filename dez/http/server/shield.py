@@ -3,7 +3,7 @@ from dez.logging import default_get_logger
 
 BANNED_PRE = ["/", "~"]
 SKETCH_BITS = ["..", "/.", ".cfc", "/aws", "/FD87",
-	"php", "boaform", "goform", "cav/client"]
+	"php", "boaform", "goform", "cav/client", "/ajax"]
 
 LIMIT = 200
 INTERVAL = 2
