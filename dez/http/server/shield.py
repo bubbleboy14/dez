@@ -2,8 +2,8 @@ import event
 from dez.logging import default_get_logger
 
 BANNED_PRE = ["/", "~"]
-SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".aspx",
-	"/aws", "/ajax", "/resolve", "/query", "/dns-query",
+SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx",
+	"/aws", "/sdk", "/ajax", "/resolve", "/query", "/dns-query",
 	"php", "boaform", "goform", "cgi", "GponForm",
 	"/v1/", "/cf_scripts/", "/onvif/", "/FD87"]
 
