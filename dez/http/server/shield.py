@@ -5,7 +5,7 @@ BANNED_PRE = ["/", "~"]
 SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx",
 	"/aws", "/sdk", "/ajax", "/resolve", "/query", "/dns-query",
 	"php", "boaform", "goform", "cgi", "GponForm",
-	"/v1/", "/cf_scripts/", "/onvif/", "/FD87"]
+	"/v1/", "/cf_scripts/", "/onvif/", "/FD87", ".html/"]
 
 LIMIT = 200
 INTERVAL = 2
