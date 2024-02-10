@@ -31,7 +31,7 @@ def ssl_handshake(sock, cb, *args):
 
 def server_socket(port, certfile=None, keyfile=None, cacerts=None):
     ''' Return a listening socket bound to the given interface and port. '''
-    if socket.has_ipv6:
+    if False:#socket.has_ipv6:
         fam = socket.AF_INET6
         host = '::1'
     else:
