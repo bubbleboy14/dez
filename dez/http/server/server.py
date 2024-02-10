@@ -57,6 +57,7 @@ class HTTPDaemon(object):
         self.log.debug("accept_connection")
         try:
             sock, addr = sock.accept()
+            addr = (addr[0], addr[1]) # for ipv6
             if self.secure:
                 io.ssl_handshake(sock, self.handshake_cb(sock, addr))
             else:

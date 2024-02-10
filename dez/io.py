@@ -31,10 +31,16 @@ def ssl_handshake(sock, cb, *args):
 
 def server_socket(port, certfile=None, keyfile=None, cacerts=None):
     ''' Return a listening socket bound to the given interface and port. '''
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if socket.has_ipv6:
+        fam = socket.AF_INET6
+        host = '::1'
+    else:
+        fam = socket.AF_INET
+        host = ''
+    sock = socket.socket(fam, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.setblocking(0)
-    sock.bind(('', port))
+    sock.bind((host, port))
     sock.listen(LQUEUE_SIZE)
     if certfile:
         if hasattr(ssl, "SSLContext"):
