@@ -16,8 +16,7 @@ class HTTPDaemon(object):
         self.secure = bool(certfile)
         self.counter = Counter()
         self.log.info("Listening on %s:%s" % (host, port))
-        self.sock = io.server_socket(self.port, certfile, keyfile, cacerts)
-        self.listen = event.read(self.sock, self.accept_connection)
+        io.listen(self.port, self.reg_conn, certfile, keyfile, cacerts)
         self.router = Router(self.default_cb, roll_cb=self.roll_cb, rollz=rollz, get_logger=get_logger, whitelist=whitelist, blacklist=blacklist, shield=shield)
 
     def register_prefix(self, prefix, cb, args=[]):
@@ -48,24 +47,10 @@ class HTTPDaemon(object):
     def default_cb(self, request):
         return self.default_404_cb(request)
 
-    def handshake_cb(self, sock, addr):
+    def reg_conn(self, sock, addr):
         def cb():
             HTTPConnection(sock, addr, self.router, self.get_logger, self.counter)
         return cb
-
-    def accept_connection(self):
-        self.log.debug("accept_connection")
-        try:
-            sock, addr = self.sock.accept()
-            addr = (addr[0], addr[1]) # for ipv6
-            cb = self.handshake_cb(sock, addr)
-            if self.secure:
-                io.ssl_handshake(sock, cb)
-            else:
-                cb()
-        except io.socket.error as e:
-            self.log.info("abandoning connection on socket error: %s"%(e,))
-        return True
 
 class HTTPConnection(object):
     id = 0
