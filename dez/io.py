@@ -48,7 +48,7 @@ def listen(port, regConn, certfile=None, keyfile=None, cacerts=None):
         sock = server_socket(port, certfile, keyfile, cacerts, ipv)
         event.read(sock, accept_connection, sock, regConn, bool(certfile))
 
-def server_socket(port, certfile=None, keyfile=None, cacerts=None, ipv="ipv6"):
+def server_socket(port, certfile=None, keyfile=None, cacerts=None, ipv="dual"):
     ''' Return a listening socket bound to the given interface and port. '''
     if ipv == "dual":
         sock = socket.create_server(("", port), family=socket.AF_INET6,
