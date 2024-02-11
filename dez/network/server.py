@@ -28,11 +28,10 @@ class SocketDaemon(object):
             cb = self.handshake_cb(sock, addr)
             if self.secure:
                 io.ssl_handshake(sock, cb)
-                return True
+            else:
+                cb()
         except io.socket.error as e:
             self.log.info("abandoning connection on socket error: %s"%(e,))
-            return True
-        cb()
         return True
 
     def start(self):
