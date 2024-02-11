@@ -29,6 +29,23 @@ def ssl_handshake(sock, cb, *args):
             cb(*args)
     event.timeout(SSL_HANDSHAKE_TICK, shaker)
 
+def accept_connection(sock, regConn, secure):
+    try:
+        sock, addr = sock.accept()
+        addr = (addr[0], addr[1]) # for ipv6
+        cb = regConn(sock, addr)
+        if secure:
+            ssl_handshake(sock, cb)
+        else:
+            cb()
+    except socket.error as e:
+        print("abandoning connection on socket error: %s"%(e,))
+    return True
+
+def listen(port, regConn, certfile=None, keyfile=None, cacerts=None):
+    sock = server_socket(port, certfile, keyfile, cacerts)
+    event.read(sock, accept_connection, sock, regConn, bool(certfile))
+
 def server_socket(port, certfile=None, keyfile=None, cacerts=None):
     ''' Return a listening socket bound to the given interface and port. '''
     if False:#socket.has_ipv6:
