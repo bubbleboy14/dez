@@ -11,6 +11,7 @@ SSL_HANDSHAKE_DEADLINE = 5
 #   - but TLSv1 sux :(
 PY27_OLD_CIPHERS = "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:ECDH+HIGH:DH+HIGH:RSA+HIGH:!aNULL:!eNULL:!MD5:!DSS"
 locz = ["localhost", "0.0.0.0", "127.0.0.1"]
+ipversions = ["ipv4", "ipv6"]
 
 def ssl_handshake(sock, cb, *args):
     deadline = time.time() + SSL_HANDSHAKE_DEADLINE
@@ -43,12 +44,13 @@ def accept_connection(sock, regConn, secure):
     return True
 
 def listen(port, regConn, certfile=None, keyfile=None, cacerts=None):
-    sock = server_socket(port, certfile, keyfile, cacerts)
-    event.read(sock, accept_connection, sock, regConn, bool(certfile))
+    for ipv in ipversions:
+        sock = server_socket(port, certfile, keyfile, cacerts, ipv)
+        event.read(sock, accept_connection, sock, regConn, bool(certfile))
 
-def server_socket(port, certfile=None, keyfile=None, cacerts=None):
+def server_socket(port, certfile=None, keyfile=None, cacerts=None, ipv="ipv6"):
     ''' Return a listening socket bound to the given interface and port. '''
-    if False:#socket.has_ipv6:
+    if ipv == "ipv6":
         fam = socket.AF_INET6
         host = '::1'
     else:
