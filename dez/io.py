@@ -11,7 +11,7 @@ SSL_HANDSHAKE_DEADLINE = 5
 #   - but TLSv1 sux :(
 PY27_OLD_CIPHERS = "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:ECDH+HIGH:DH+HIGH:RSA+HIGH:!aNULL:!eNULL:!MD5:!DSS"
 locz = ["localhost", "0.0.0.0", "127.0.0.1", "::1"]
-ipversions = ["ipv4", "ipv6"]
+ipversions = ["dual"]#["ipv4", "ipv6"]
 
 def ssl_handshake(sock, cb, *args):
     deadline = time.time() + SSL_HANDSHAKE_DEADLINE
@@ -50,17 +50,22 @@ def listen(port, regConn, certfile=None, keyfile=None, cacerts=None):
 
 def server_socket(port, certfile=None, keyfile=None, cacerts=None, ipv="ipv6"):
     ''' Return a listening socket bound to the given interface and port. '''
-    if ipv == "ipv6":
-        fam = socket.AF_INET6
-        host = '::1'
+    if ipv == "dual":
+        sock = socket.create_server(("", port), family=socket.AF_INET6,
+            backlog=LQUEUE_SIZE, reuse_port=True, dualstack_ipv6=True)
+        sock.setblocking(0)
     else:
-        fam = socket.AF_INET
-        host = ''
-    sock = socket.socket(fam, socket.SOCK_STREAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.setblocking(0)
-    sock.bind((host, port))
-    sock.listen(LQUEUE_SIZE)
+        if ipv == "ipv6":
+            fam = socket.AF_INET6
+            host = '::1'
+        else:
+            fam = socket.AF_INET
+            host = ''
+        sock = socket.socket(fam, socket.SOCK_STREAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.setblocking(0)
+        sock.bind((host, port))
+        sock.listen(LQUEUE_SIZE)
     if certfile:
         if hasattr(ssl, "SSLContext"):
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
