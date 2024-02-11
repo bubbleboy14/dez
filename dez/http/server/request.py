@@ -1,4 +1,5 @@
 import event, os
+from dez.io import locz
 from dez.http.errors import HTTPProtocolError
 
 class HTTPRequest(object):
@@ -85,7 +86,7 @@ class HTTPRequest(object):
                 return True
             try:
                 key, value = self.conn.buffer.part(0, index).split(': ', 1)
-                if key == "drp_ip" and self.ip == "127.0.0.1":
+                if key == "drp_ip" and self.ip in locz:
                     self.real_ip = self.conn.real_ip = value
             except ValueError as e:
                 self.log.debug("state_headers", "ValueError", e)
