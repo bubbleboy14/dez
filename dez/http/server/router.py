@@ -51,9 +51,6 @@ class Router(object):
         return cmp(len(a[0]),len(b[0]))
 
     def _check(self, url, req=None):
-        self.log.access("processing url: %s"%(url,))
-        if "%0D+" in url:
-            url = url.replace("%0D+", "")
         if req and (self.shield or self.whitelist or self.blacklist or self.rollz):
             ip = req.real_ip
             ref = req.headers.get("referer", "")

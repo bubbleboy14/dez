@@ -47,6 +47,9 @@ class HTTPRequest(object):
         self.log.debug("state_action", self.action)
         try:
             self.method, self.url, self.protocol = self.action.split(' ', 2)
+            if "%0D+" in self.url:
+                self.log.access("stripping carriage return from url: %s"%(self.url,))
+                self.url = self.url.replace("%0D+", "")
             p, qs = self.url, ""
             if "?" in self.url:
                 p, qs = self.url.split("?")
