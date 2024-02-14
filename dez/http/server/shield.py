@@ -38,6 +38,17 @@ class Shield(object):
 		self.blacklist[ip] = self.ips[ip]["message"] = reason
 		self.log.warn("suss %s : %s"%(ip, reason))
 
+	def unsuss(self, ip, reason="oops"):
+		self.has_suss = True
+		sig = "unsuss(%s)"%(ip,)
+		if ip in self.ips:
+			self.ips[ip]["suss"] = False
+			self.ips[ip]["message"] += " - reverted because " + reason
+			self.log.warn("%s unflagging IP: %s"%(sig, self.ips[ip]["message"]))
+		if ip in self.blacklist:
+			del self.blacklist[ip]
+			self.log.warn("%s unblacklisting IP"%(sig,))
+
 	def check(self):
 		for ip in self.checkers:
 			ipdata = self.ip(ip)
