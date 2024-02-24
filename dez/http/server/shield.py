@@ -3,7 +3,7 @@ from dez.logging import default_get_logger
 
 BANNED_PRE = ["/", "~"]
 SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx",
-	"/aws", "/sdk", "/ajax", "/resolve", "/query", "/dns-query",
+	"/aws", "/sdk", "/ajax", "/resolve", "/query", "/dns-query", "/global-protect",
 	"php", "boaform", "goform", "cgi", "GponForm",
 	"/v1/", "/cf_scripts/", "/onvif/", "/FD87", ".html/", "/categories/Yud"]
 
