@@ -1,4 +1,4 @@
-import json, random
+import os, sys, json, random
 from dez.network import SocketDaemon, SimpleClient
 from dez.http.counter import Counter
 from dez.http.server import HTTPDaemon
@@ -173,7 +173,6 @@ class ReverseProxy(object):
 
 def error(msg):
     print("error:",msg)
-    import sys
     sys.exit(0)
 
 def get_controller(port, verbose, cert, key, monitor):
@@ -208,6 +207,8 @@ def parse_options():
         help="if specified, 302 redirect ALL requests to https (port 443) application at specified host ('auto' leaves host unchanged) - ignores config")
     parser.add_option("-m", "--monitor", dest="monitor", default=None,
         help="listen on specified port for /_report requests (default: None)")
+    parser.add_option("-e", "--errlog", dest="errlog", default=None,
+        help="log file for error messages (default: None)")
     return parser.parse_args()
 
 def process_targets(domains, controller):
@@ -218,9 +219,10 @@ def process_targets(domains, controller):
 
 def startreverseproxy(options=None, start=True):
     global BIG_302
-    import os
     if not options:
         options, arguments = parse_options()    
+    if options.errlog:
+        sys.stderr = open(options.errlog, "a")
     BIG_302 = not options.override_redirect
     controller = get_controller(options.port, options.verbose, options.cert, options.key, options.monitor)
     if options.ssl_redirect:
