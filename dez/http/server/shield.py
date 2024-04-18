@@ -6,7 +6,8 @@ SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".action",
 	"/aws", "/sdk", "/ajax", "/resolve", "/query", "/dns-query", "/live_env",
 	"/global-protect", "php", "boaform", "goform", "cgi", "GponForm",
 	"/luci/", "/dana-na/", "/laravel/", "/redmine/", "/webtools/", "/autodiscover/",
-	"/v1/", "/cf_scripts/", "/onvif/", "/FD87", ".html/", "/categories/Yud"]
+	"/v1/", "/cf_scripts/", "/onvif/", "/seeyon/", "/stalker_portal/", "/owa/",
+	"/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud"]
 
 LIMIT = 200
 INTERVAL = 2
