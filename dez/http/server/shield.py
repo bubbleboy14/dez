@@ -2,12 +2,15 @@ import event
 from dez.logging import default_get_logger
 
 BANNED_PRE = ["/", "~"]
-SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".action",
+SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".alfa", ".action",
 	"/aws", "/sdk", "/ajax", "/resolve", "/query", "/dns-query", "/live_env",
-	"/global-protect", "php", "boaform", "goform", "cgi", "GponForm",
-	"/luci/", "/dana-na/", "/laravel/", "/redmine/", "/webtools/", "/autodiscover/",
-	"/v1/", "/cf_scripts/", "/onvif/", "/seeyon/", "/stalker_portal/", "/owa/",
-	"/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud"]
+	"/global-protect", "php", "boaform", "goform", "cgi", "GponForm", "elfinder",
+	"/dana-na/", "/laravel/", "/redmine/", "/webtools/", "/autodiscover/",
+	"/v1/", "/cf_scripts/", "/onvif/", "/seeyon/", "/stalker_portal/", "/remote/",
+	"/owa/", "/totp/", "/vpnsvc/", "/pfblockerng/", "/ztp/", "/owncloud/",
+	"/cms/", "/docker/", "/RDWeb/", "/kcfinder/", "/kubepi/", "/dup-installer/",
+	"/private/", "/system/", "/zb_system/", "/cp/", "/_profiler/", "/__tests__/",
+	"/luci", "/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud"]
 
 LIMIT = 200
 INTERVAL = 2
