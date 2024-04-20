@@ -7,7 +7,7 @@ def parse_input():
     parser.add_option("-p", "--port", dest="port", default="8888", help="run test on PORT. default: 8888")
     parser.add_option("-d", "--domain", dest="domain", default="localhost", help="run test on DOMAIN. default: localhost")
     parser.add_option("-f", "--function", dest="function", default="main", help="run this FUNCTION in test module. default: main")
-    parser.add_option("-e", "--event", dest="event", default="pyevent", help="(event listener) notification method. default: pyevent. options: %s"%str(rel.supported_methods)[1:-1])
+    parser.add_option("-e", "--event", dest="event", default="poll", help="(event listener) notification method. default: poll. options: %s"%str(rel.supported_methods)[1:-1])
     parser.add_option("-r", "--report", action="store_true", dest="report", default=False, help="(event listener) status report every 5 seconds (non-pyevent only)")
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="(event listener) verbose output")
     parser.add_option("-s", "--strict", action="store_true", dest="strict", default=False, help="(event listener) _only_ try specified notification method")

@@ -42,7 +42,7 @@ def response_body_cb(response, size, request):
     response.body.reset()
         
 def main(**kwargs):
-    event.signal(2, event.abort)
+    rel.signal(2, rel.abort)
     server = HTTPDaemon("", kwargs['port'])
     server.register_prefix("/", proxy)
-    event.dispatch()
+    rel.dispatch()

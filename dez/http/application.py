@@ -6,7 +6,7 @@ from dez.http.wsgithreadpool import WSGIThreadPool
 from dez.http.proxy.proxy import proxy
 from dez.http.errors import HTTPProtocolError
 
-import event
+import rel
 try:
     from cgi import parse_qsl # else py>=3.8(?)
 except:
@@ -23,7 +23,7 @@ class HTTPApplication(object):
 
     def __init__(self, bind_address, port, get_logger=None, server_name="Dez", certfile=None, keyfile=None, cacerts=None, static_timestamp=False, rollz={}, static_dir_404=False, whitelist=[], blacklist={}, shield=False, mempad=MEMPAD):
         """start listening on the given port (this doesn't include a call to
-           event.dispatch)"""
+           rel.dispatch)"""
         self.daemon = HTTPDaemon(bind_address, port, get_logger, certfile, keyfile, cacerts, rollz, whitelist, blacklist, shield)
         self.host = bind_address
         self.port = port
@@ -32,16 +32,16 @@ class HTTPApplication(object):
         self.shield = self.daemon.router.shield
 
     def start(self):
-        """calls event.dispatch"""
-        event.signal(2, self.stop)
+        """calls rel.dispatch"""
+        rel.signal(2, self.stop)
         if self.wsgi_pool:
             self.wsgi_pool.start()
-        event.dispatch()
+        rel.dispatch()
 
     def stop(self):
         if self.wsgi_pool:
             self.wsgi_pool.stop()
-        event.abort()
+        rel.abort()
         
     def add_proxy_rule(self, prefix, dest_host, dest_port):
         """ Adds a prefix that will be proxied to the destination

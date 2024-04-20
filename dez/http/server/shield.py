@@ -1,4 +1,4 @@
-import event
+import rel
 from dez.logging import default_get_logger
 
 BANNED_PRE = ["/", "~"]
@@ -25,7 +25,7 @@ class Shield(object):
 		self.on_suss = on_suss
 		self.checkers = set()
 		self.has_suss = False
-		event.timeout(interval, self.check)
+		rel.timeout(interval, self.check)
 		self.log.info("initialized with %s blacklisted IPs"%(len(blacklist.keys()),))
 
 	def ip(self, ip):

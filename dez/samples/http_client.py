@@ -1,10 +1,10 @@
 from dez.http.client import HTTPClientRequest, HTTPClient
-import event
+import rel
 
 def main(**kwargs):
     client = HTTPClient()
     client.get_connection(kwargs['domain'], kwargs['port'], get_conn_cb, [])
-    event.dispatch()
+    rel.dispatch()
     
 def get_conn_cb(conn):
     print('GOT conn', conn)
@@ -31,4 +31,4 @@ def response_completed_cb(body, response):
     print(response.headers)
     print("#########")
     print("body len:", len(body))
-    event.abort()    
+    rel.abort()    

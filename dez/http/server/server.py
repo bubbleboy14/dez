@@ -1,4 +1,4 @@
-import event
+import rel
 from dez import io
 from dez.buffer import ReadBuffer, WriteBuffer
 from dez.logging import default_get_logger
@@ -75,10 +75,10 @@ class HTTPConnection(object):
         self.current_eb = None
         self.current_ebargs = None
         self.__close_cb = None
-        self._timeout = event.timeout(None, self.timeout)
-        self.wevent = event.write(self.sock, self.write_ready)
-        self.revent = event.read(self.sock, self.read_ready)
-        self.eevent = event.error(self.sock, self.error)
+        self._timeout = rel.timeout(None, self.timeout)
+        self.wevent = rel.write(self.sock, self.write_ready)
+        self.revent = rel.read(self.sock, self.read_ready)
+        self.eevent = rel.error(self.sock, self.error)
         self.buffer = ReadBuffer()
         self.write_buffer = WriteBuffer()
         self.start_request()

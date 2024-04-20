@@ -1,4 +1,4 @@
-import event, io
+import rel, io
 from six import binary_type
 
 KEEPALIVE = 300
@@ -34,7 +34,7 @@ class HTTPResponse(object):
             self.keep_alive = True
             self.headers['Connection'] = 'keep-alive'
             self.headers['Keep-Alive'] = str(KEEPALIVE)
-            self.timeout = event.timeout(KEEPALIVE, self.end_or_close)
+            self.timeout = rel.timeout(KEEPALIVE, self.end_or_close)
 
     def __repr__(self):
         return "<HTTPResponse(%s)>"%(self.id,)
@@ -118,7 +118,7 @@ class HTTPVariableResponse(object):
                 self.keep_alive = True
                 self.headers['Connection'] = 'keep-alive'
                 self.headers['Keep-Alive'] = str(KEEPALIVE)
-                self.timeout = event.timeout(KEEPALIVE, self.end_or_close)
+                self.timeout = rel.timeout(KEEPALIVE, self.end_or_close)
 
     def __setitem__(self, key, val):
         self.headers[key] = val

@@ -1,4 +1,4 @@
-import event
+import rel
 from dez.http.server import HTTPDaemon, HTTPResponse, RawHTTPResponse
 
 def test_dispatch(request):
@@ -41,8 +41,8 @@ def noop():
 def main(**kwargs):
     httpd = HTTPDaemon(kwargs['domain'], kwargs['port'])
     httpd.register_prefix("/index", test_dispatch)
-    event.timeout(1, noop)
-    event.dispatch()
+    rel.timeout(1, noop)
+    rel.dispatch()
 
 def profile(**kwargs):
     import hotshot

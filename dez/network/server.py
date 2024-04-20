@@ -1,4 +1,4 @@
-import event
+import rel
 from dez import io
 from dez.logging import default_get_logger
 from dez.network.connection import Connection
@@ -22,5 +22,5 @@ class SocketDaemon(object):
         return cb
 
     def start(self):
-        event.signal(2, event.abort)
-        event.dispatch()
+        rel.signal(2, rel.abort)
+        rel.dispatch()

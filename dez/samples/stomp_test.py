@@ -6,7 +6,7 @@ def _key():
     return ''.join([random.choice('0123456789ABCDEF') for i in range(8)])
 
 def _deliver(d):
-    event.timeout(random.random(),random.choice([d.success,d.failure]))
+    rel.timeout(random.random(),random.choice([d.success,d.failure]))
 
 class TestDaemon(object):
     def request_cb(self, frame, *args):

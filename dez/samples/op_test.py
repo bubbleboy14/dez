@@ -3,7 +3,7 @@ from orbited.op.message import OrbitMessage
 import random,event
 
 def deliver(d):
-    event.timeout(random.random(),random.choice([d.success,d.failure]))
+    rel.timeout(random.random(),random.choice([d.success,d.failure]))
 
 class TestApp(object):
     def __init__(self):
