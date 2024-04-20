@@ -31,6 +31,7 @@ class Connection(object):
         self.__soft_close = False
         self.revent = None
         self.wevent = None
+        self.eevent = None
         if not self.pool:
             self.__start()
 
@@ -51,6 +52,7 @@ class Connection(object):
     def __start(self):
         self.wevent = event.write(self.sock, self.__write_ready)
         self.revent = event.read(self.sock, self.__read_ready)
+        self.eevent = event.error(self.sock, self.error)
         self.wevent.delete()
 
     def __connected_cb(self):
@@ -65,6 +67,9 @@ class Connection(object):
         self.connect_timer.delete()
         self.connect_timer = None
         self.close("connect timed out")
+
+    def error(self):
+        self.close("unexpected")
 
     def soft_close(self, reason=""):
         if self.__write_chunk or self.__write_queue:
@@ -81,6 +86,9 @@ class Connection(object):
         if self.wevent:
             self.wevent.delete()
             self.wevent = None
+        if self.eevent:
+            self.eevent.delete()
+            self.eevent = None
         self.sock.close()
         self.__clear_writes(reason)
         if self.pool:

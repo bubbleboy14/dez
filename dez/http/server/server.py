@@ -78,6 +78,7 @@ class HTTPConnection(object):
         self._timeout = event.timeout(None, self.timeout)
         self.wevent = event.write(self.sock, self.write_ready)
         self.revent = event.read(self.sock, self.read_ready)
+        self.eevent = event.error(self.sock, self.error)
         self.buffer = ReadBuffer()
         self.write_buffer = WriteBuffer()
         self.start_request()
@@ -106,6 +107,9 @@ class HTTPConnection(object):
     def timeout(self):
         self.log.debug("TIMEOUT (request %s) -- closing!"%(self.request.id,))
         self.close()
+
+    def error(self):
+        self.fry("unexpected")
 
     def fry(self, reason=""):
         self.log.debug("fried", reason)
@@ -143,6 +147,7 @@ class HTTPConnection(object):
         self.request.dereference()
         self.revent.dereference()
         self.wevent.dereference()
+        self.eevent.dereference()
         self.sock.close()
         if self.current_eb:
             self.log.error("close - triggering current_eb!")
