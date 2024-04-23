@@ -3,7 +3,6 @@ import rel
 import time
 
 def main(**kwargs):
-#    rel.initialize(["pyevent"])
     client = HTTPClient()
     for i in range(20):
 #        client.get_url("http://www.google.com/", cb=response_cb)
