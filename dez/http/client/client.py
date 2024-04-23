@@ -3,7 +3,7 @@ from .response import HTTPClientReader
 from dez.network.client import SocketClient, SILENT
 from dez.logging import get_logger_getter
 from json import loads, dumps
-import event
+import rel
 
 MPBOUND = "53^3n733n"
 MPSTART = "--%s"%(MPBOUND,)
@@ -139,7 +139,7 @@ class URLRequest(object):
         self.eb = eb
         self.ebargs = ebargs
         self.body = body
-        self.timeout = event.event(self.timedout)
+        self.timeout = rel.event(self.timedout)
         if timeout:
             self.timeout.add(timeout)
         self.failed = False

@@ -9,9 +9,9 @@ def http_client(silent=SILENT):
 	return HC
 
 def do_dispatch():
-	import event
-	event.signal(2, event.abort)
-	event.dispatch()
+	import rel
+	rel.signal(2, rel.abort)
+	rel.dispatch()
 
 def fetch(host, path="/", port=80, secure=False, headers={}, cb=None, timeout=10, json=False, dispatch=False, silent=SILENT, eb=None):
 	http_client(silent).fetch(host, path, port, secure, headers, cb, timeout, json, eb)

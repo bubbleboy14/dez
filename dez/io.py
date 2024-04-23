@@ -1,4 +1,4 @@
-import socket, ssl, time, event
+import socket, ssl, time, rel
 LQUEUE_SIZE = 4096
 BUFFER_SIZE = 65536 # higher values (previously 131072) break ssl sometimes
 SSL_HANDSHAKE_TICK = 0.002
@@ -28,7 +28,7 @@ def ssl_handshake(sock, cb, *args):
                 return True
         else:
             cb(*args)
-    event.timeout(SSL_HANDSHAKE_TICK, shaker)
+    rel.timeout(SSL_HANDSHAKE_TICK, shaker)
 
 def accept_connection(sock, regConn, secure):
     try:
@@ -46,7 +46,7 @@ def accept_connection(sock, regConn, secure):
 def listen(port, regConn, certfile=None, keyfile=None, cacerts=None):
     for ipv in ipversions:
         sock = server_socket(port, certfile, keyfile, cacerts, ipv)
-        event.read(sock, accept_connection, sock, regConn, bool(certfile))
+        rel.read(sock, accept_connection, sock, regConn, bool(certfile))
 
 def server_socket(port, certfile=None, keyfile=None, cacerts=None, ipv="dual"):
     ''' Return a listening socket bound to the given interface and port. '''

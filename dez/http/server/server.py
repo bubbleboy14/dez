@@ -1,4 +1,4 @@
-import event
+import rel
 from dez import io
 from dez.buffer import ReadBuffer, WriteBuffer
 from dez.logging import default_get_logger
@@ -75,9 +75,10 @@ class HTTPConnection(object):
         self.current_eb = None
         self.current_ebargs = None
         self.__close_cb = None
-        self._timeout = event.timeout(None, self.timeout)
-        self.wevent = event.write(self.sock, self.write_ready)
-        self.revent = event.read(self.sock, self.read_ready)
+        self._timeout = rel.timeout(None, self.timeout)
+        self.wevent = rel.write(self.sock, self.write_ready)
+        self.revent = rel.read(self.sock, self.read_ready)
+        self.eevent = rel.error(self.sock, self.error)
         self.buffer = ReadBuffer()
         self.write_buffer = WriteBuffer()
         self.start_request()
@@ -106,6 +107,9 @@ class HTTPConnection(object):
     def timeout(self):
         self.log.debug("TIMEOUT (request %s) -- closing!"%(self.request.id,))
         self.close()
+
+    def error(self):
+        self.fry("unexpected")
 
     def fry(self, reason=""):
         self.log.debug("fried", reason)
@@ -143,6 +147,7 @@ class HTTPConnection(object):
         self.request.dereference()
         self.revent.dereference()
         self.wevent.dereference()
+        self.eevent.dereference()
         self.sock.close()
         if self.current_eb:
             self.log.error("close - triggering current_eb!")

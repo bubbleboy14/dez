@@ -1,4 +1,4 @@
-import event
+import rel
 from dez.network.server import SocketDaemon
 from dez.network.websocket import WebSocketDaemon
 from dez.http.server import HTTPDaemon
@@ -32,12 +32,12 @@ class SocketController(object):
     def _abort(self):
         if self.onstop:
             self.onstop()
-        event.abort()
+        rel.abort()
 
     def start(self, onstop=False):
         if not self.daemons:
             print("SocketController doesn't know where to listen. Use register_address(hostname, port, callback) to register server addresses.")
             return
         self.onstop = onstop
-        event.signal(2, self._abort)
-        event.dispatch()
+        rel.signal(2, self._abort)
+        rel.dispatch()

@@ -1,4 +1,4 @@
-import event, os
+import rel, os
 from dez.io import locz
 from dez.http.errors import HTTPProtocolError
 

@@ -2,7 +2,7 @@ from dez.logging import default_get_logger
 from dez.http.server import HTTPResponse, HTTPVariableResponse
 from dez.http.cache import NaiveCache, INotifyCache, TEXTEXTS, MEMPAD
 from dez import io
-import os, event
+import os, rel
 try:
     from urllib import parse # py3
 except:
@@ -146,4 +146,4 @@ class StaticHandler(StaticStore):
             openfile.close()
             return response.end_or_close()
 #        self.cache.add_content(path, data)
-        event.timeout(0, response.write, data, self.__write_file, [response, openfile, path, limit])
+        rel.timeout(0, response.write, data, self.__write_file, [response, openfile, path, limit])

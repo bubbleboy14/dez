@@ -1,5 +1,5 @@
 from dez.network.client import SocketClient
-import event
+import rel
 def main(**kwargs):
     port = kwargs['port']
     domain = kwargs['domain']
@@ -14,8 +14,8 @@ def main(**kwargs):
     x.get_connection(domain, port, get_connection_cb, [ "hello3" ])
     x.get_connection(domain, port, get_connection_cb, [ "hello2" ])
     x.get_connection(domain, port, get_connection_cb, [ "hello1" ])
-    event.signal(2, event.abort)
-    event.dispatch()
+    rel.signal(2, rel.abort)
+    rel.dispatch()
 
 def get_connection_cb(conn, payload):
     conn.write(payload, hello_world_cb, [conn])

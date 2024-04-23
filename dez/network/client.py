@@ -1,4 +1,4 @@
-import event
+import rel
 from dez import io
 from dez.network.connection import Connection
 
@@ -15,8 +15,8 @@ class SimpleClient(object):
         sock = io.client_socket(host, port)
         self.conn = Connection((host, port), sock, b64=self.b64)
         cb(self.conn, *args)
-        event.signal(2, event.abort)
-        event.dispatch()
+        rel.signal(2, rel.abort)
+        rel.dispatch()
 
 class SocketClient(object):
     def __init__(self):
@@ -78,7 +78,7 @@ class ConnectionPool(object):
         if self.__start_cb_info:
             raise Exception("StartInProgress")("Only issue one start_connections call in parallel")
         if timeout:
-            self.__start_timer = event.timeout(timeout, __start_timeout_cb)
+            self.__start_timer = rel.timeout(timeout, __start_timeout_cb)
         self.__start_cb_info = (cb, args)
         self.__start_count = num
         self.spawn(num)
@@ -86,7 +86,7 @@ class ConnectionPool(object):
     def get_connection(self, cb, args, timeout):
         self.stats("GET CONN")
         i = self.wait_index
-        timer = event.timeout(timeout, self.__timed_out, i)
+        timer = rel.timeout(timeout, self.__timed_out, i)
         self.wait_timers[i] = cb, args, timer
         self.wait_queue.append(i)
         self.wait_index += 1

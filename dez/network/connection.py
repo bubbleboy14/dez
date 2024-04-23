@@ -1,4 +1,4 @@
-import event, json
+import rel, json
 import dez.io
 from dez.buffer import ReadBuffer, WriteBuffer, B64ReadBuffer, B64WriteBuffer
 from dez.xml_tools import extract_xml, XMLNode
@@ -31,6 +31,7 @@ class Connection(object):
         self.__soft_close = False
         self.revent = None
         self.wevent = None
+        self.eevent = None
         if not self.pool:
             self.__start()
 
@@ -41,16 +42,17 @@ class Connection(object):
             self.__read_buffer = RBUFF[val](str(self.__read_buffer))
 
     def connect(self, timeout=5):
-        self.connect_timer = event.timeout(timeout, self.__connect_timeout_cb)
-        self.connect_event = event.write(self.sock, self.__connected_cb)
+        self.connect_timer = rel.timeout(timeout, self.__connect_timeout_cb)
+        self.connect_event = rel.write(self.sock, self.__connected_cb)
 
     def set_close_cb(self, cb, args=[], withReason=False):
         self.__close_cb = (cb, args)
         self.__close_reason = withReason
 
     def __start(self):
-        self.wevent = event.write(self.sock, self.__write_ready)
-        self.revent = event.read(self.sock, self.__read_ready)
+        self.wevent = rel.write(self.sock, self.__write_ready)
+        self.revent = rel.read(self.sock, self.__read_ready)
+        self.eevent = rel.error(self.sock, self.error)
         self.wevent.delete()
 
     def __connected_cb(self):
@@ -65,6 +67,9 @@ class Connection(object):
         self.connect_timer.delete()
         self.connect_timer = None
         self.close("connect timed out")
+
+    def error(self):
+        self.close("unexpected")
 
     def soft_close(self, reason=""):
         if self.__write_chunk or self.__write_queue:
@@ -81,6 +86,9 @@ class Connection(object):
         if self.wevent:
             self.wevent.delete()
             self.wevent = None
+        if self.eevent:
+            self.eevent.delete()
+            self.eevent = None
         self.sock.close()
         self.__clear_writes(reason)
         if self.pool:
