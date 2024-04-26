@@ -68,8 +68,8 @@ class Connection(object):
         self.connect_timer = None
         self.close("connect timed out")
 
-    def error(self):
-        self.close("unexpected")
+    def error(self, msg="unexpected"):
+        self.close(msg)
 
     def soft_close(self, reason=""):
         if self.__write_chunk or self.__write_queue:

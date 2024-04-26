@@ -108,8 +108,8 @@ class HTTPConnection(object):
         self.log.debug("TIMEOUT (request %s) -- closing!"%(self.request.id,))
         self.close()
 
-    def error(self):
-        self.fry("unexpected")
+    def error(self, msg="unexpected"):
+        self.fry(msg)
 
     def fry(self, reason=""):
         self.log.debug("fried", reason)
