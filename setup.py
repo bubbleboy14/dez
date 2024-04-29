@@ -24,7 +24,7 @@ setup(
     ],
     zip_safe = False,
     install_requires = [
-        "rel >= 0.4.9.16",
+        "rel >= 0.4.9.17",
         "psutil >= 5.9.1",
         "python-magic >= 0.4.11"
     ],
