@@ -3,14 +3,14 @@ from dez.logging import default_get_logger
 
 BANNED_PRE = ["/", "~"]
 SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".alfa", ".action",
-	"/aws", "/sdk", "/ajax", "/resolve", "/query", "/dns-query", "/live_env",
-	"/global-protect", "php", "boaform", "goform", "cgi", "GponForm", "elfinder",
-	"/dana-na/", "/laravel/", "/redmine/", "/webtools/", "/autodiscover/",
-	"/v1/", "/cf_scripts/", "/onvif/", "/seeyon/", "/stalker_portal/", "/remote/",
-	"/owa/", "/totp/", "/vpnsvc/", "/pfblockerng/", "/ztp/", "/owncloud/",
-	"/cms/", "/docker/", "/RDWeb/", "/kcfinder/", "/kubepi/", "/dup-installer/",
+	"/aws", "/sdk", "/ajax", "/resolve", "/query", "/dns-query", "/live_env", "/global-protect",
+	"php", "boaform", "goform", "cgi", "GponForm", "elfinder", "ckeditor", "EmpireCMS",
+	"/dana-na/", "/laravel/", "/redmine/", "/webtools/", "/autodiscover/", "/agent/", "/ALFA_DATA/",
+	"/v1/", "/cf_scripts/", "/onvif/", "/seeyon/", "/stalker_portal/", "/remote/", "/service/",
+	"/owa/", "/totp/", "/vpnsvc/", "/pfblockerng/", "/ztp/", "/owncloud/", "/luci/", "/filemanager/",
+	"/cms/", "/docker/", "/RDWeb/", "/kcfinder/", "/kubepi/", "/dup-installer/", "/pmd/",
 	"/private/", "/system/", "/zb_system/", "/cp/", "/_profiler/", "/__tests__/",
-	"/luci", "/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud"]
+	"/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud"]
 
 LIMIT = 200
 INTERVAL = 2
