@@ -4,13 +4,14 @@ from dez.logging import default_get_logger
 BANNED_PRE = ["/", "~"]
 SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".alfa", ".action",
 	"/aws", "/sdk", "/ajax", "/resolve", "/query", "/dns-query", "/live_env", "/global-protect",
-	"php", "boaform", "goform", "cgi", "GponForm", "elfinder", "ckeditor", "EmpireCMS", "androxgh0st",
+	"php", "boaform", "goform", "cgi", "GponForm", "elfinder", "ckeditor", "EmpireCMS",
 	"/dana-na/", "/laravel/", "/redmine/", "/webtools/", "/autodiscover/", "/agent/", "/ALFA_DATA/",
 	"/v1/", "/cf_scripts/", "/onvif/", "/seeyon/", "/stalker_portal/", "/remote/", "/service/",
 	"/owa/", "/totp/", "/vpnsvc/", "/pfblockerng/", "/ztp/", "/owncloud/", "/luci/", "/filemanager/",
 	"/cms/", "/docker/", "/RDWeb/", "/kcfinder/", "/kubepi/", "/dup-installer/", "/pmd/",
 	"/private/", "/system/", "/zb_system/", "/cp/", "/_profiler/", "/__tests__/",
-	"/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud"]
+	"/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud",
+	"androxgh0st", "3.1.05160", "system.listMethods", "debug=true", "username=admin&password=admin"]
 
 LIMIT = 200
 INTERVAL = 2
