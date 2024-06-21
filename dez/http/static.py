@@ -140,8 +140,10 @@ class StaticHandler(StaticStore):
         ])
 
     def __write_file(self, response, openfile, path, limit):
-        data = openfile.read(min(limit, io.BUFFER_SIZE))
-        limit -= len(data)
+        data = openfile.read(io.BUFFER_SIZE * 8)
+        ld = len(data)
+        limit -= ld
+        self.log.debug("wrote:", ld, "remaining:", limit)
         if not data:
             openfile.close()
             return response.end_or_close()
