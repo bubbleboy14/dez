@@ -10,7 +10,7 @@ SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".alfa", ".act
 	"/owa/", "/totp/", "/vpnsvc/", "/pfblockerng/", "/ztp/", "/owncloud/", "/luci/", "/filemanager/",
 	"/cms/", "/docker/", "/RDWeb/", "/kcfinder/", "/kubepi/", "/dup-installer/", "/pmd/",
 	"/private/", "/system/", "/zb_system/", "/cp/", "/_profiler/", "/__tests__/",
-	"/MyCRL", "/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud",
+	"/logincheck", "/MyCRL", "/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud",
 	"androxgh0st", "3.1.05160", "system.listMethods", "0x01%5B%5D=legion",
 	"debug=true", "username=admin&password=admin", "EX=_tools"]
 
