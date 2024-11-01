@@ -12,7 +12,7 @@ SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".alfa", ".act
 	"/private/", "/system/", "/zb_system/", "/cp/", "/_profiler/", "/__tests__/",
 	"/logincheck", "/MyCRL", "/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud",
 	"androxgh0st", "3.1.05160", "system.listMethods", "0x01%5B%5D=legion",
-	"debug=true", "username=admin&password=admin", "EX=_tools"]
+	"debug=true", "username=admin&password=admin", "EX=_tools", "no-inspection-host=1"]
 
 LIMIT = 200
 INTERVAL = 2
