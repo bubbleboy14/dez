@@ -69,10 +69,10 @@ def parse_frame(buf):
     return payload
 
 class WebSocketProxy(object):
-    def __init__(self, myhostname, myport, targethostname, targetport, b64=False, verbose=False):
+    def __init__(self, myhostname, myport, targethostname, targetport, b64=False, verbose=False, certfile=None, keyfile=None):
         self.verbose = verbose
         self.target = {'host':targethostname, 'port':targetport, 'b64':b64}
-        self.proxy = WebSocketDaemon(myhostname, myport, self._new_conn, b64, report_cb=self._report)
+        self.proxy = WebSocketDaemon(myhostname, myport, self._new_conn, b64, report_cb=self._report, certfile=certfile, keyfile=keyfile)
 
     def _report(self, data):
         if self.verbose:
@@ -258,6 +258,8 @@ def startwebsocketproxy():
     parser = optparse.OptionParser('dez_websocket_proxy [DOMAIN] [PORT] [--port=PUBLIC_PORT')
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="verbose output")
     parser.add_option("-p", "--port", dest="port", default="81", help="public-facing port (default: 81)")
+    parser.add_option("-c", "--certfile", dest="certfile", default=None, help="cert file (default: None)")
+    parser.add_option("-k", "--keyfile", dest="keyfile", default=None, help="key file (default: None)")
     options, args = parser.parse_args()
     try:
         hostname, port = args
@@ -275,7 +277,8 @@ def startwebsocketproxy():
         print('\nThe -p (or --port) option must be an integer. The command should look like this:\n\ndez_websocket_proxy mydomain.com 5555 -p 82 (or something)\n\nTry again!')
         return
     try:
-        proxy = WebSocketProxy('localhost', options.port, hostname, port, verbose=options.verbose)
+        proxy = WebSocketProxy('localhost', options.port, hostname, port,
+            verbose=options.verbose, certfile=options.certfile, keyfile=options.keyfile)
     except:
         print('\nPermission denied to use port %s. Depending on how your system is set up, you may need root privileges to run the proxy.'%(port))
         return
