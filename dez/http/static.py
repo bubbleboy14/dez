@@ -14,6 +14,7 @@ class StaticStore(object):
     id = 0
     def __init__(self, server_name="dez", get_logger=default_get_logger, timestamp=False, mempad=MEMPAD):
         StaticStore.id += 1
+        self.headers = {}
         self.id = StaticStore.id
         self.timestamp = timestamp
         self.server_name = server_name
@@ -30,6 +31,8 @@ class StaticStore(object):
             headers['Last-Modified'] = self.cache.get_mtime(path, True)
         if ctype:
             headers['Content-Type'] = self.cache.get_type(path)
+        for header in self.headers:
+            headers[header] = self.headers[header]
         return headers
 
     def read(self, path, req=None): # returns data"", headers{}
@@ -38,10 +41,12 @@ class StaticStore(object):
             encodings=ency and req.headers.get('accept-encoding', '') or "")
 
 class StaticHandler(StaticStore):
-    def __init__(self, server_name="dez", get_logger=default_get_logger, timestamp=False, mempad=MEMPAD, dir_404=False):
+    def __init__(self, server_name="dez", get_logger=default_get_logger, timestamp=False, mempad=MEMPAD, dir_404=False, xorigin=False):
         StaticStore.__init__(self, server_name, get_logger, timestamp, mempad)
         self.log.debug("__init__")
         self.dir_404 = dir_404
+        if xorigin:
+            self.headers["Access-Control-Allow-Origin"] = "*"
 
     def __isi(self, req):
         ua = req.headers.get("user-agent")
