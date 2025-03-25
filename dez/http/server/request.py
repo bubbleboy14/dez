@@ -84,6 +84,12 @@ class HTTPRequest(object):
         self.red_flags.append(reason)
         self.suss = suss
 
+    def abort(self):
+        rf = "; ".join(self.red_flags)
+        self.suss and self.shield.suss(self.real_ip, rf)
+        self.log.error("request aborting:", rf)
+        self.close_now()
+
     def check_headers(self):
         if not self.shield or 'cookie' not in self.headers:
             return
@@ -95,6 +101,8 @@ class HTTPRequest(object):
         while True:
             index = self.conn.buffer.find('\r\n')
             if index == -1:
+                if self.red_flags and self.real_ip not in locz:
+                    self.abort()
                 return False
             if index == 0:
                 self.conn.buffer.move(2)
@@ -104,10 +112,7 @@ class HTTPRequest(object):
                 self.log.debug("waiting", self.content_length)
                 self.check_headers()
                 if self.red_flags:
-                    rf = "; ".join(self.red_flags)
-                    self.suss and self.shield.suss(self.real_ip, rf)
-                    self.log.error("request aborting:", rf)
-                    return self.close_now()
+                    return self.abort()
                 else:
                     self.conn.route(self)
                     return True
