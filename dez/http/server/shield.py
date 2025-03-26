@@ -40,9 +40,10 @@ class Shield(object):
 		return self.ips[ip]
 
 	def suss(self, ip, reason="you know why"):
+		ipd = self.ip(ip)
+		ipd["suss"] = True
 		self.has_suss = True
-		self.ips[ip]["suss"] = True
-		self.blacklist[ip] = self.ips[ip]["message"] = reason
+		self.blacklist[ip] = ipd["message"] = reason
 		self.log.warn("suss %s : %s"%(ip, reason))
 
 	def unsuss(self, ip, reason="oops"):
