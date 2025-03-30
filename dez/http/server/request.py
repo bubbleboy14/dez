@@ -69,7 +69,7 @@ class HTTPRequest(object):
                 bv = bv.decode(errors='replace')
             self.log.error(bv)
             if self.shield:
-                self.flag("%s (action: '%s')"%(e, self.action), True)
+                self.flag("%s (action: '%s')"%(e, self.action))
             else:
                 return self.close_now()
 #            raise HTTPProtocolError, "Invalid HTTP status line"
@@ -79,14 +79,13 @@ class HTTPRequest(object):
         self.log.debug("state_action", self.action)
         return self.state_headers()
 
-    def flag(self, reason, suss=False):
+    def flag(self, reason):
         self.log.error("request flagged:", reason)
         self.red_flags.append(reason)
-        self.suss = suss
 
     def abort(self):
         rf = "; ".join(self.red_flags)
-        self.suss and self.shield.suss(self.real_ip, rf)
+        self.shield.suss(self.real_ip, rf)
         self.log.error("request aborting:", rf)
         self.close_now()
 
@@ -95,7 +94,7 @@ class HTTPRequest(object):
             return
         for header in ["cookie", "user-agent"]:
             val = self.headers.get(header)
-            if val and self.shield(val, self.real_ip, count=False):
+            if val and self.shield.path(val):
                 self.flag("sketchy %s ('%s')"%(header, val))
 
     def state_headers(self):
