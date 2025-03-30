@@ -91,11 +91,12 @@ class HTTPRequest(object):
         self.close_now()
 
     def check_headers(self):
-        if not self.shield or 'cookie' not in self.headers:
+        if not self.shield:
             return
-        cookie = self.headers['cookie']
-        if self.shield(cookie, self.real_ip, count=False):
-            self.flag("sketchy cookie ('%s')"%(cookie,))
+        for header in ["cookie", "user-agent"]:
+            val = self.headers.get(header)
+            if val and self.shield(val, self.real_ip, count=False):
+                self.flag("sketchy %s ('%s')"%(header, val))
 
     def state_headers(self):
         while True:
