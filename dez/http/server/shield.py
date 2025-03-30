@@ -8,9 +8,9 @@ SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".alfa", ".act
 	"/dana-na/", "/laravel/", "/redmine/", "/webtools/", "/agent/", "/ALFA_DATA/", "/geoserver/",
 	"/v1/", "/cf_scripts/", "/onvif/", "/seeyon/", "/stalker_portal/", "/remote/", "/service/",
 	"/owa/", "/totp/", "/vpnsvc/", "/pfblockerng/", "/ztp/", "/owncloud/", "/luci/", "/filemanager/",
-	"/cms/", "/docker/", "/RDWeb/", "/kcfinder/", "/kubepi/", "/dup-installer/", "/pmd/",
-	"/private/", "/system/", "/zb_system/", "/cp/", "/_profiler/", "/__tests__/",
-	"/logincheck", "/MyCRL", "/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud",
+	"/cms/", "/docker/", "/RDWeb/", "/kcfinder/", "/kubepi/", "/dup-installer/", "/pmd/", "/moodle/",
+	"/private/", "/system/", "/zb_system/", "/cp/", "/_profiler/", "/__tests__/", "gsocket.io", "mstshash=",
+	"/logincheck", "/MyCRL", "/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud", "TruffleHog",
 	"androxgh0st", "3.1.05160", "4.10.05111", "system.listMethods", "0x01%5B%5D=legion", "0x%5B%5D=ridho",
 	"a=a", "debug=true", "debug=command", "username=admin&password=admin", "EX=_tools", "no-inspection-host=1"]
 
@@ -40,9 +40,10 @@ class Shield(object):
 		return self.ips[ip]
 
 	def suss(self, ip, reason="you know why"):
+		ipd = self.ip(ip)
+		ipd["suss"] = True
 		self.has_suss = True
-		self.ips[ip]["suss"] = True
-		self.blacklist[ip] = self.ips[ip]["message"] = reason
+		self.blacklist[ip] = ipd["message"] = reason
 		self.log.warn("suss %s : %s"%(ip, reason))
 
 	def unsuss(self, ip, reason="oops"):

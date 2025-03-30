@@ -18,6 +18,7 @@ class HTTPDaemon(object):
         self.log.info("Listening on %s:%s" % (host, port))
         io.listen(self.port, self.reg_conn, certfile, keyfile, cacerts)
         self.router = Router(self.default_cb, roll_cb=self.roll_cb, rollz=rollz, get_logger=get_logger, whitelist=whitelist, blacklist=blacklist, shield=shield)
+        self.shield = self.router.shield
 
     def register_prefix(self, prefix, cb, args=[]):
         self.router.register_prefix(prefix, cb, args)
@@ -49,18 +50,19 @@ class HTTPDaemon(object):
 
     def reg_conn(self, sock, addr):
         def cb():
-            HTTPConnection(sock, addr, self.router, self.get_logger, self.counter)
+            HTTPConnection(sock, addr, self.router, self.get_logger, self.counter, self.shield)
         return cb
 
 class HTTPConnection(object):
     id = 0
-    def __init__(self, sock, addr, router, get_logger, counter=None):
+    def __init__(self, sock, addr, router, get_logger, counter=None, shield=None):
         HTTPConnection.id += 1
         self.id = HTTPConnection.id
         self.log = get_logger("HTTPConnection(%s)"%(self.id,))
         self.log.debug("__init__")
         self.get_logger = get_logger
         self.sock = sock
+        self.shield = shield
         self.ip = sock.getpeername()[0]
         self.real_ip = self.ip # subject to later modification based on request headers
         self.addr, self.local_port = addr

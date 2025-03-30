@@ -9,6 +9,7 @@ class HTTPRequest(object):
         self.id = HTTPRequest.id
         self.log = conn.get_logger("HTTPRequest(%s)"%(self.id,))
         self.log.debug("__init__")
+        self.shield = conn.shield
         self.conn = conn
         self.ip = conn.ip
         self.real_ip = conn.real_ip
@@ -18,6 +19,7 @@ class HTTPRequest(object):
         self.headers_complete = False
         self.write_ended = False
         self.send_close = False
+        self.red_flags = []
         self.body = None
         self.body_cb = None
         self.body_stream_cb = None
@@ -66,18 +68,41 @@ class HTTPRequest(object):
                 self.log.error("decode()ing buffer...")
                 bv = bv.decode(errors='replace')
             self.log.error(bv)
-            return self.close_now()
+            if self.shield:
+                self.flag("%s (action: '%s')"%(e, self.action))
+            else:
+                return self.close_now()
 #            raise HTTPProtocolError, "Invalid HTTP status line"
         #self.protocol = self.protocol.lower()
         self.conn.buffer.move(i+2)
         self.state = 'headers'
         self.log.debug("state_action", self.action)
         return self.state_headers()
-    
+
+    def flag(self, reason):
+        self.log.error("request flagged:", reason)
+        self.red_flags.append(reason)
+
+    def abort(self):
+        rf = "; ".join(self.red_flags)
+        self.shield.suss(self.real_ip, rf)
+        self.log.error("request aborting:", rf)
+        self.close_now()
+
+    def check_headers(self):
+        if not self.shield:
+            return
+        for header in ["cookie", "user-agent"]:
+            val = self.headers.get(header)
+            if val and self.shield.path(val):
+                self.flag("sketchy %s ('%s')"%(header, val))
+
     def state_headers(self):
         while True:
             index = self.conn.buffer.find('\r\n')
             if index == -1:
+                if self.red_flags and self.real_ip not in locz:
+                    self.abort()
                 return False
             if index == 0:
                 self.conn.buffer.move(2)
@@ -85,8 +110,12 @@ class HTTPRequest(object):
                 self.headers_complete = True
                 self.state = 'waiting'
                 self.log.debug("waiting", self.content_length)
-                self.conn.route(self)
-                return True
+                self.check_headers()
+                if self.red_flags:
+                    return self.abort()
+                else:
+                    self.conn.route(self)
+                    return True
             try:
                 key, value = self.conn.buffer.part(0, index).split(': ', 1)
                 if key == "drp_ip" and self.ip in locz:
