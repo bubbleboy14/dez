@@ -2,7 +2,7 @@ import rel
 from dez.logging import default_get_logger
 
 BANNED_PRE = ["/", "~"]
-SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".alfa", ".action", "deadaed",
+SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".alfa", ".action", "deadaed", "Smuggle:",
 	"/aws", "/sdk", "/ajax", "/resolve", "/query", "/dns-query", "/live_env", "/global-protect",
 	"php", "boaform", "goform", "cgi", "GponForm", "elfinder", "ckeditor", "EmpireCMS", "utodiscover",
 	"/dana-na/", "/laravel/", "/redmine/", "/webtools/", "/agent/", "/ALFA_DATA/", "/geoserver/",
