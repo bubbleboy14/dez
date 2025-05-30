@@ -2,6 +2,9 @@ import rel
 from dez.logging import default_get_logger
 
 BANNED_PRE = ["/", "~"]
+ALLOWED = {
+	"header": ["facebookexternalhit"]
+}
 SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".alfa", ".action", "deadaed", "Smuggle:",
 	"/aws", "/sdk", "/ajax", "/resolve", "/query", "/dns-query", "/live_env", "/global-protect",
 	"php", "boaform", "goform", "cgi", "GponForm", "elfinder", "ckeditor", "EmpireCMS", "utodiscover",
@@ -16,6 +19,11 @@ SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".alfa", ".act
 
 LIMIT = 200
 INTERVAL = 2
+
+def isallowed(txt, agroup):
+	for abit in ALLOWED[agroup]:
+		if abit in txt:
+			return True
 
 class Shield(object):
 	def __init__(self, blacklist={}, get_logger=default_get_logger, on_suss=None, limit=LIMIT, interval=INTERVAL):
@@ -75,14 +83,17 @@ class Shield(object):
 			self.checkers.add(ip)
 		ipdata["count"] += 1
 
-	def path(self, path, fspath=False):
+	def path(self, path, fspath=False, allow=None):
 		if fspath:
 			c1 = path[0]
 			if c1 in BANNED_PRE:
 				return True
 		for sb in SKETCH_BITS:
 			if sb in path:
-				return True
+				if allow and isallowed(path, allow):
+					self.log.info("allowing: %s"%(path,))
+				else:
+					return True
 		return False
 
 	def __call__(self, path, ip, fspath=False, count=True):
