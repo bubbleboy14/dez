@@ -94,7 +94,7 @@ class HTTPRequest(object):
             return
         for header in ["cookie", "user-agent"]:
             val = self.headers.get(header)
-            if val and self.shield.path(val, allow="header"):
+            if val and self.shield.path(val, allow=header):
                 self.flag("sketchy %s ('%s')"%(header, val))
 
     def state_headers(self):
