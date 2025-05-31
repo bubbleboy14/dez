@@ -3,7 +3,7 @@ from dez.logging import default_get_logger
 
 BANNED_PRE = ["/", "~"]
 ALLOWED = {
-	"header": ["facebookexternalhit"]
+	"user-agent": ["facebookexternalhit"]
 }
 SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".alfa", ".action", "deadaed", "Smuggle:",
 	"/aws", "/sdk", "/ajax", "/resolve", "/query", "/dns-query", "/live_env", "/global-protect",
@@ -21,7 +21,7 @@ LIMIT = 200
 INTERVAL = 2
 
 def isallowed(txt, agroup):
-	for abit in ALLOWED[agroup]:
+	for abit in ALLOWED.get(agroup, []):
 		if abit in txt:
 			return True
 
