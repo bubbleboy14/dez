@@ -6,7 +6,7 @@ ALLOWED = {
 	"user-agent": ["facebookexternalhit"]
 }
 SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".alfa", ".action", "deadaed", "Smuggle:",
-	"/aws", "/sdk", "/ajax", "/resolve", "/query", "/dns-query", "/live_env", "/global-protect",
+	"/aws", "/sdk", "/ajax", "/resolve", "/query", "/dns-query", "/live_env", "/global-protect", "/testing-put",
 	"php", "boaform", "goform", "cgi", "GponForm", "elfinder", "ckeditor", "EmpireCMS", "utodiscover",
 	"/dana-na/", "/laravel/", "/redmine/", "/webtools/", "/agent/", "/ALFA_DATA/", "/geoserver/",
 	"/v1/", "/cf_scripts/", "/onvif/", "/seeyon/", "/stalker_portal/", "/remote/", "/service/",
