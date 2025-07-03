@@ -9,7 +9,7 @@ from dez.http.server.request import HTTPRequest
 
 class HTTPDaemon(object):
     def __init__(self, host, port, get_logger=None, certfile=None, keyfile=None, cacerts=None, rollz={}, whitelist=[], blacklist={}, shield=False):
-        self.get_logger = get_logger or default_get_logger
+        self.get_logger = get_logger = get_logger or default_get_logger
         self.log = self.get_logger("HTTPDaemon")
         self.host = host
         self.port = port
