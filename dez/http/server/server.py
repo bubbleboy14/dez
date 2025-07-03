@@ -8,9 +8,9 @@ from dez.http.server.response import KEEPALIVE, HTTPResponse
 from dez.http.server.request import HTTPRequest
 
 class HTTPDaemon(object):
-    def __init__(self, host, port, get_logger=default_get_logger, certfile=None, keyfile=None, cacerts=None, rollz={}, whitelist=[], blacklist={}, shield=False):
-        self.log = get_logger("HTTPDaemon")
-        self.get_logger = get_logger
+    def __init__(self, host, port, get_logger=None, certfile=None, keyfile=None, cacerts=None, rollz={}, whitelist=[], blacklist={}, shield=False):
+        self.get_logger = get_logger or default_get_logger
+        self.log = self.get_logger("HTTPDaemon")
         self.host = host
         self.port = port
         self.secure = bool(certfile)
