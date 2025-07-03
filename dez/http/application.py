@@ -5,6 +5,7 @@ from dez.http.static import StaticHandler, MEMPAD
 from dez.http.wsgithreadpool import WSGIThreadPool
 from dez.http.proxy.proxy import proxy
 from dez.http.errors import HTTPProtocolError
+from dez.logging import default_get_logger
 
 import rel
 try:
@@ -21,7 +22,7 @@ class HTTPApplication(object):
         construct the appropriate RawHTTPResponse or HTTPResponse as required.
     """
 
-    def __init__(self, bind_address, port, get_logger=None, server_name="Dez", certfile=None, keyfile=None, cacerts=None, static_timestamp=False, rollz={}, static_dir_404=False, whitelist=[], blacklist={}, shield=False, mempad=MEMPAD, xorigin=False):
+    def __init__(self, bind_address, port, get_logger=default_get_logger, server_name="Dez", certfile=None, keyfile=None, cacerts=None, static_timestamp=False, rollz={}, static_dir_404=False, whitelist=[], blacklist={}, shield=False, mempad=MEMPAD, xorigin=False):
         """start listening on the given port (this doesn't include a call to
            rel.dispatch)"""
         self.daemon = HTTPDaemon(bind_address, port, get_logger, certfile, keyfile, cacerts, rollz, whitelist, blacklist, shield)
