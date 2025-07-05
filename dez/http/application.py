@@ -37,10 +37,10 @@ class HTTPApplication(object):
         rel.signal(2, self.stop)
         if self.wsgi_pool:
             self.wsgi_pool.start()
-        try:
-            rel.dispatch()
-        except Exception as e:
-            print("HTTPApplication crashed(!) with:", str(e))
+#        try:
+        rel.dispatch()
+#        except Exception as e:
+#            print("HTTPApplication crashed(!) with:", str(e))
 
     def stop(self):
         if self.wsgi_pool:

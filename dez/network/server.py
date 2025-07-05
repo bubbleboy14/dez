@@ -23,7 +23,7 @@ class SocketDaemon(object):
 
     def start(self):
         rel.signal(2, rel.abort)
-        try:
-            rel.dispatch()
-        except Exception as e:
-            print("SocketDaemon crashed(!) with:", str(e))
+#        try:
+        rel.dispatch()
+#        except Exception as e:
+#            print("SocketDaemon crashed(!) with:", str(e))

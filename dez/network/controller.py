@@ -40,7 +40,7 @@ class SocketController(object):
             return
         self.onstop = onstop
         rel.signal(2, self._abort)
-        try:
-            rel.dispatch()
-        except Exception as e:
-            print("SocketController crashed(!) with:", str(e))
+#        try:
+        rel.dispatch()
+#        except Exception as e:
+#            print("SocketController crashed(!) with:", str(e))
