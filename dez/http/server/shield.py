@@ -9,13 +9,14 @@ SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".alfa", ".act
 	"/aws", "/sdk", "/ajax", "/resolve", "/query", "/dns-query", "/live_env", "/global-protect", "/testing-put",
 	"php", "boaform", "goform", "cgi", "GponForm", "elfinder", "ckeditor", "EmpireCMS", "utodiscover",
 	"/dana-na/", "/laravel/", "/redmine/", "/webtools/", "/agent/", "/ALFA_DATA/", "/geoserver/",
-	"/v1/", "/cf_scripts/", "/onvif/", "/seeyon/", "/stalker_portal/", "/remote/", "/service/", "doAuthentication.do",
+	"/v1/", "/cf_scripts/", "/onvif/", "/seeyon/", "/stalker_portal/", "/remote/", "/service/",
 	"/owa/", "/totp/", "/vpnsvc/", "/pfblockerng/", "/ztp/", "/owncloud/", "/luci/", "/filemanager/",
 	"/cms/", "/docker/", "/RDWeb/", "/kcfinder/", "/kubepi/", "/dup-installer/", "/pmd/", "/moodle/",
 	"/private/", "/system/", "/zb_system/", "/cp/", "/_profiler/", "/__tests__/", "gsocket.io", "mstshash=",
-	"/logincheck", "/MyCRL", "/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud", "TruffleHog",
-	"androxgh0st", "3.1.05160", "4.10.05111", "system.listMethods", "0x01%5B%5D=legion", "0x%5B%5D=ridho", "0x%5B%5D=DTAB",
-	"a=a", "debug=true", "debug=command", "username=admin&password=admin", "user=test&passwd=test", "EX=_tools", "no-inspection-host=1"]
+	"/logincheck", "/MyCRL", "/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud",
+	"androxgh0st", "3.1.05160", "4.10.05111", "system.listMethods", "doAuthentication.do", "TruffleHog",
+	"0x01%5B%5D=legion", "0x%5B%5D=ridho", "0x%5B%5D=DTAB", "a=a", "debug=true", "debug=command", "EX=_tools",
+	"username=admin&password=admin", "user=test&passwd=test", "action=getsoftware", "no-inspection-host=1"]
 
 LIMIT = 200
 INTERVAL = 2
