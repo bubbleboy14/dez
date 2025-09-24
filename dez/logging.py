@@ -50,7 +50,7 @@ class BasicLogger(object):
 		self._log("warn", msg, *args, **kwargs)
 
 	def detail(self, msg, *args, **kwargs):
-		self._log("detail", " ".join([str(a) for a in args]), **kwargs)
+		self._log("detail", msg, " ".join([str(a) for a in args]), **kwargs)
 
 	def error(self, *args, **kwargs):
 		self._log("error", " ".join([str(a) for a in args]), **kwargs)
