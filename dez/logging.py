@@ -1,6 +1,12 @@
+LOGGY = False
+
+def logson():
+	global LOGGY
+	LOGGY = True
+
 class FakeLogger(object):
     def debug(self, *args, **kwargs):
-        pass
+        LOGGY and print(args, kwargs)
     info = debug
     access = debug
     warn = debug
