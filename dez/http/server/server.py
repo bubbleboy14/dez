@@ -137,8 +137,8 @@ class HTTPConnection(object):
                 self.log.error("close", "buffer present - starting new request")
                 return self.start_request()
             if not self.revent.pending():
-                self.log.debug("close", "revent not pending - starting new request")
-                return self.start_request()
+                self.log.debug("close", "revent not pending - allowing close")
+                #return self.start_request()
         self.cancelTimeout(True)
         self.counter.dec("connections")
         if self.__close_cb:
