@@ -32,6 +32,7 @@ def ssl_handshake(sock, cb, *args):
 
 def accept_connection(sock, regConn, secure):
     try:
+        rel.util.log("dez io SOCK ACCEPT")
         sock, addr = sock.accept()
         addr = (addr[0], addr[1]) # for ipv6
         cb = regConn(sock, addr)
@@ -46,6 +47,7 @@ def accept_connection(sock, regConn, secure):
 def listen(port, regConn, certfile=None, keyfile=None, cacerts=None):
     for ipv in ipversions:
         sock = server_socket(port, certfile, keyfile, cacerts, ipv)
+        rel.util.log("dez io SOCK LISTEN")
         rel.read(sock, accept_connection, sock, regConn, bool(certfile))
 
 def server_socket(port, certfile=None, keyfile=None, cacerts=None, ipv="dual"):
