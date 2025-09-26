@@ -43,7 +43,7 @@ class Connection(object):
 
     def connect(self, timeout=5):
         self.connect_timer = rel.timeout(timeout, self.__connect_timeout_cb)
-        self.connect_event = rel.write(self.sock, self.__connected_cb)
+        rel.write(self.sock, self.__connected_cb)
 
     def set_close_cb(self, cb, args=[], withReason=False):
         self.__close_cb = (cb, args)
@@ -56,8 +56,6 @@ class Connection(object):
         self.wevent.delete()
 
     def __connected_cb(self):
-        self.connect_event.delete()
-        self.connect_event = None
         self.connect_timer.delete()
         self.connect_timer = None
         self.__start()
