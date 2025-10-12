@@ -46,9 +46,8 @@ class Connection(object):
             self.__read_buffer = RBUFF[val](str(self.__read_buffer))
 
     def connect(self, timeout=5):
-        self.log("CONNECT")
-        self.connect_timer = rel.timeout(timeout, self.__connect_timeout_cb)
-        rel.write(self.sock, self.__connected_cb)
+        self.log("CONNECT") # can no longer do this w/ rel.write()....
+        rel.timeout(0, self.__connected_cb)
 
     def set_close_cb(self, cb, args=[], withReason=False):
         self.__close_cb = (cb, args)
@@ -63,15 +62,8 @@ class Connection(object):
 
     def __connected_cb(self):
         self.log("CONNECTED_CB")
-        self.connect_timer.delete()
-        self.connect_timer = None
         self.__start()
         self.__ready()
-
-    def __connect_timeout_cb(self):
-        self.connect_timer.delete()
-        self.connect_timer = None
-        self.close("connect timed out")
 
     def error(self, msg="unexpected"):
         self.log("ERROR!", msg)
