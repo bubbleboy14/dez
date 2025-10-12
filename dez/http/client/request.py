@@ -1,25 +1,36 @@
 from dez.buffer import WriteBuffer
 
 class HTTPClientWriter(object):
-    def __init__(self, conn):
+    def __init__(self, conn, silent=True):
         self.conn = conn
+        self.silent = silent
+
+    def log(self, *msg):
+        self.silent or print("HTTPClientWriter", *msg)
 
     def dispatch(self, request, cb, args):
+        self.log("dispatch!")
         request.headers['Host'] = self.conn.addr[0]
         self.conn.write(request.render(), self.__request_written_cb, [cb, args])
 
     def __request_written_cb(self, cb, args):
+        self.log("__request_written_cb")
         return cb(*args)
 
 class HTTPClientRequest(object):
-    def __init__(self):
+    def __init__(self, silent=True):
         self.protocol = "HTTP/1.1"
+        self.silent = silent
         self.method = "GET"
         self.path = "/"
         self.headers = {}
         self.body = WriteBuffer()
 
+    def log(self, *msg):
+        self.silent or print("HTTPClientRequest", *msg)
+
     def write(self, data):
+        self.log("write", data)
         self.body += data
         self.headers['Content-Length'] = str(len(self.body))
 

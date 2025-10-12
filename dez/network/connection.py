@@ -8,7 +8,7 @@ WBUFF = { True: B64WriteBuffer, False: WriteBuffer }
 
 class Connection(object):
     id = 0
-    def __init__(self, addr, sock, pool=None, b64=False):
+    def __init__(self, addr, sock, pool=None, b64=False, silent=True):
         Connection.id += 1
         self.id = Connection.id
         self.pool = pool
@@ -20,6 +20,7 @@ class Connection(object):
             self.ip = "unknown"
         self.b64 = b64
         self.mode = None
+        self.silent = silent
         self.__write_queue = []
         self.__write_chunk = None
         self.__write_buffer = WBUFF[b64]()
@@ -35,6 +36,9 @@ class Connection(object):
         if not self.pool:
             self.__start()
 
+    def log(self, *msg):
+        self.silent or print("Connection", *msg)
+
     def set_b64(self, val):
         if val is not self.b64:
             self.b64 = val
@@ -42,31 +46,27 @@ class Connection(object):
             self.__read_buffer = RBUFF[val](str(self.__read_buffer))
 
     def connect(self, timeout=5):
-        self.connect_timer = rel.timeout(timeout, self.__connect_timeout_cb)
-        rel.write(self.sock, self.__connected_cb)
+        self.log("CONNECT") # can no longer do this w/ rel.write()....
+        rel.timeout(0, self.__connected_cb)
 
     def set_close_cb(self, cb, args=[], withReason=False):
         self.__close_cb = (cb, args)
         self.__close_reason = withReason
 
     def __start(self):
+        self.log("START")
         self.wevent = rel.write(self.sock, self.__write_ready)
         self.revent = rel.read(self.sock, self.__read_ready)
         self.eevent = rel.error(self.sock, self.error)
         self.wevent.delete()
 
     def __connected_cb(self):
-        self.connect_timer.delete()
-        self.connect_timer = None
+        self.log("CONNECTED_CB")
         self.__start()
         self.__ready()
 
-    def __connect_timeout_cb(self):
-        self.connect_timer.delete()
-        self.connect_timer = None
-        self.close("connect timed out")
-
     def error(self, msg="unexpected"):
+        self.log("ERROR!", msg)
         self.close(msg)
 
     def soft_close(self, reason=""):
@@ -78,6 +78,7 @@ class Connection(object):
         self.close(reason)
 
     def close(self, reason=""):
+        self.log("CLOSE!", reason)
         if self.revent:
             self.revent.delete()
             self.revent = None
@@ -105,6 +106,7 @@ class Connection(object):
                 cb(*args, **kwargs)
 
     def __clear_writes(self, reason=""):
+        self.log("__clear_writes", reason)
         if self.__write_chunk:
             self.__write_chunk.error(reason)
             self.__write_chunk = None
@@ -118,8 +120,8 @@ class Connection(object):
         if not self.__release_timer:
             self.__ready()
         else:
-            print('pool', self.pool)
-            print('release_timer', self.__release_timer)
+            self.log('pool', self.pool)
+            self.log('release_timer', self.__release_timer)
             raise "What?"
 
     def __release_timer_cb(self):
@@ -135,6 +137,7 @@ class Connection(object):
             self.pool.connection_available(self)
 
     def write(self, data, cb=None, cbargs=[], eb=None, ebargs=[]):
+        self.log("WRITE", data)
         if data.__class__ == XMLNode:
             data = str(data)
         self.__write_queue.append(WriteChunk(data, cb, cbargs, eb, ebargs))
@@ -195,23 +198,30 @@ class Connection(object):
     # if we just finished writing some segment, call its callback
     # if there are no more segments, then stop
     def __write_ready(self):
+        self.log("__WRITE_READY")
         if self.__write_buffer.empty():
+            self.log("__write_buffer empty")
             if self.__write_chunk:
+                self.log("__write_chunk")
                 self.__write_chunk.completed()
                 self.__write_chunk = None
             if not self.__write_queue:
+                self.log("__write_queue empty")
                 if self.__soft_close:
                     self.close("soft close")
                 return None
+            self.log("buffer reset")
             self.__write_chunk = self.__write_queue.pop(0)
             self.__write_buffer.reset(self.__write_chunk.data)
         try:
+            self.log("sending...")
             self.__write_buffer.send(self.sock)
             return True
         except dez.io.ssl.SSLWantWriteError as msg:
-            print("SSLWantWriteError", "(waiting)", msg)
+            self.log("SSLWantWriteError", "(waiting)", msg)
             return True
         except dez.io.socket.error as msg:
+            self.log("write error", msg)
             self.close(reason=str(msg))
             return None
 
@@ -219,6 +229,7 @@ class Connection(object):
     # the __looping and __mode_changed variables are required to keep
     # from ignoring mode changes in the middle of the loop.
     def __read(self, data):
+        self.log("__read", data)
         self.__read_buffer += data
         if self.__looping:
             return
@@ -233,6 +244,7 @@ class Connection(object):
         self.__looping = False
 
     def __read_ready(self):
+        self.log("__read_ready")
         try:
             data = self.sock.recv(dez.io.BUFFER_SIZE)
         except dez.io.ssl.SSLWantReadError as e:

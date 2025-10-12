@@ -140,7 +140,8 @@ class HTTPProtocolReader(object):
     def __recv_body(self, data):
         # do something with self.response
         self.response.body += data
-        self.conn.release()
+#        self.conn.release()
+        self.conn.close()
         cb, args = self.cb_info
         return cb(*args)
 

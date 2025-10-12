@@ -68,11 +68,11 @@ class ConnectionPool(object):
         self.__start_count = None
         
     def log(self, *msg):
-        SILENT or print(*msg)
+        SILENT or print("ConnectionPool", *msg)
 
     def stats(self, msg):
         self.log(msg, len(self.wait_queue), "queue;", len(self.pool),
-            "pool", self.connection_count, "conns", self.wait_index, "reqs")
+            "pool;", self.connection_count, "conns;", self.wait_index, "reqs")
 
     def start_connections(self, num, cb, args, timeout=None):
         if self.__start_cb_info:
@@ -106,7 +106,7 @@ class ConnectionPool(object):
 
     def __start_connection(self):
         sock = io.client_socket(self.hostname, self.port, self.secure)
-        Connection(self.addr, sock, self, self.b64).connect()
+        Connection(self.addr, sock, self, self.b64, SILENT).connect()
         self.connection_count += 1
 
     def connection_available(self, conn):
