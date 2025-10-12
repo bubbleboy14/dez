@@ -31,7 +31,7 @@ class HTTPClient(object):
 
     def proc_resp(self, resp, cb=None, json=False):
         val = resp.body.get_value()
-#        self.log("proc_resp(%s)"%(val,))
+        self.log("proc_resp(%s)"%(val,))
         return (cb or self.log)(self.jayornay(val, json))
 
     def multipart(self, data):
@@ -70,8 +70,8 @@ class HTTPClient(object):
 
     def __conn_cb(self, conn, id):
         self.log("__conn_cb: %s"%(id,))
-        writer = HTTPClientWriter(conn)
-        request = HTTPClientRequest()
+        writer = HTTPClientWriter(conn, self.silent)
+        request = HTTPClientRequest(self.silent)
         url_request = self.requests[id]
         request.headers.update(url_request.headers)
         request.method = url_request.method
