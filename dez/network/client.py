@@ -3,7 +3,7 @@ from dez import io
 from dez.network.connection import Connection
 
 SILENT = True
-MIN_CONN = 10
+MIN_CONN = 1
 MAX_CONN = 1000
 
 class SimpleClient(object):
