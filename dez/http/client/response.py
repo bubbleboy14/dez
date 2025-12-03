@@ -103,7 +103,7 @@ class HTTPProtocolReader(object):
             self.conn.halt_read()
             cb, args, = self.cb_info
             return cb(*args)
-        key, val = data.split(': ')
+        key, val = data.split(': ', 1)
         self.response.case_match_headers[key.lower()] = key
         self.response.headers[key.lower()] = val
         if key.lower() == 'content-length':
