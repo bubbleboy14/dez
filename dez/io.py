@@ -84,8 +84,9 @@ def server_socket(port, certfile=None, keyfile=None, cacerts=None, ipv="dual"):
 def client_socket(addr, port, secure=False):
     sock = socket.create_connection((addr, port))
     if secure:
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        ctx.load_default_certs()
+#        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+#        ctx.load_default_certs()
+        ctx = ssl.create_default_context()
         if addr in locz:
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
