@@ -13,7 +13,7 @@ SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".alfa", ".act
 	"/owa/", "/totp/", "/vpnsvc/", "/pfblockerng/", "/ztp/", "/owncloud/", "/luci/", "/filemanager/",
 	"/cms/", "/docker/", "/RDWeb/", "/kcfinder/", "/kubepi/", "/dup-installer/", "/pmd/", "/moodle/",
 	"/private/", "/system/", "/zb_system/", "/cp/", "/_profiler/", "/__tests__/", "gsocket.io", "mstshash=",
-	"/logincheck", "/MyCRL", "/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud",
+	"/logincheck", "/MyCRL", "/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud", "l33t", "fileOWN767",
 	"androxgh0st", "3.1.05160", "4.10.05111", "5.1.8.105", "system.listMethods", "doAuthentication.do", "TruffleHog",
 	"0x01%5B%5D=legion", "0x%5B%5D=ridho", "0x%5B%5D=DTAB", "a=a", "debug=true", "debug=command", "EX=_tools",
 	"username=admin&password=admin", "user=test&passwd=test", "action=getsoftware", "no-inspection-host=1"]
