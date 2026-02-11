@@ -19,20 +19,21 @@ class SimpleClient(object):
         rel.dispatch()
 
 class SocketClient(object):
-    def __init__(self):
+    def __init__(self, silent=SILENT):
+        self.silent = silent
         self.pools = {}
 
     def get_connection(self, host, port, cb, args=[], secure=False, eb=None, ebargs=None, timeout=60, max_conn=MAX_CONN, b64=False):
         addr = host, port
         if addr not in self.pools:
-            self.pools[addr] = ConnectionPool(host, port, secure, max_conn, b64)
+            self.pools[addr] = ConnectionPool(host, port, secure, max_conn, b64, self.silent)
             MIN_CONN and self.pools[addr].spawn(MIN_CONN)
         self.pools[addr].get_connection(cb, args, timeout)
 
     def start_connections(self, host, port, num, cb, args=[], secure=False, timeout=None, max_conn=MAX_CONN):
         addr = host, port
         if addr not in self.pools:
-            self.pools[addr] = ConnectionPool(host, port, secure, max_conn)
+            self.pools[addr] = ConnectionPool(host, port, secure, max_conn, silent=self.silent)
         self.pools[addr].start_connections(num, cb, args, timeout)
 
 #    def free_connection(self, conn):
@@ -47,14 +48,16 @@ class SocketClient(object):
 
 
 class ConnectionPool(object):
-    def __init__(self, hostname, port, secure=False, max_connections=MAX_CONN, b64=False):
+    def __init__(self, hostname, port, secure=False, max_connections=MAX_CONN, b64=False, silent=SILENT):
         self.addr = hostname, port
         self.hostname = hostname
         self.port = port
         self.secure = secure
         self.connection_count = 0
+        self.connecting_count = 0
         self.max_connections = max_connections
         self.b64 = b64
+        self.silent = silent
 
         # real connections
         self.pool = []
@@ -68,7 +71,7 @@ class ConnectionPool(object):
         self.__start_count = None
         
     def log(self, *msg):
-        SILENT or print("ConnectionPool", *msg)
+        self.silent or print("ConnectionPool", *msg)
 
     def stats(self, msg):
         self.log(msg, len(self.wait_queue), "queue;", len(self.pool),
@@ -106,10 +109,12 @@ class ConnectionPool(object):
 
     def __start_connection(self):
         sock = io.client_socket(self.hostname, self.port, self.secure)
-        Connection(self.addr, sock, self, self.b64, SILENT).connect()
+        Connection(self.addr, sock, self, self.b64, self.silent).connect()
         self.connection_count += 1
+        self.connecting_count += 1
 
     def connection_available(self, conn):
+        self.connecting_count -= 1
         self.pool.append(conn)
         self.stats("CONN AVAILABLE")
         if self.__start_count and len(self.pool) == self.__start_count:          
@@ -144,6 +149,6 @@ class ConnectionPool(object):
             cb, args, timer = self.wait_timers.pop(i)
             timer.delete()
             cb(self.pool.pop(0), *args)
-        if self.wait_queue and self.connection_count < self.max_connections:
-            self.spawn(min(len(self.wait_queue),
-                self.max_connections - self.connection_count))
+        waiters = len(self.wait_queue) - self.connecting_count
+        if waiters and self.connection_count < self.max_connections:
+            self.spawn(min(waiters, self.max_connections - self.connection_count))
