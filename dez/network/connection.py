@@ -5,6 +5,7 @@ from dez.xml_tools import extract_xml, XMLNode
 
 RBUFF = { True: B64ReadBuffer, False: ReadBuffer }
 WBUFF = { True: B64WriteBuffer, False: WriteBuffer }
+LOUD = False
 
 class Connection(object):
     id = 0
@@ -218,7 +219,7 @@ class Connection(object):
             self.__write_buffer.send(self.sock)
             return True
         except dez.io.ssl.SSLWantWriteError as msg:
-            self.log("SSLWantWriteError", "(waiting)", msg)
+            LOUD and self.log("SSLWantWriteError", "(waiting)", msg)
             return True
         except dez.io.socket.error as msg:
             self.log("write error", msg)
@@ -229,7 +230,7 @@ class Connection(object):
     # the __looping and __mode_changed variables are required to keep
     # from ignoring mode changes in the middle of the loop.
     def __read(self, data):
-        self.log("__read", data)
+        LOUD and self.log("__read", data)
         self.__read_buffer += data
         if self.__looping:
             return
@@ -244,11 +245,11 @@ class Connection(object):
         self.__looping = False
 
     def __read_ready(self):
-        self.log("__read_ready")
+        LOUD and self.log("__read_ready")
         try:
             data = self.sock.recv(dez.io.BUFFER_SIZE)
         except dez.io.ssl.SSLWantReadError as e:
-            self.log("SSLWantReadError", "(waiting)", e)
+            LOUD and self.log("SSLWantReadError", "(waiting)", e)
             return True # wait a tick
         except dez.io.socket.error as e:
             self.close("socket read error: %s"%(str(e),))
