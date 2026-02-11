@@ -8,6 +8,7 @@ import rel
 MPBOUND = "53^3n733n"
 MPSTART = "--%s"%(MPBOUND,)
 MPMID = "\r\n%s\r\n"%(MPSTART,)
+LOUD = False
 
 class HTTPClient(object):
     id = 0
@@ -16,7 +17,7 @@ class HTTPClient(object):
         self.id = HTTPClient.id
         self.logger = get_logger_getter("dez")("%s(%s)"%(self.__class__.__name__, self.id)).simple
         self.rcount = 0
-        self.client = SocketClient()
+        self.client = SocketClient(silent)
         self.silent = silent
         self.requests = {}
         self.log("initialized client")
@@ -31,7 +32,7 @@ class HTTPClient(object):
 
     def proc_resp(self, resp, cb=None, json=False):
         val = resp.body.get_value()
-        self.log("proc_resp(%s)"%(val,))
+        LOUD and self.log("proc_resp(%s)"%(val,))
         return (cb or self.log)(self.jayornay(val, json))
 
     def multipart(self, data):
@@ -66,13 +67,14 @@ class HTTPClient(object):
 
     def __conn_timeout_cb(self, id):
         self.log("__conn_timeout_cb: %s"%(id,))
-        self.requests[id].timeout()
+        self.requests[id].timedout()
 
     def __conn_cb(self, conn, id):
         self.log("__conn_cb: %s"%(id,))
         writer = HTTPClientWriter(conn, self.silent)
         request = HTTPClientRequest(self.silent)
         url_request = self.requests[id]
+        url_request.conn = conn
         request.headers.update(url_request.headers)
         request.method = url_request.method
         request.host = url_request.host
@@ -167,5 +169,9 @@ class URLRequest(object):
             print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         self.timeout.delete()
         self.failed = True
-        if self.eb:
-            self.eb(reason, *self.ebargs)
+        if self.eb and self.eb(reason, *self.ebargs) == "close":
+            if not SILENT:
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print("closing connection!")
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            self.conn.close()
