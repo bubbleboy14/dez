@@ -159,7 +159,11 @@ class WebSocketHandshake(object):
 
     def _recv_action(self, data):
         self.report("Processing action line")
-        tokens = data.split(' ')
+        try:
+            tokens = data.split(' ')
+        except Exception as e:
+            self.report("got: %s"%(e,))
+            return self._handshake_error("Invalid action line")
         if len(tokens) != 3:
             return self._handshake_error("Invalid action line")
         self.path = tokens[1]
