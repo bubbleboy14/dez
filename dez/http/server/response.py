@@ -1,6 +1,6 @@
 import rel, io
 
-KEEPALIVE = 300
+KEEPALIVE = 600
 
 def renderResponse(data="", version_major=1, version_minor=0, status="200 OK", headers={}):
     if isinstance(data, list):
