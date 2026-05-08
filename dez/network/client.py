@@ -70,8 +70,9 @@ class ConnectionPool(object):
         self.__start_timer = None
         self.__start_count = None
         
-    def log(self, *msg):
-        self.silent or print("ConnectionPool", *msg)
+    def log(self, *msg, force=False):
+        if force or not self.silent:
+            print("ConnectionPool", *msg)
 
     def stats(self, msg):
         self.log(msg, len(self.wait_queue), "queue;", len(self.pool),
@@ -108,7 +109,11 @@ class ConnectionPool(object):
             self.__start_connection()
 
     def __start_connection(self):
-        sock = io.client_socket(self.hostname, self.port, self.secure)
+        try:
+            sock = io.client_socket(self.hostname, self.port, self.secure)
+        except io.ssl.SSLError as e:
+            self.log("__start_connection got SSLError!", e, force=True)
+            return # this is probs fine...?
         Connection(self.addr, sock, self, self.b64, self.silent).connect()
         self.connection_count += 1
         self.connecting_count += 1
