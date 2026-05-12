@@ -190,7 +190,7 @@ class WebSocketHandshake(object):
             "WebSocket-Location: ws://%s:%s%s"%(self.hostname, self.port, self.path),
             "Sec-WebSocket-Accept: %s"%(key2accept(self.headers['Sec-WebSocket-Key']),)
         ]
-        self.conn.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n%s\r\n\r\n"%("\r\n".join(response_headers),))
+        self.conn.write("HTTP/1.1 101 Switching Protocols\r\n%s\r\n\r\n"%("\r\n".join(response_headers),))
         self.report("Handshake complete")
         self.cb(WebSocketConnection(self.conn, self._report_cb, self.isJSON, self.b64))
 
