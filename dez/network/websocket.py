@@ -179,6 +179,7 @@ class WebSocketHandshake(object):
                 return self._handshake_error("Invalid headers")
             self.headers.__setitem__(*header)
         if 'Sec-WebSocket-Key' not in self.headers:
+            self.report("Sec-WebSocket-Key not found - headers: %s"%(self.headers,))
             return self._https_validate()
         for required_header in ['Host', 'Origin']:
             if required_header not in self.headers:
