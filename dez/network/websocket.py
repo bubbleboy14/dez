@@ -178,7 +178,8 @@ class WebSocketHandshake(object):
             if len(header) != 2:
                 return self._handshake_error("Invalid headers")
             self.headers.__setitem__(*header)
-        if 'Sec-WebSocket-Key' not in self.headers:
+        wskey = self.headers.get("Sec-WebSocket-Key") or self.headers.get("Sec-Websocket-Key")
+        if not wskey:
             self.report("Sec-WebSocket-Key not found - headers: %s"%(self.headers,))
             return self._https_validate()
         for required_header in ['Host', 'Origin']:
@@ -189,7 +190,7 @@ class WebSocketHandshake(object):
             "Connection: Upgrade",
             "WebSocket-Origin: %s"%(self.headers['Origin'],),
             "WebSocket-Location: ws://%s:%s%s"%(self.hostname, self.port, self.path),
-            "Sec-WebSocket-Accept: %s"%(key2accept(self.headers['Sec-WebSocket-Key']),)
+            "Sec-WebSocket-Accept: %s"%(key2accept(wskey),)
         ]
         self.conn.write("HTTP/1.1 101 Switching Protocols\r\n%s\r\n\r\n"%("\r\n".join(response_headers),))
         self.report("Handshake complete")
