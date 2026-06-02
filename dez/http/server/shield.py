@@ -12,11 +12,11 @@ SKETCH_BITS = ["..", "/.", ".sh", ".vm", ".cfc", ".dll", ".aspx", ".alfa", ".act
 	"/v1/", "/cf_scripts/", "/onvif/", "/seeyon/", "/stalker_portal/", "/remote/", "/service/", "//recordings/", "/sso",
 	"/owa/", "/totp/", "/vpnsvc/", "/pfblockerng/", "/ztp/", "/owncloud/", "/luci/", "/filemanager/", "/PasswordVault",
 	"/cms/", "/docker/", "/RDWeb/", "/kcfinder/", "/kubepi/", "/dup-installer/", "/pmd/", "/moodle/", "/web_shell_cmd.gch",
-	"/private/", "/system/", "/zb_system/", "/cp/", "/_profiler/", "/__tests__/", "gsocket.io", "mstshash=", "l33t",
+	"/private/", "/system/", "/zb_system/", "/cp/", "/_profiler/", "/__tests__/", "/___proxy_subdomain_whm/", "gsocket.io",
 	"/logincheck", "/MyCRL", "/Telerik", "/xmlrpc", "/wp-", "/FD87", ".html/", "/categories/Yud", "/apps", "fileOWN767",
 	"androxgh0st", "3.1.05160", "4.10.05111", "5.1.8.105", "system.listMethods", "doAuthentication.do", "TruffleHog",
-	"0x01%5B%5D=legion", "0x%5B%5D=ridho", "0x%5B%5D=DTAB", "a=a", "debug=true", "debug=command", "EX=_tools",
-	"username=admin&password=admin", "user=test&passwd=test", "action=getsoftware", "no-inspection-host=1"]
+	"0x01%5B%5D=legion", "0x%5B%5D=ridho", "0x%5B%5D=DTAB", "a=a", "debug=true", "debug=command", "EX=_tools", "l33t",
+	"username=admin&password=admin", "user=test&passwd=test", "action=getsoftware", "no-inspection-host=1", "mstshash="]
 
 LIMIT = 200
 INTERVAL = 2
