@@ -59,6 +59,11 @@ class Router(object):
     def pref_order(self, b, a):
         return cmp(len(a[0]),len(b[0]))
 
+    def _is_ips(self, rule):
+        if ":" in rule: # v6
+            return True
+        return rule.replace(".", "").replace("|", "").isnumeric() # v4
+
     def _denied(self, ip, url, ref):
         self.log.access("roll check!\nurl: %s\nreferer: %s\nip: %s"%(url, ref, ip))
         if self.whitelist or self.wildlist:
@@ -74,9 +79,11 @@ class Router(object):
         if self.blacklist and ip in self.blacklist:
             self.log.access("%s in blacklist"%(ip,))
             return True
-        for flag, domain in list(self.rollz.items()):
+        for flag, rule in list(self.rollz.items()):
             if url.startswith(flag):
-                if not ref or domain not in ref:
+                if self._is_ips(rule):
+                    return ip not in rule
+                elif not ref or rule not in ref:
                     return True
 
     def _check(self, url, req=None):
