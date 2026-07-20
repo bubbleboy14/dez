@@ -62,7 +62,7 @@ class Router(object):
     def _is_ips(self, rule):
         if ":" in rule: # v6
             return True
-        return rule.replace(".", "").replace("|", "").isnumeric() # v4
+        return rule.replace(".", "").replace(",", "").isnumeric() # v4
 
     def _denied(self, ip, url, ref):
         self.log.access("roll check!\nurl: %s\nreferer: %s\nip: %s"%(url, ref, ip))
