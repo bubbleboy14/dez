@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='dez',
-    version="0.10.10.54",
+    version="0.10.10.55",
     author='Mario Balibrera',
     author_email='mario.balibrera@gmail.com',
     license='MIT License',
