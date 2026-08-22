@@ -28,7 +28,7 @@ class SocketClient(object):
         if addr not in self.pools:
             self.pools[addr] = ConnectionPool(host, port, secure, max_conn, b64, self.silent)
             MIN_CONN and self.pools[addr].spawn(MIN_CONN)
-        self.pools[addr].get_connection(cb, args, timeout)
+        self.pools[addr].get_connection(cb, args, timeout, eb, ebargs)
 
     def start_connections(self, host, port, num, cb, args=[], secure=False, timeout=None, max_conn=MAX_CONN):
         addr = host, port
@@ -87,11 +87,11 @@ class ConnectionPool(object):
         self.__start_count = num
         self.spawn(num)
 
-    def get_connection(self, cb, args, timeout):
+    def get_connection(self, cb, args, timeout, eb=None, ebargs=None):
         self.stats("GET CONN")
         i = self.wait_index
         timer = rel.timeout(timeout, self.__timed_out, i)
-        self.wait_timers[i] = cb, args, timer
+        self.wait_timers[i] = cb, args, timer, eb, ebargs
         self.wait_queue.append(i)
         self.wait_index += 1
         self._churn()
@@ -113,10 +113,22 @@ class ConnectionPool(object):
             sock = io.client_socket(self.hostname, self.port, self.secure)
         except io.ssl.SSLError as e:
             self.log("__start_connection got SSLError!", e, force=True)
-            return # this is probs fine...?
+            return self._fail_waiter(str(e))
         Connection(self.addr, sock, self, self.b64, self.silent).connect()
         self.connection_count += 1
         self.connecting_count += 1
+
+    def _fail_waiter(self, reason):
+        # tell the oldest still-waiting request right away instead of
+        # making it sit out the full get_connection() timeout for a
+        # failure we already know about
+        if not self.wait_queue:
+            return
+        i = self.wait_queue.pop(0)
+        cb, args, timer, eb, ebargs = self.wait_timers.pop(i)
+        timer.delete()
+        self.stats("CONNECT FAILED")
+        eb and eb(*(ebargs or []))
 
     def connection_available(self, conn):
         self.connecting_count -= 1
@@ -140,18 +152,18 @@ class ConnectionPool(object):
         self.wait_queue and self._churn()
 
     def __timed_out(self, i):
-        cb, args, timer = self.wait_timers[i]
+        cb, args, timer, eb, ebargs = self.wait_timers[i]
         timer.delete()
         del self.wait_timers[i]
         self.wait_queue.remove(i)
-        self.connection_count -= 1
         self.stats("TIMEOUT")
+        eb and eb(*(ebargs or []))
 
     def __service_queue(self):
         self.stats("SERVICE")
         while self.pool and self.wait_queue:
             i = self.wait_queue.pop(0)
-            cb, args, timer = self.wait_timers.pop(i)
+            cb, args, timer, eb, ebargs = self.wait_timers.pop(i)
             timer.delete()
             cb(self.pool.pop(0), *args)
         waiters = len(self.wait_queue) - self.connecting_count
