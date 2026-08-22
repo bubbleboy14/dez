@@ -62,7 +62,7 @@ class HTTPClient(object):
         self.log("get_url: %s"%(url,))
         self.rcount += 1
         path, host, port = self.__parse_url(url)
-        self.requests[self.rcount] = URLRequest(self.rcount, path, host, port, method, headers, cb, cbargs, eb, ebargs, body, timeout=timeout)
+        self.requests[self.rcount] = URLRequest(self.rcount, path, host, port, method, headers, cb, cbargs, eb, ebargs, body, timeout=timeout, requests=self.requests)
         self.client.get_connection(host, port, self.__conn_cb, [self.rcount], url.startswith("https://"), self.__conn_timeout_cb, [self.rcount])
 
     def __conn_timeout_cb(self, id):
@@ -128,9 +128,11 @@ class HTTPClient(object):
         return path, hostname, port
 
 class URLRequest(object):
-    def __init__(self, id, path, host, port, method, headers, cb, cbargs, eb, ebargs, body, timeout=None):
+    def __init__(self, id, path, host, port, method, headers, cb, cbargs, eb, ebargs, body, timeout=None, requests=None):
         self.id = id
+        self.requests = requests # HTTPClient.requests, so we can pop ourselves out on completion
         self.cb = cb
+        self.conn = None # only set once a connection is actually obtained (__conn_cb)
         self.path = path
         self.host = host
         self.port = port
@@ -149,12 +151,16 @@ class URLRequest(object):
     def timedout(self, *args, **kwargs):
         self.failure("timeout", *args, **kwargs)
 
+    def _forget(self):
+        self.requests is not None and self.requests.pop(self.id, None)
+
     def success(self, response):
         if self.failed and not SILENT:
             print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             print("BUT I FAILED!")
             print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         self.timeout.delete()
+        self._forget()
         if self.cb:
             args = []
             if self.cbargs:
@@ -168,10 +174,11 @@ class URLRequest(object):
             print("failed!", reason, args, kwargs)
             print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         self.timeout.delete()
+        self._forget()
         self.failed = True
         if self.eb and self.eb(reason, *self.ebargs) == "close":
             if not SILENT:
                 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                 print("closing connection!")
                 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            self.conn.close()
+            self.conn and self.conn.close()
