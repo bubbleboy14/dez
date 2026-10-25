@@ -181,4 +181,5 @@ class URLRequest(object):
                 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                 print("closing connection!")
                 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            self.conn and self.conn.close()
+            if self.conn:
+                self.conn.close()
